@@ -13,7 +13,7 @@ import (
 
 	//"strings"
 	"encoding/json"
-	"github.com/LeoWillems2/checknet/pkg/sharedlib"
+	"github.com/LeoWillems2/nchecknet/pkg/sharedlib"
 )
 
 func CompareNmapWithUFW() {
