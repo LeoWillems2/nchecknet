@@ -1,33 +1,47 @@
 package sharedlib
 
 import (
-	"fmt"
-	"bufio"
-	"bytes"
+	"io/ioutil"
 	"encoding/json"
 	"log"
-	"net"
 	"os"
-	"os/exec"
 	"regexp"
 	"strings"
 	"unicode"
-	"errors"
 )
 
+type RawDataNmap struct {
+	Nmap []string
+	Hostname string
+	Scanname string
+	Date string
+	Key string
+}
 
-type Nmap struct {
+type RawDataServer struct {
+	Listeners []string
+	Fwrules []string
+	Interfaces []string
+	Routes []string
+	Hostname string
+	Date string
+	Key string
+}
+
+type NmapLine struct {
 	Proto  string
 	Port   string
 	Status string
 }
 
-type NmapFile struct {
-	Filename  string
+type NcheckNetNmap struct {
 	IPversion string
+	Scanned string
 	IPScanned string
-	IPFrom string
-	Nmap
+	FromHostname string
+	NmapLines []NmapLine
+	Key string
+	Date string
 }
 
 type Listener struct {
@@ -36,16 +50,17 @@ type Listener struct {
 	IP              string
 	Port            string
 	Bound2interface string
+	Command         string
 	OriginalText    string
 }
 
-type InterfaceData struct {
+type Interface struct {
 	Name        string
 	V4addresses []string
 	V6addresses []string
 }
 
-type FWrules struct {
+type Fwrule struct {
 	IPversion    string
 	Port         string
 	Proto        string
@@ -64,13 +79,21 @@ type RouteEntry struct {
 
 }
 
-var FWrulesByPort = make(map[string][]FWrules)
+type NcheckNetServer struct {
+	Date string
+	Key string
+	Hostname string
+	Listeners []Listener
+	Routes []RouteEntry
+	Fwrules []Fwrule
+	Interfaces []Interface
+}
+
+var FWrulesByPort = make(map[string][]Fwrule)
 var ListenersByPort = make(map[string][]Listener)
 var ListenersByRow = make([]Listener, 0)
-var InterfacesByName = make(map[string]InterfaceData)
+var InterfacesByName = make(map[string]Interface)
 var InterfaceNames = []string{}
-var NmapResults = make([]NmapFile, 0)
-var RouteTable = make([]RouteEntry,0)
 
 func trimLeftSpace(s string) string {
 	return strings.TrimLeftFunc(s, unicode.IsSpace)
@@ -80,33 +103,53 @@ func trimRightSpace(s string) string {
 	return strings.TrimRightFunc(s, unicode.IsSpace)
 }
 
-func ReadUFWProc() []string {
-	return ReadPipe("sudo", "/usr/sbin/ufw", "status")
+func ProcessRawServerData(filePath string) NcheckNetServer {
+	data, err := ioutil.ReadFile(filePath)
+	if err != nil {
+		panic(err)
+	}
+	rdata := RawDataServer{}
+	err = json.Unmarshal(data, &rdata)
+	if err != nil {
+		panic(err)
+	}
+
+	nchecknet := NcheckNetServer{}
+	nchecknet.Hostname = rdata.Hostname
+	nchecknet.Key = rdata.Key
+	nchecknet.Date = rdata.Date
+
+	nchecknet.Fwrules = ProcessFW(rdata.Fwrules)
+	nchecknet.Routes = ProcessRoutes(rdata.Routes)
+	nchecknet.Listeners = ProcessListeners(rdata.Listeners)
+	nchecknet.Interfaces = ProcessInterfaces(rdata.Interfaces)
+
+	return nchecknet
 }
 
-func ReadNMAPFile(filePath string) []string {
-	return ReadFile(filePath)
-}
+func ProcessRawNmapData(filePath string) NcheckNetNmap {
+	data, err := ioutil.ReadFile(filePath)
+	if err != nil {
+		panic(err)
+	}
+	rdata := RawDataNmap{}
+	err = json.Unmarshal(data, &rdata)
+	if err != nil {
+		panic(err)
+	}
 
-func ReadUFWFile(filePath string) []string {
-	return ReadFile(filePath)
-}
-
-func ReadListenerProc() []string {
-	return ReadPipe("/usr/bin/ss", "-lntup")
-}
-
-func ReadListenerFile(filePath string) []string {
-	return ReadFile(filePath)
-}
-
-func ProcessNMAP(nmapdata []string, filename string) {
-	nmap := NmapFile{}
-	nmap.Filename = filename
+	nmap := NcheckNetNmap{}
+	nmap.FromHostname = rdata.Hostname
+	nmap.Scanned = rdata.Scanname
+	nmap.Key = rdata.Key
+	nmap.Date = rdata.Date
+	
 
 	PORTseen := false
 	nmap.IPversion = "v4"
-	for _, line := range nmapdata {
+
+	for _, line := range rdata.Nmap {
+		log.Println(line)
 		if strings.Contains(line, "Nmap scan report for") {
 			x, _ := regexp.MatchString(`.*:.*:.*:`, line)
 			if x {
@@ -136,21 +179,29 @@ func ProcessNMAP(nmapdata []string, filename string) {
 		}
 
 		fs := strings.Fields(line)
+		if len(fs) != 3 {
+			continue
+		}
 		if fs[1] != "open" {
 			log.Println("can handle only open: ", line)
 			continue
 		}
-		nmap.Status = fs[1]
-		ps := strings.Split(fs[0], "/")
-		nmap.Port = ps[0]
-		nmap.Proto = ps[1]
 
-		NmapResults = append(NmapResults, nmap)
+		nmapline := NmapLine{}
+
+		nmapline.Status = fs[1]
+		ps := strings.Split(fs[0], "/")
+		nmapline.Port = ps[0]
+		nmapline.Proto = ps[1]
+
+		nmap.NmapLines = append(nmap.NmapLines, nmapline)
 	}
-	JsonDump(NmapResults, "NmapResults.json")
+
+	return nmap
 }
 
-func ProcessListeners(ssdata []string) {
+func ProcessListeners(ssdata []string) []Listener {
+	Listeners := make([]Listener,0)
 	for _, line := range ssdata {
 
 		listener := Listener{}
@@ -159,13 +210,19 @@ func ProcessListeners(ssdata []string) {
 
 		fs := strings.Fields(line)
 
-		if len(fs) == 0 || fs[0] == "Netid" { // Header
+		if len(fs) == 0 || fs[0] == "Proto" || fs[0] == "Active" { // Header
 			continue
 		}
 
+		col := 6
+		if line[0] == 'u'{
+			col=5		// no LISTEN col
+		}
+		
+		listener.Command = fs[col][strings.Index(fs[col], "/")+1:]
 		listener.Proto = fs[0]
 		li := strings.LastIndex(fs[4], ":")
-		listener.Port = fs[4][li+1:]
+		listener.Port = fs[3][li+1:]
 		tmp := fs[4][:li]
 		fi := strings.SplitN(tmp, "%", 2)
 		listener.IP = fi[0]
@@ -180,12 +237,13 @@ func ProcessListeners(ssdata []string) {
 		if len(fi) > 1 {
 			listener.Bound2interface = fi[1]
 		}
-		ListenersByPort[listener.Port] = append(ListenersByPort[listener.Port], listener)
-		ListenersByRow = append(ListenersByRow, listener)
+		Listeners = append(Listeners, listener)
 	}
 
-	JsonDump(ListenersByPort, "ListenersByPort.json")
-	JsonDump(ListenersByRow, "ListenersByRow.json")
+	//JsonDump(ListenersByPort, "ListenersByPort.json")
+	//JsonDump(ListenersByRow, "ListenersByRow.json")
+
+	return Listeners
 }
 
 func JsonDump(i interface{}, fn string) {
@@ -199,10 +257,12 @@ func JsonDump(i interface{}, fn string) {
 	}
 }
 
-func ProcessUFW(ufwdata []string) {
+func ProcessFW(fwdata []string) []Fwrule {
 
-	for _, line := range ufwdata {
-		ufw := FWrules{}
+	Fwrules := make([]Fwrule, 0)
+
+	for _, line := range fwdata {
+		ufw := Fwrule{}
 		ufw.Intfaces = make([]string, 0)
 		ufw.OriginalText = line
 
@@ -284,7 +344,7 @@ func ProcessUFW(ufwdata []string) {
 			ufw.IP_to = topartsplit[0]
 			ufw.Intfaces = append(ufw.Intfaces, topartsplit[2])
 		default:
-			log.Fatalln("Bad split on topart term of UFW output")
+			log.Fatalln("Bad split on topart term of FW output")
 		}
 
 		// process port and proto
@@ -307,112 +367,50 @@ func ProcessUFW(ufwdata []string) {
 		// Process ufw "From"
 		ufw.IP_from = frompart
 
-		FWrulesByPort[ufw.Port] = append(FWrulesByPort[ufw.Port], ufw)
+		//FWrulesByPort[ufw.Port] = append(FWrulesByPort[ufw.Port], ufw)
+		Fwrules = append(Fwrules, ufw)
 	}
 
-	JsonDump(FWrulesByPort, "FWrulesByPort.json")
+	return Fwrules
 }
 
-func GetInterfaces(filewrite bool) map[string]InterfaceData {
+func ProcessInterfaces(interfaces []string) []Interface {
+	Interfaces := make([]Interface, 0)
+	Iface := Interface{}
 
-	ni, _ := net.Interfaces()
-	for _, n := range ni {
-
-		interfacedata := InterfaceData{}
-		interfacedata.V4addresses = make([]string, 0)
-		interfacedata.V6addresses = make([]string, 0)
-
-		if len(n.Name) > 4 && n.Name[0:5] == "virbr" {
-			//continue
-		}
-		if len(n.Name) > 3 && n.Name[0:4] == "vnet" {
-			//continue
-		}
-		if n.Flags&net.FlagUp == 0 {
+	haveIface := false
+	for _, iface := range(interfaces) {
+		if len(iface) < 10 {
+			haveIface = false
+			Interfaces = append(Interfaces, Iface)
+			Iface = Interface{}
 			continue
 		}
-
-		interfacedata.Name = n.Name
-		InterfaceNames = append(InterfaceNames, n.Name)
-
-		addrs, _ := n.Addrs()
-		// handle err
-		for _, addr := range addrs {
-			var ip net.IP
-			switch v := addr.(type) {
-			case *net.IPNet:
-				ip = v.IP
-			case *net.IPAddr:
-				ip = v.IP
+		if haveIface == true {
+			// scan for inet and inet6
+			fs := strings.Fields(trimLeftSpace(iface))
+			switch fs[0] {
+			 case "inet":
+				Iface.V4addresses = append(Iface.V4addresses, fs[1])
+			 case "inet6":
+				Iface.V6addresses = append(Iface.V6addresses, fs[1])
 			}
-			if ip.To4() != nil {
-				interfacedata.V4addresses = append(interfacedata.V4addresses, ip.String())
-			} else {
-				interfacedata.V6addresses = append(interfacedata.V6addresses, ip.String())
-			}
+			continue
 		}
-
-		InterfacesByName[interfacedata.Name] = interfacedata
+		if iface[0] != ' ' {
+			haveIface = true
+			fs := strings.Fields(iface)
+			Iface.Name = fs[0]
+			continue
+		}
+		haveIface = false
 	}
 
-	if filewrite {
-		JsonDump(InterfacesByName, "InterfacesByName.json")
-	}
-
-	return InterfacesByName
+	return Interfaces
 }
 
-func ReadPipe(args ...string) (result []string) {
-	cmd := exec.Command(args[0], args[1:]...)
-	var stdout bytes.Buffer
-	cmd.Stdout = &stdout
-
-	err := cmd.Run()
-	if err != nil {
-		log.Fatalf("Command failed to run: %v", err)
-	}
-
-	result = strings.Split(stdout.String(), "\n")
-
-	return
-}
-
-func ReadFile(filePath string) (result []string) {
-	file, err := os.Open(filePath)
-	if err != nil {
-		// log.Fatal prints the error and exits the program.
-		log.Fatal(err)
-	}
-	defer file.Close()
-
-	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
-		result = append(result, scanner.Text())
-	}
-	if err := scanner.Err(); err != nil {
-		log.Fatal(err)
-	}
-	return
-}
-
-func GetFQDN() (string, error) {
-	hostname, err := os.Hostname()
-	if err != nil {
-		return "", err
-	}
-	f := strings.Split(hostname, ".")
-	if len(f) < 3 {
-		return hostname, errors.New("Hostname is not a FQDN")
-	}
-	return hostname, nil
-	
-}
-
-func ReadRoutesProc() []string {
-	return ReadPipe("/usr/bin/netstat", "-rn")
-}
-
-func ProcessRoutes(RouteData []string) {
+func ProcessRoutes(RouteData []string) []RouteEntry {
+	RouteTable := make([]RouteEntry,0)
 	entry := RouteEntry{}
 	DestSeen := false
 	for _, line := range(RouteData) {
@@ -433,10 +431,12 @@ func ProcessRoutes(RouteData []string) {
 
 		RouteTable = append(RouteTable, entry)
 	}
+	return RouteTable
 }
 
 
 func SuggestNmapLocations() {
+/*
 	//ifaces := GetInterfaces(false)
 	hostname, err := GetFQDN()
 	if err != nil {
@@ -455,4 +455,8 @@ func SuggestNmapLocations() {
 		}
 		continue
 	}
+*/
+} 
+
+func GetRawJSON(f string) {
 }

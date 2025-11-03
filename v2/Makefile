@@ -1,5 +1,5 @@
 
-all: execute/collectfwdata execute/compare_fw_listeners execute/nmapscanner
+all: execute/collectfwdata
 
 execute/collectfwdata: cmd/collectfwdata/collectfwdata.go pkg/sharedlib/funcs.go
 	go build -o execute/collectfwdata cmd/collectfwdata/collectfwdata.go
