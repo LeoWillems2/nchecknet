@@ -1,0 +1,657 @@
+{
+  "S": {
+    "Date": "2025-11-03 14:03:01",
+    "Key": "ABCDEF0123456789",
+    "Hostname": "monitor.managedlinux.nl",
+    "Listeners": [
+      {
+        "IPversion": "v4",
+        "Proto": "tcp",
+        "IP": "0.0.0.0",
+        "Port": "54:53",
+        "Bound2interface": "",
+        "Command": "systemd-resolv",
+        "OriginalText": "tcp        0      0 127.0.0.54:53           0.0.0.0:*               LISTEN      9950/systemd-resolv "
+      },
+      {
+        "IPversion": "v4",
+        "Proto": "tcp",
+        "IP": "0.0.0.0",
+        "Port": "1:25",
+        "Bound2interface": "",
+        "Command": "master",
+        "OriginalText": "tcp        0      0 127.0.0.1:25            0.0.0.0:*               LISTEN      36420/master        "
+      },
+      {
+        "IPversion": "v4",
+        "Proto": "tcp",
+        "IP": "0.0.0.0",
+        "Port": "80",
+        "Bound2interface": "",
+        "Command": "nginx:",
+        "OriginalText": "tcp        0      0 0.0.0.0:80              0.0.0.0:*               LISTEN      440087/nginx: maste "
+      },
+      {
+        "IPversion": "v4",
+        "Proto": "tcp",
+        "IP": "0.0.0.0",
+        "Port": "22",
+        "Bound2interface": "",
+        "Command": "systemd",
+        "OriginalText": "tcp        0      0 0.0.0.0:22              0.0.0.0:*               LISTEN      1/systemd           "
+      },
+      {
+        "IPversion": "v4",
+        "Proto": "tcp",
+        "IP": "0.0.0.0",
+        "Port": "443",
+        "Bound2interface": "",
+        "Command": "nginx:",
+        "OriginalText": "tcp        0      0 0.0.0.0:443             0.0.0.0:*               LISTEN      440087/nginx: maste "
+      },
+      {
+        "IPversion": "v4",
+        "Proto": "tcp",
+        "IP": "0.0.0.0",
+        "Port": "8081",
+        "Bound2interface": "",
+        "Command": "nginx:",
+        "OriginalText": "tcp        0      0 0.0.0.0:8081            0.0.0.0:*               LISTEN      440087/nginx: maste "
+      },
+      {
+        "IPversion": "v4",
+        "Proto": "tcp",
+        "IP": "0.0.0.0",
+        "Port": "8080",
+        "Bound2interface": "",
+        "Command": "nginx:",
+        "OriginalText": "tcp        0      0 0.0.0.0:8080            0.0.0.0:*               LISTEN      440087/nginx: maste "
+      },
+      {
+        "IPversion": "v4",
+        "Proto": "tcp",
+        "IP": "0.0.0.0",
+        "Port": "1:5432",
+        "Bound2interface": "",
+        "Command": "postgres",
+        "OriginalText": "tcp        0      0 127.0.0.1:5432          0.0.0.0:*               LISTEN      752134/postgres     "
+      },
+      {
+        "IPversion": "v4",
+        "Proto": "tcp",
+        "IP": "0.0.0.0",
+        "Port": "10051",
+        "Bound2interface": "",
+        "Command": "zabbix_serve",
+        "OriginalText": "tcp        0      0 0.0.0.0:10051           0.0.0.0:*               LISTEN      752164/zabbix_serve "
+      },
+      {
+        "IPversion": "v4",
+        "Proto": "tcp",
+        "IP": "0.0.0.0",
+        "Port": "53:53",
+        "Bound2interface": "",
+        "Command": "systemd-resolv",
+        "OriginalText": "tcp        0      0 127.0.0.53:53           0.0.0.0:*               LISTEN      9950/systemd-resolv "
+      },
+      {
+        "IPversion": "v6",
+        "Proto": "tcp6",
+        "IP": "::",
+        "Port": ":25",
+        "Bound2interface": "",
+        "Command": "master",
+        "OriginalText": "tcp6       0      0 ::1:25                  :::*                    LISTEN      36420/master        "
+      },
+      {
+        "IPversion": "v6",
+        "Proto": "tcp6",
+        "IP": "::",
+        "Port": "80",
+        "Bound2interface": "",
+        "Command": "nginx:",
+        "OriginalText": "tcp6       0      0 :::80                   :::*                    LISTEN      440087/nginx: maste "
+      },
+      {
+        "IPversion": "v6",
+        "Proto": "tcp6",
+        "IP": "::",
+        "Port": "22",
+        "Bound2interface": "",
+        "Command": "systemd",
+        "OriginalText": "tcp6       0      0 :::22                   :::*                    LISTEN      1/systemd           "
+      },
+      {
+        "IPversion": "v6",
+        "Proto": "tcp6",
+        "IP": "::",
+        "Port": "443",
+        "Bound2interface": "",
+        "Command": "nginx:",
+        "OriginalText": "tcp6       0      0 :::443                  :::*                    LISTEN      440087/nginx: maste "
+      },
+      {
+        "IPversion": "v6",
+        "Proto": "tcp6",
+        "IP": "::",
+        "Port": "10051",
+        "Bound2interface": "",
+        "Command": "zabbix_serve",
+        "OriginalText": "tcp6       0      0 :::10051                :::*                    LISTEN      752164/zabbix_serve "
+      },
+      {
+        "IPversion": "v6",
+        "Proto": "tcp6",
+        "IP": "::",
+        "Port": "10050",
+        "Bound2interface": "",
+        "Command": "zabbix_agent2",
+        "OriginalText": "tcp6       0      0 :::10050                :::*                    LISTEN      62976/zabbix_agent2 "
+      },
+      {
+        "IPversion": "v6",
+        "Proto": "tcp6",
+        "IP": "::",
+        "Port": ":5432",
+        "Bound2interface": "",
+        "Command": "postgres",
+        "OriginalText": "tcp6       0      0 ::1:5432                :::*                    LISTEN      752134/postgres     "
+      },
+      {
+        "IPversion": "v4",
+        "Proto": "udp",
+        "IP": "0.0.0.0",
+        "Port": "7.178:68",
+        "Bound2interface": "",
+        "Command": "systemd-networ",
+        "OriginalText": "udp        0      0 91.98.147.178:68        0.0.0.0:*                           9960/systemd-networ "
+      },
+      {
+        "IPversion": "v4",
+        "Proto": "udp",
+        "IP": "0.0.0.0",
+        "Port": "1:161",
+        "Bound2interface": "",
+        "Command": "snmpd",
+        "OriginalText": "udp        0      0 127.0.0.1:161           0.0.0.0:*                           28496/snmpd         "
+      },
+      {
+        "IPversion": "v4",
+        "Proto": "udp",
+        "IP": "0.0.0.0",
+        "Port": "1194",
+        "Bound2interface": "",
+        "Command": "openvpn",
+        "OriginalText": "udp        0      0 0.0.0.0:1194            0.0.0.0:*                           313999/openvpn      "
+      },
+      {
+        "IPversion": "v4",
+        "Proto": "udp",
+        "IP": "0.0.0.0",
+        "Port": "1195",
+        "Bound2interface": "",
+        "Command": "openvpn",
+        "OriginalText": "udp        0      0 0.0.0.0:1195            0.0.0.0:*                           357732/openvpn      "
+      },
+      {
+        "IPversion": "v4",
+        "Proto": "udp",
+        "IP": "0.0.0.0",
+        "Port": "1196",
+        "Bound2interface": "",
+        "Command": "openvpn",
+        "OriginalText": "udp        0      0 0.0.0.0:1196            0.0.0.0:*                           314201/openvpn      "
+      },
+      {
+        "IPversion": "v4",
+        "Proto": "udp",
+        "IP": "0.0.0.0",
+        "Port": "54:53",
+        "Bound2interface": "",
+        "Command": "systemd-resolv",
+        "OriginalText": "udp        0      0 127.0.0.54:53           0.0.0.0:*                           9950/systemd-resolv "
+      },
+      {
+        "IPversion": "v4",
+        "Proto": "udp",
+        "IP": "0.0.0.0",
+        "Port": "53:53",
+        "Bound2interface": "",
+        "Command": "systemd-resolv",
+        "OriginalText": "udp        0      0 127.0.0.53:53           0.0.0.0:*                           9950/systemd-resolv "
+      },
+      {
+        "IPversion": "v6",
+        "Proto": "udp6",
+        "IP": "::",
+        "Port": ":161",
+        "Bound2interface": "",
+        "Command": "snmpd",
+        "OriginalText": "udp6       0      0 ::1:161                 :::*                                28496/snmpd"
+      }
+    ],
+    "Routes": [
+      {
+        "Dest": "0.0.0.0",
+        "Gateway": "172.31.1.1",
+        "Interface": "eth0"
+      },
+      {
+        "Dest": "10.8.0.0",
+        "Gateway": "0.0.0.0",
+        "Interface": "tun2"
+      },
+      {
+        "Dest": "10.9.0.0",
+        "Gateway": "0.0.0.0",
+        "Interface": "tun0"
+      },
+      {
+        "Dest": "10.10.0.0",
+        "Gateway": "0.0.0.0",
+        "Interface": "tun1"
+      },
+      {
+        "Dest": "172.31.1.1",
+        "Gateway": "0.0.0.0",
+        "Interface": "eth0"
+      },
+      {
+        "Dest": "185.12.64.1",
+        "Gateway": "172.31.1.1",
+        "Interface": "eth0"
+      },
+      {
+        "Dest": "185.12.64.2",
+        "Gateway": "172.31.1.1",
+        "Interface": "eth0"
+      }
+    ],
+    "Fwrules": [
+      {
+        "IPversion": "v4",
+        "Port": "22",
+        "Proto": "tcp",
+        "Intfaces": [
+          "eth0:",
+          "lo:",
+          "tun0:",
+          "tun1:"
+        ],
+        "IP_to": "To_AnyIP",
+        "IP_from": "188.245.255.136",
+        "Ruletype": "ALLOW",
+        "Comment": "# Oscar VPN ssh",
+        "OriginalText": "22/tcp                     ALLOW       188.245.255.136            # Oscar VPN ssh"
+      },
+      {
+        "IPversion": "v4",
+        "Port": "443",
+        "Proto": "tcp",
+        "Intfaces": [
+          "eth0:",
+          "lo:",
+          "tun0:",
+          "tun1:"
+        ],
+        "IP_to": "To_AnyIP",
+        "IP_from": "188.245.255.136",
+        "Ruletype": "ALLOW",
+        "Comment": "# Oscar VPN www",
+        "OriginalText": "443/tcp                    ALLOW       188.245.255.136            # Oscar VPN www"
+      },
+      {
+        "IPversion": "v4",
+        "Port": "8080",
+        "Proto": "tcp",
+        "Intfaces": [
+          "eth0:",
+          "lo:",
+          "tun0:",
+          "tun1:"
+        ],
+        "IP_to": "To_AnyIP",
+        "IP_from": "188.245.255.136",
+        "Ruletype": "ALLOW",
+        "Comment": "# Oscar VPN zabbix web",
+        "OriginalText": "8080/tcp                   ALLOW       188.245.255.136            # Oscar VPN zabbix web"
+      },
+      {
+        "IPversion": "v4",
+        "Port": "1194",
+        "Proto": "udp",
+        "Intfaces": [
+          "eth0:",
+          "lo:",
+          "tun0:",
+          "tun1:"
+        ],
+        "IP_to": "To_AnyIP",
+        "IP_from": "188.245.255.136",
+        "Ruletype": "ALLOW",
+        "Comment": "# Oscar VPN / VPN",
+        "OriginalText": "1194/udp                   ALLOW       188.245.255.136            # Oscar VPN / VPN"
+      },
+      {
+        "IPversion": "v4",
+        "Port": "1195",
+        "Proto": "udp",
+        "Intfaces": [
+          "eth0:",
+          "lo:",
+          "tun0:",
+          "tun1:"
+        ],
+        "IP_to": "To_AnyIP",
+        "IP_from": "188.40.83.216",
+        "Ruletype": "ALLOW",
+        "Comment": "# mongo1.iwoz.io VPN",
+        "OriginalText": "1195/udp                   ALLOW       188.40.83.216              # mongo1.iwoz.io VPN"
+      },
+      {
+        "IPversion": "v4",
+        "Port": "1195",
+        "Proto": "udp",
+        "Intfaces": [
+          "eth0:",
+          "lo:",
+          "tun0:",
+          "tun1:"
+        ],
+        "IP_to": "To_AnyIP",
+        "IP_from": "23.88.78.109",
+        "Ruletype": "ALLOW",
+        "Comment": "# mongo2.iwoz.io VPN",
+        "OriginalText": "1195/udp                   ALLOW       23.88.78.109               # mongo2.iwoz.io VPN"
+      },
+      {
+        "IPversion": "v4",
+        "Port": "1195",
+        "Proto": "udp",
+        "Intfaces": [
+          "eth0:",
+          "lo:",
+          "tun0:",
+          "tun1:"
+        ],
+        "IP_to": "To_AnyIP",
+        "IP_from": "23.88.78.110",
+        "Ruletype": "ALLOW",
+        "Comment": "# mongo3.iwoz.io VPN",
+        "OriginalText": "1195/udp                   ALLOW       23.88.78.110               # mongo3.iwoz.io VPN"
+      },
+      {
+        "IPversion": "v4",
+        "Port": "22",
+        "Proto": "tcp",
+        "Intfaces": [
+          "eth0:",
+          "lo:",
+          "tun0:",
+          "tun1:"
+        ],
+        "IP_to": "To_AnyIP",
+        "IP_from": "10.8.0.133",
+        "Ruletype": "ALLOW",
+        "Comment": "# Leo",
+        "OriginalText": "22/tcp                     ALLOW       10.8.0.133                 # Leo"
+      },
+      {
+        "IPversion": "v4",
+        "Port": "22",
+        "Proto": "tcp",
+        "Intfaces": [
+          "eth0:",
+          "lo:",
+          "tun0:",
+          "tun1:"
+        ],
+        "IP_to": "To_AnyIP",
+        "IP_from": "86.87.19.76",
+        "Ruletype": "ALLOW",
+        "Comment": "# Leo thuis",
+        "OriginalText": "22/tcp                     ALLOW       86.87.19.76                # Leo thuis"
+      },
+      {
+        "IPversion": "v4",
+        "Port": "22",
+        "Proto": "tcp",
+        "Intfaces": [
+          "eth0:",
+          "lo:",
+          "tun0:",
+          "tun1:"
+        ],
+        "IP_to": "To_AnyIP",
+        "IP_from": "37.97.131.118",
+        "Ruletype": "ALLOW",
+        "Comment": "# system.managedlinux.nl ssh (tmp move mediawiki)",
+        "OriginalText": "22/tcp                     ALLOW       37.97.131.118              # system.managedlinux.nl ssh (tmp move mediawiki)"
+      },
+      {
+        "IPversion": "v4",
+        "Port": "1194",
+        "Proto": "udp",
+        "Intfaces": [
+          "eth0:",
+          "lo:",
+          "tun0:",
+          "tun1:"
+        ],
+        "IP_to": "To_AnyIP",
+        "IP_from": "37.97.131.118",
+        "Ruletype": "ALLOW",
+        "Comment": "# system.managedlinux.nl VPN",
+        "OriginalText": "1194/udp                   ALLOW       37.97.131.118              # system.managedlinux.nl VPN"
+      },
+      {
+        "IPversion": "v4",
+        "Port": "1194",
+        "Proto": "udp",
+        "Intfaces": [
+          "eth0:",
+          "lo:",
+          "tun0:",
+          "tun1:"
+        ],
+        "IP_to": "To_AnyIP",
+        "IP_from": "86.87.19.76",
+        "Ruletype": "ALLOW",
+        "Comment": "# Leo VPN",
+        "OriginalText": "1194/udp                   ALLOW       86.87.19.76                # Leo VPN"
+      },
+      {
+        "IPversion": "v4",
+        "Port": "443",
+        "Proto": "tcp",
+        "Intfaces": [
+          "eth0:",
+          "lo:",
+          "tun0:",
+          "tun1:"
+        ],
+        "IP_to": "To_AnyIP",
+        "IP_from": "86.87.19.76",
+        "Ruletype": "ALLOW",
+        "Comment": "# Leo VPN www",
+        "OriginalText": "443/tcp                    ALLOW       86.87.19.76                # Leo VPN www"
+      },
+      {
+        "IPversion": "v4",
+        "Port": "8080",
+        "Proto": "tcp",
+        "Intfaces": [
+          "eth0:",
+          "lo:",
+          "tun0:",
+          "tun1:"
+        ],
+        "IP_to": "To_AnyIP",
+        "IP_from": "86.87.19.76",
+        "Ruletype": "ALLOW",
+        "Comment": "# Leo zabbix web",
+        "OriginalText": "8080/tcp                   ALLOW       86.87.19.76                # Leo zabbix web"
+      },
+      {
+        "IPversion": "v4",
+        "Port": "10050",
+        "Proto": "tcp",
+        "Intfaces": [
+          "eth0:",
+          "lo:",
+          "tun0:",
+          "tun1:"
+        ],
+        "IP_to": "To_AnyIP",
+        "IP_from": "127.0.0.1",
+        "Ruletype": "ALLOW",
+        "Comment": "# zabbix",
+        "OriginalText": "10050/tcp                  ALLOW       127.0.0.1                  # zabbix"
+      },
+      {
+        "IPversion": "v4",
+        "Port": "10051",
+        "Proto": "tcp",
+        "Intfaces": [
+          "eth0:",
+          "lo:",
+          "tun0:",
+          "tun1:"
+        ],
+        "IP_to": "To_AnyIP",
+        "IP_from": "127.0.0.1",
+        "Ruletype": "ALLOW",
+        "Comment": "# zabbix",
+        "OriginalText": "10051/tcp                  ALLOW       127.0.0.1                  # zabbix"
+      },
+      {
+        "IPversion": "v4",
+        "Port": "10050",
+        "Proto": "tcp",
+        "Intfaces": [
+          "eth0:",
+          "lo:",
+          "tun0:",
+          "tun1:"
+        ],
+        "IP_to": "To_AnyIP",
+        "IP_from": "10.8.0.0/24",
+        "Ruletype": "ALLOW",
+        "Comment": "# zabbix",
+        "OriginalText": "10050/tcp                  ALLOW       10.8.0.0/24                # zabbix"
+      },
+      {
+        "IPversion": "v4",
+        "Port": "10051",
+        "Proto": "tcp",
+        "Intfaces": [
+          "eth0:",
+          "lo:",
+          "tun0:",
+          "tun1:"
+        ],
+        "IP_to": "To_AnyIP",
+        "IP_from": "10.8.0.0/24",
+        "Ruletype": "ALLOW",
+        "Comment": "# zabbix",
+        "OriginalText": "10051/tcp                  ALLOW       10.8.0.0/24                # zabbix"
+      },
+      {
+        "IPversion": "v4",
+        "Port": "10050",
+        "Proto": "tcp",
+        "Intfaces": [
+          "eth0:",
+          "lo:",
+          "tun0:",
+          "tun1:"
+        ],
+        "IP_to": "To_AnyIP",
+        "IP_from": "10.9.0.0/24",
+        "Ruletype": "ALLOW",
+        "Comment": "# zabbix",
+        "OriginalText": "10050/tcp                  ALLOW       10.9.0.0/24                # zabbix"
+      },
+      {
+        "IPversion": "v4",
+        "Port": "10051",
+        "Proto": "tcp",
+        "Intfaces": [
+          "eth0:",
+          "lo:",
+          "tun0:",
+          "tun1:"
+        ],
+        "IP_to": "To_AnyIP",
+        "IP_from": "10.9.0.0/24",
+        "Ruletype": "ALLOW",
+        "Comment": "# zabbix",
+        "OriginalText": "10051/tcp                  ALLOW       10.9.0.0/24                # zabbix"
+      }
+    ],
+    "Interfaces": [
+      {
+        "Name": "eth0:",
+        "V4addresses": [
+          "91.98.147.178"
+        ],
+        "V6addresses": [
+          "fe80::9000:6ff:fe93:ce46",
+          "2a01:4f8:c014:ab5d::1"
+        ]
+      },
+      {
+        "Name": "lo:",
+        "V4addresses": [
+          "127.0.0.1"
+        ],
+        "V6addresses": [
+          "::1"
+        ]
+      },
+      {
+        "Name": "tun0:",
+        "V4addresses": [
+          "10.9.0.1"
+        ],
+        "V6addresses": [
+          "fe80::48fe:6772:bf25:f5fb"
+        ]
+      },
+      {
+        "Name": "tun1:",
+        "V4addresses": [
+          "10.10.0.1"
+        ],
+        "V6addresses": [
+          "fe80::2e12:7b1e:f4e7:261"
+        ]
+      }
+    ]
+  },
+  "N": {
+    "IPversion": "v4",
+    "Scanned": "monitor.managedlinux.nl",
+    "IPScanned": "91.98.147.178",
+    "FromHostname": "server",
+    "NmapLines": [
+      {
+        "Proto": "tcp",
+        "Port": "22",
+        "Status": "open"
+      },
+      {
+        "Proto": "tcp",
+        "Port": "443",
+        "Status": "open"
+      },
+      {
+        "Proto": "tcp",
+        "Port": "8080",
+        "Status": "open"
+      }
+    ],
+    "Key": "ABCDEF0123456789",
+    "Date": "2025-11-03 13:15:59"
+  }
+}

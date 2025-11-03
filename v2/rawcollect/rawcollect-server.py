@@ -34,7 +34,7 @@ def main():
 	data["Interfaces"] = runp(["ifconfig"])
 	data["Listeners"] = runp(["sudo", "netstat", "-tulpn"])
 	data["Routes"] = runp(["netstat", "-rn"])
-	data["Ufwrules"] = runp(["sudo", "ufw", "status"])
+	data["Fwrules"] = runp(["sudo", "ufw", "status"])
 
 	now = datetime.datetime.now()
 	data["Date"] = now.strftime("%Y-%m-%d %H:%M:%S")

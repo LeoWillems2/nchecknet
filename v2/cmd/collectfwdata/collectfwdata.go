@@ -8,6 +8,6 @@ package main
 import "github.com/LeoWillems2/nchecknet/pkg/sharedlib"
 
 func main() {
-	sharedlib.ProcessRawServerData("data/nchecknetraw-server.json")
-	sharedlib.ProcessRawNmapData("data/nchecknetraw-nmap.json")
+
+	sharedlib.DumpData()
 }

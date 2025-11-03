@@ -1,5 +1,6 @@
 package sharedlib
 
+
 import (
 	"io/ioutil"
 	"encoding/json"
@@ -89,12 +90,6 @@ type NcheckNetServer struct {
 	Interfaces []Interface
 }
 
-var FWrulesByPort = make(map[string][]Fwrule)
-var ListenersByPort = make(map[string][]Listener)
-var ListenersByRow = make([]Listener, 0)
-var InterfacesByName = make(map[string]Interface)
-var InterfaceNames = []string{}
-
 func trimLeftSpace(s string) string {
 	return strings.TrimLeftFunc(s, unicode.IsSpace)
 }
@@ -114,15 +109,16 @@ func ProcessRawServerData(filePath string) NcheckNetServer {
 		panic(err)
 	}
 
+
 	nchecknet := NcheckNetServer{}
 	nchecknet.Hostname = rdata.Hostname
 	nchecknet.Key = rdata.Key
 	nchecknet.Date = rdata.Date
 
-	nchecknet.Fwrules = ProcessFW(rdata.Fwrules)
+	nchecknet.Interfaces = ProcessInterfaces(rdata.Interfaces)
+	nchecknet.Fwrules = ProcessFW(rdata.Fwrules, nchecknet.Interfaces)
 	nchecknet.Routes = ProcessRoutes(rdata.Routes)
 	nchecknet.Listeners = ProcessListeners(rdata.Listeners)
-	nchecknet.Interfaces = ProcessInterfaces(rdata.Interfaces)
 
 	return nchecknet
 }
@@ -149,7 +145,6 @@ func ProcessRawNmapData(filePath string) NcheckNetNmap {
 	nmap.IPversion = "v4"
 
 	for _, line := range rdata.Nmap {
-		log.Println(line)
 		if strings.Contains(line, "Nmap scan report for") {
 			x, _ := regexp.MatchString(`.*:.*:.*:`, line)
 			if x {
@@ -257,14 +252,16 @@ func JsonDump(i interface{}, fn string) {
 	}
 }
 
-func ProcessFW(fwdata []string) []Fwrule {
+func ProcessFW(fwdata []string, ifaces []Interface) []Fwrule {
 
 	Fwrules := make([]Fwrule, 0)
 
 	for _, line := range fwdata {
+		log.Println(line)
 		ufw := Fwrule{}
 		ufw.Intfaces = make([]string, 0)
 		ufw.OriginalText = line
+
 
 		switch {
 		case strings.Contains(line, "ALLOW"):
@@ -323,12 +320,17 @@ func ProcessFW(fwdata []string) []Fwrule {
 		// process topart
 		topart = strings.Replace(topart, "on ", "ON", 1) // unique
 		topartsplit := strings.SplitN(topart, " ", 3)
+		
+		all_ifaces := []string{}
+		for _, inf := range ifaces {
+			all_ifaces = append(all_ifaces, inf.Name)
+		}
 
 		switch len(topartsplit) {
 		case 1: // 80/tcp
 			ufw.Port = topartsplit[0]
 			ufw.IP_to = "To_AnyIP"
-			ufw.Intfaces = append(ufw.Intfaces, InterfaceNames...)
+			ufw.Intfaces = append(ufw.Intfaces, all_ifaces...)
 		case 2: // 127.0.0.1 3025/tcp  ||  3020/tcp on lo
 			if strings.Contains(topartsplit[1], "ON") {
 				ufw.Port = topartsplit[0]
@@ -337,7 +339,7 @@ func ProcessFW(fwdata []string) []Fwrule {
 			} else {
 				ufw.Port = topartsplit[1]
 				ufw.IP_to = topartsplit[0]
-				ufw.Intfaces = append(ufw.Intfaces, InterfaceNames...)
+				ufw.Intfaces = append(ufw.Intfaces, all_ifaces...)
 			}
 		case 3: // 192.168.7.7 3023/tcp on lo
 			ufw.Port = topartsplit[1]
@@ -367,7 +369,6 @@ func ProcessFW(fwdata []string) []Fwrule {
 		// Process ufw "From"
 		ufw.IP_from = frompart
 
-		//FWrulesByPort[ufw.Port] = append(FWrulesByPort[ufw.Port], ufw)
 		Fwrules = append(Fwrules, ufw)
 	}
 
@@ -458,5 +459,16 @@ func SuggestNmapLocations() {
 */
 } 
 
-func GetRawJSON(f string) {
+
+func DumpData() {
+	type T struct {
+	    S NcheckNetServer
+	    N NcheckNetNmap
+	}
+	t := T{}
+
+	t.S = ProcessRawServerData("data/nchecknetraw-server.json")
+        t.N = ProcessRawNmapData("data/nchecknetraw-nmap.json")
+
+	JsonDump(t, "testdump.json")
 }
