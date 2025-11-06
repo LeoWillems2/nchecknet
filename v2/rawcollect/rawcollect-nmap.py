@@ -28,6 +28,9 @@ def runp(command):
 
 def main():
 
+	runp(["curl","-k","--data-binary","@nchecknetraw-nmap.json","-X","POST","http://127.0.0.1:8080/api_nmap"])
+	return
+
 	## hostname -s arg1  -k arg2
 	scanname = "monitor.managedlinux.nl"
 
@@ -42,6 +45,6 @@ def main():
 	f.write(json.dumps(data))
 	f.close()
 
-	#curl -k --data-binary "@nchecknetraw-nmap.json" -X POST https://wanted.lewi.nl/api/procraw"
+	runp(["curl","-k","--data-binary","@nchecknetraw-nmap.json","-X","POST","http://127.0.0.1:8080/api_nmap"])
 
 main()

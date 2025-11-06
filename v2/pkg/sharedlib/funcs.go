@@ -30,21 +30,24 @@ type RawDataServer struct {
 }
 
 type NmapLine struct {
-	IPversion string
-	IPScanned string
-	FromHostname string
-	ScannedHostname string
 	Proto  string
 	Port   string
 	Status string
 	Supressed bool
 }
 
-type NcheckNetNmap struct {
+type NmapHost struct {
+	IPversion string
+	IPScanned string
+	FromHostname string
+	ScannedHostname string
 	NmapLines []NmapLine
+}
+
+type NcheckNetNmap struct {
+	NmapHosts []NmapHost
 	Key string
 	Date string
-	SessionID string
 }
 
 type Listener struct {
@@ -111,8 +114,10 @@ func ProcessRawServerData(filePath string) NcheckNetServer {
 	if err != nil {
 		panic(err)
 	}
+	return ProcessRawServerDataJSON(rdata)
+}
 
-
+func ProcessRawServerDataJSON(rdata RawDataServer) NcheckNetServer {
 	nchecknet := NcheckNetServer{}
 	nchecknet.Hostname = rdata.Hostname
 	nchecknet.Key = rdata.Key
@@ -136,13 +141,17 @@ func ProcessRawNmapData(filePath string) NcheckNetNmap {
 	if err != nil {
 		panic(err)
 	}
+	return ProcessRawNmapDataJSON(rdata)
+}
 
+
+func ProcessRawNmapDataJSON(rdata RawDataNmap) NcheckNetNmap {
 	nmap := NcheckNetNmap{}
+
 	nmap.Key = rdata.Key
 	nmap.Date = rdata.Date
-	nmap.SessionID =  rdata.Date[0:10]
-	nmap.SessionID = strings.Replace(nmap.SessionID, "-","",2)
-	
+
+	nmaphost := NmapHost{}
 
 	PORTseen := false
 	IPversion := "v4"
@@ -191,13 +200,14 @@ func ProcessRawNmapData(filePath string) NcheckNetNmap {
 		ps := strings.Split(fs[0], "/")
 		nmapline.Port = ps[0]
 		nmapline.Proto = ps[1]
-		nmapline.FromHostname = rdata.Hostname
-		nmapline.ScannedHostname = rdata.Scanname
-		nmapline.IPScanned = IPScanned
-		nmapline.IPversion = IPversion
 
-		nmap.NmapLines = append(nmap.NmapLines, nmapline)
+		nmaphost.NmapLines = append(nmaphost.NmapLines, nmapline)
 	}
+	nmaphost.FromHostname = rdata.Hostname
+	nmaphost.ScannedHostname = rdata.Scanname
+	nmaphost.IPScanned = IPScanned
+	nmaphost.IPversion = IPversion
+	nmap.NmapHosts = append(nmap.NmapHosts, nmaphost)
 
 	return nmap
 }
@@ -464,6 +474,7 @@ func SuggestNmapLocations() {
 } 
 
 
+/*
 func DumpData() {
 	type T struct {
 	    S NcheckNetServer
@@ -476,6 +487,7 @@ func DumpData() {
 
 	JsonDump(t, "testdump.json")
 }
+*/
 
 func FWrules2MapByPort(fwr []Fwrule) map[string][]Fwrule {
 	fwrbymap := make(map[string][]Fwrule)

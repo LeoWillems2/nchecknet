@@ -30,6 +30,9 @@ def runp(command):
 
 
 def main():
+	runp(["curl","-k","--data-binary","@nchecknetraw-server.json","-X","POST","http://127.0.0.1:8080/api_server"])
+	return
+
 	data["Hostname"] = platform.node()
 	data["Interfaces"] = runp(["ifconfig"])
 	data["Listeners"] = runp(["sudo", "netstat", "-tulpn"])
@@ -44,6 +47,6 @@ def main():
 	f.write(json.dumps(data))
 	f.close()
 
-	#curl -k --data-binary "@nchecknetraw-server.json" -X POST https://wanted.lewi.nl/api/procraw"
+	runp(["curl","-k","--data-binary","@nchecknetraw-server.json","-X","POST","http://127.0.0.1:8080/api_server"])
 
 main()
