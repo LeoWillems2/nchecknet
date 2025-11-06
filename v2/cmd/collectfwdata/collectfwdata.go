@@ -9,5 +9,6 @@ import "github.com/LeoWillems2/nchecknet/pkg/sharedlib"
 
 func main() {
 
-	sharedlib.DumpData()
+	//sharedlib.DumpData()
+	sharedlib.Test()
 }

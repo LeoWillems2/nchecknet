@@ -30,19 +30,21 @@ type RawDataServer struct {
 }
 
 type NmapLine struct {
+	IPversion string
+	IPScanned string
+	FromHostname string
+	ScannedHostname string
 	Proto  string
 	Port   string
 	Status string
+	Supressed bool
 }
 
 type NcheckNetNmap struct {
-	IPversion string
-	Scanned string
-	IPScanned string
-	FromHostname string
 	NmapLines []NmapLine
 	Key string
 	Date string
+	SessionID string
 }
 
 type Listener struct {
@@ -52,13 +54,14 @@ type Listener struct {
 	Port            string
 	Bound2interface string
 	Command         string
-	OriginalText    string
+	Supressed	bool
 }
 
 type Interface struct {
 	Name        string
 	V4addresses []string
 	V6addresses []string
+	Supressed	bool
 }
 
 type Fwrule struct {
@@ -70,14 +73,14 @@ type Fwrule struct {
 	IP_from      string
 	Ruletype     string
 	Comment      string
-	OriginalText string
+	Supressed	bool
 }
 
 type RouteEntry struct {
 	Dest string
 	Gateway  string
 	Interface  string
-
+	Supressed	bool
 }
 
 type NcheckNetServer struct {
@@ -135,20 +138,20 @@ func ProcessRawNmapData(filePath string) NcheckNetNmap {
 	}
 
 	nmap := NcheckNetNmap{}
-	nmap.FromHostname = rdata.Hostname
-	nmap.Scanned = rdata.Scanname
 	nmap.Key = rdata.Key
 	nmap.Date = rdata.Date
+	nmap.SessionID =  rdata.Date[0:10]
+	nmap.SessionID = strings.Replace(nmap.SessionID, "-","",2)
 	
 
 	PORTseen := false
-	nmap.IPversion = "v4"
-
+	IPversion := "v4"
+	IPScanned  := ""
 	for _, line := range rdata.Nmap {
 		if strings.Contains(line, "Nmap scan report for") {
 			x, _ := regexp.MatchString(`.*:.*:.*:`, line)
 			if x {
-				nmap.IPversion = "v6"
+				IPversion = "v6"
 			}
 
 			var re *regexp.Regexp
@@ -160,7 +163,7 @@ func ProcessRawNmapData(filePath string) NcheckNetNmap {
 				re = regexp.MustCompile(`report for (.*)`)
 			}
 			got := re.FindStringSubmatch(line)
-			nmap.IPScanned = got[1]
+			IPScanned = got[1]
 
 			continue
 		}
@@ -188,6 +191,10 @@ func ProcessRawNmapData(filePath string) NcheckNetNmap {
 		ps := strings.Split(fs[0], "/")
 		nmapline.Port = ps[0]
 		nmapline.Proto = ps[1]
+		nmapline.FromHostname = rdata.Hostname
+		nmapline.ScannedHostname = rdata.Scanname
+		nmapline.IPScanned = IPScanned
+		nmapline.IPversion = IPversion
 
 		nmap.NmapLines = append(nmap.NmapLines, nmapline)
 	}
@@ -201,7 +208,6 @@ func ProcessListeners(ssdata []string) []Listener {
 
 		listener := Listener{}
 
-		listener.OriginalText = line
 
 		fs := strings.Fields(line)
 
@@ -257,10 +263,8 @@ func ProcessFW(fwdata []string, ifaces []Interface) []Fwrule {
 	Fwrules := make([]Fwrule, 0)
 
 	for _, line := range fwdata {
-		log.Println(line)
 		ufw := Fwrule{}
 		ufw.Intfaces = make([]string, 0)
-		ufw.OriginalText = line
 
 
 		switch {
@@ -471,4 +475,20 @@ func DumpData() {
         t.N = ProcessRawNmapData("data/nchecknetraw-nmap.json")
 
 	JsonDump(t, "testdump.json")
+}
+
+func FWrules2MapByPort(fwr []Fwrule) map[string][]Fwrule {
+	fwrbymap := make(map[string][]Fwrule)
+	for _, r := range(fwr) {
+		fwrbymap[r.Port] = append(fwrbymap[r.Port], r)
+	}
+	return fwrbymap
+}
+
+func Listeners2MapByPort(fwr []Listener) map[string][]Listener{
+	lisbymap := make(map[string][]Listener)
+	for _, r := range(fwr) {
+		lisbymap[r.Port] = append(lisbymap[r.Port], r)
+	}
+	return lisbymap
 }

@@ -1,7 +1,7 @@
 
 all: execute/collectfwdata
 
-execute/collectfwdata: cmd/collectfwdata/collectfwdata.go pkg/sharedlib/funcs.go
+execute/collectfwdata: cmd/collectfwdata/collectfwdata.go pkg/sharedlib/funcs.go pkg/sharedlib/database.go
 	go build -o execute/collectfwdata cmd/collectfwdata/collectfwdata.go
 
 execute/compare_fw_listeners: cmd/compare_fw_listeners/compare_fw_listeners.go pkg/sharedlib/funcs.go
