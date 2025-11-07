@@ -2,7 +2,7 @@ package sharedlib
 
 import (
 	"context"
-	"fmt"
+	//"fmt"
 	"log"
 	"time"
 	"strings"
@@ -24,6 +24,7 @@ type dbServer struct {
 type dbServerData struct {
 	ID         primitive.ObjectID `bson:"_id,omitempty"`
 	SessionID string         `bson:"sessionid,omitempty"`
+	Key string         `bson:"key,omitempty"`
 	Sdata NcheckNetServer         `bson:"sdata,omitempty"`
 }
 
@@ -73,8 +74,16 @@ func GetNmapDataByKeyAndSessionID(key, sessionid string) (dbNmapData, error) {
         nmap := dbNmapData{}
         err := NmapDataCollection.FindOne(ctx, filter).Decode(&nmap)
         return nmap, err
-
 }
+
+func GetServerDataByKeyAndSessionID(key, sessionid string) (dbServerData, error) {
+        filter := bson.M{"key": key, "sessionid": sessionid}
+        server := dbServerData{}
+        err := ServerDataCollection.FindOne(ctx, filter).Decode(&server)
+        return server, err
+}
+
+
 func DeleteExistingServerDataIfExists(hostname, key, sessionid string){
         filter := bson.M{"sdata.hostname": hostname, "sdata.key": key, "sessionid": sessionid}
 	// feitelijk hoeft de lookup niet.
@@ -84,6 +93,7 @@ func DeleteExistingServerDataIfExists(hostname, key, sessionid string){
 
 	if err == nil {
         	ServerDataCollection.DeleteOne(ctx, filter)
+		log.Println("Serverdata deleted")
 	}
 }
 func GetServerByHostname(hostname string) (dbServer, error) {
@@ -131,11 +141,16 @@ func insertServer(sdata NcheckNetServer) dbServer {
 	return s
 }
 
+func CreateSessionID(date string) string {
+	// date: assume yyyy-mm-dd hh:mm:ss
+	return strings.Replace(date[0:10], "-", "", 2)
+}
+
 /*
 InsertServerData first inserts a Server document if the Server is unknown.
 After that, the ServerData is inserted but it replaces a earlier document if the
 SessionID has te same (day) range.
-After that, the NmapData is inserted in a document that already has the same SessionID (if not exists, it is added) but records with matching source-host+ipversion are replaced,
+After thasd.Sdata.Datet, the NmapData is inserted in a document that already has the same SessionID (if not exists, it is added) but records with matching source-host+ipversion are replaced,
 otherwise they are added.
 */
 func InsertServerData(rawjson RawDataServer) {
@@ -143,18 +158,25 @@ func InsertServerData(rawjson RawDataServer) {
 	sd := dbServerData{}
 
 	sd.Sdata = ProcessRawServerDataJSON(rawjson)
-	serverSessionID := sd.Sdata.Date[0:10]
-	serverSessionID = strings.Replace(serverSessionID, "-", "", 2)
+
+	serverSessionID := CreateSessionID(sd.Sdata.Date)
 
 	insertServer(sd.Sdata)
 
 	DeleteExistingServerDataIfExists(sd.Sdata.Hostname, sd.Sdata.Key, serverSessionID)
 
 	sd.SessionID = serverSessionID
+	sd.Key = sd.Sdata.Key
 
 	_, err := ServerDataCollection.InsertOne(ctx, sd)
 	if err != nil {
 		log.Fatalf("Failed to insert document: %v", err)
+	}
+
+	log.Println("Serverdata inserted")
+
+	if check4ServerAndNmapDocs(sd.Sdata.Key,sd.SessionID) {
+		log.Println("Serverdata Can report on", sd.Sdata.Key,sd.SessionID)
 	}
 	
 	//fmt.Printf("Inserted ID: %v\n", insertResult.InsertedID)
@@ -163,12 +185,9 @@ func InsertServerData(rawjson RawDataServer) {
 func InsertNmapData(rawjson RawDataNmap) {
 	nd := dbNmapData{}
 
-	//nd.Ndata = ProcessRawNmapData("data/nchecknetraw-nmap.json")
 	nd.Ndata = ProcessRawNmapDataJSON(rawjson)
 
-	SessionID := nd.Ndata.Date[0:10]
-	SessionID = strings.Replace(SessionID, "-", "", 2)
-
+	SessionID := CreateSessionID(nd.Ndata.Date)
 
 	_, err := GetServerByKey(nd.Ndata.Key)
 	if err != nil {
@@ -180,15 +199,16 @@ func InsertNmapData(rawjson RawDataNmap) {
 	// first get an existing one
 	dbnd, err := GetNmapDataByKeyAndSessionID(nd.Ndata.Key, SessionID)
 	if err != nil { //new
-		log.Println("New", dbnd)
+		log.Println("New Nmap Session inserted")
 		nd.SessionID = SessionID
 		nd.Key = nd.Ndata.Key
-		insertResult, err := NmapDataCollection.InsertOne(ctx, nd)
+		_, err := NmapDataCollection.InsertOne(ctx, nd)
 		if err != nil {
 			log.Fatalf("Failed to insert document: %v", err)
 		}
-		fmt.Println("✅ Document inserted.")
-		fmt.Printf("Inserted ID: %v\n", insertResult.InsertedID)
+		if check4ServerAndNmapDocs(nd.Key,nd.SessionID) {
+			log.Println("New Nmap Can report on", nd.Key,nd.SessionID)
+		}
 		return;
 	}
 
@@ -199,15 +219,15 @@ func InsertNmapData(rawjson RawDataNmap) {
 		if host.IPversion == nd.Ndata.NmapHosts[0].IPversion &&
 		   host.FromHostname == nd.Ndata.NmapHosts[0].FromHostname   &&
 		   host.ScannedHostname == nd.Ndata.NmapHosts[0].ScannedHostname {
-			//log.Println("replace")
 			dbnd.Ndata.NmapHosts[i] = nd.Ndata.NmapHosts[0]
+			log.Println("Nmap Session existing updated")
 			found = true
 			break
 		}
 	}
 	if !found {
-		//log.Println("add")
 		dbnd.Ndata.NmapHosts = append(dbnd.Ndata.NmapHosts,nd.Ndata.NmapHosts[0] )
+		log.Println("Nmap Session existing extended")
 	}
 
 	// Update
@@ -221,4 +241,18 @@ func InsertNmapData(rawjson RawDataNmap) {
 	if err != nil {
 		log.Fatal("Error updating document in NmapDataCollection:", err)
 	}
+	if check4ServerAndNmapDocs(dbnd.Key,dbnd.SessionID) {
+		log.Println("Updated Nmap Can report on", dbnd.Key,dbnd.SessionID)
+	}
+}
+
+func check4ServerAndNmapDocs(key,sessionid string) bool {
+
+	_, err1 := GetServerDataByKeyAndSessionID(key, sessionid)
+	_, err2 := GetNmapDataByKeyAndSessionID(key, sessionid)
+
+	//log.Println("check4ServerAndNmapDocs: ", key, sessionid)
+	//log.Println("check4ServerAndNmapDocs: ", err1, err2)
+
+	return err1 == nil && err2 == nil
 }
