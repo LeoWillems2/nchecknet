@@ -2,7 +2,7 @@ package sharedlib
 
 import (
 	"context"
-	//"fmt"
+	"fmt"
 	"log"
 	"time"
 	"strings"
@@ -255,4 +255,86 @@ func check4ServerAndNmapDocs(key,sessionid string) bool {
 	//log.Println("check4ServerAndNmapDocs: ", err1, err2)
 
 	return err1 == nil && err2 == nil
+}
+
+
+/*
+type RouteEntry struct {
+        Dest string
+        Gateway  string
+        Interface  string
+        Supressed       bool
+}
+*/
+func GenPic1(key,sessionid string) string {
+	s, err := GetServerDataByKeyAndSessionID(key, sessionid)
+	if err != nil {
+		log.Println("GenPic: no record found", key, sessionid)
+	}
+
+	txt := "flowchart TD\n"
+
+	txt += fmt.Sprintf(` SERVER["Server<br/>%s<br/>%s"]%c`, key, sessionid, '\n')
+
+	for i, r := range s.Sdata.Routes {
+		txt += fmt.Sprintf(` subgraph N%d["%s"]%c`, i,r.Dest, '\n')
+		txt += fmt.Sprintf(`  n%d["nmap<br/>%s"]%c`, i,"int-addr", '\n')
+		txt += " end\n"
+		txt += fmt.Sprintf(`n%d -- %s ---> SERVER%c`, i, r.Interface, '\n')
+	}
+
+	return txt
+}
+
+func GenPic(key,sessionid string) string {
+	s, err := GetServerDataByKeyAndSessionID(key, sessionid)
+	if err != nil {
+		log.Println("GenPic: no record found", key, sessionid)
+	}
+
+
+	ifmap := make(map[string]int)
+
+	txt := "flowchart TD\n"
+	txt += fmt.Sprintf(`subgraph Nmaps["%s"]%c`, s.Sdata.Hostname, '\n')
+
+	for i, iface := range s.Sdata.Interfaces {
+
+		if iface.Name == "lo:" {
+			continue
+		}
+
+		_, ok := ifmap[iface.Name]
+		if ok {
+			continue
+		}
+
+		ifmap[iface.Name] = i
+
+		txt += fmt.Sprintf(`I%d["%s`, i,iface.Name)
+		for _, a := range iface.V4addresses {
+			txt += "<br/>"+a
+		}
+		for _, a := range iface.V6addresses {
+			txt += "<br/>"+a
+		}
+		txt += "\"]\n"
+
+	}
+	txt += " end\n"
+	txt += fmt.Sprintf(`style Nmaps fill:#BBDEFB%c`, '\n')
+
+	for i, r := range s.Sdata.Routes {
+		txt += fmt.Sprintf(` subgraph N%d["%s"]%c`, i,r.Dest, '\n')
+		txt += fmt.Sprintf(`  n%d["nmap"]%c`, i, '\n')
+		txt += " end\n"
+		txt += fmt.Sprintf(`n%d@{ shape: rounded}%c`, i, '\n')
+		txt += fmt.Sprintf(`style N%d fill:#BBDEFB%c`, i, '\n')
+
+		
+		ifi, _ := ifmap[r.Interface+":"]
+		txt += fmt.Sprintf(`n%d ---> I%d%c`, i, ifi,'\n')
+	}
+
+	return txt
 }

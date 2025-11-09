@@ -1,17 +1,11 @@
 
-all: execute/collectfwdata execute/webserver
+all: execute/collectfwdata execute/webserver execute/collectfwdata
 
-execute/webserver: cmd/webserver/webserver.go pkg/sharedlib/funcs.go pkg/sharedlib/database.go
+execute/webserver: cmd/webserver/webserver.go pkg/sharedlib/funcs.go pkg/sharedlib/database.go pkg/sharedlib/report.go
 	go build -o execute/webserver cmd/webserver/webserver.go
 
-execute/collectfwdata: cmd/collectfwdata/collectfwdata.go pkg/sharedlib/funcs.go pkg/sharedlib/database.go
+execute/collectfwdata: cmd/collectfwdata/collectfwdata.go pkg/sharedlib/funcs.go pkg/sharedlib/database.go pkg/sharedlib/report.go
 	go build -o execute/collectfwdata cmd/collectfwdata/collectfwdata.go
-
-execute/compare_fw_listeners: cmd/compare_fw_listeners/compare_fw_listeners.go pkg/sharedlib/funcs.go
-	go build -o execute/compare_fw_listeners cmd/compare_fw_listeners/compare_fw_listeners.go
-
-execute/nmapscanner: cmd/nmapscanner/nmapscanner.go pkg/sharedlib/funcs.go
-	go build -o execute/nmapscanner cmd/nmapscanner/nmapscanner.go
 
 run:
 	(cd execute; ./collectfwdata; ./compare_fw_listeners)

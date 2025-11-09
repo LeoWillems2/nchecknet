@@ -72,6 +72,7 @@ type Fwrule struct {
 	Port         string
 	Proto        string
 	Intfaces     []string
+	AllIntfaces bool
 	IP_to        string
 	IP_from      string
 	Ruletype     string
@@ -345,6 +346,7 @@ func ProcessFW(fwdata []string, ifaces []Interface) []Fwrule {
 			ufw.Port = topartsplit[0]
 			ufw.IP_to = "To_AnyIP"
 			ufw.Intfaces = append(ufw.Intfaces, all_ifaces...)
+			ufw.AllIntfaces = true
 		case 2: // 127.0.0.1 3025/tcp  ||  3020/tcp on lo
 			if strings.Contains(topartsplit[1], "ON") {
 				ufw.Port = topartsplit[0]
@@ -354,6 +356,7 @@ func ProcessFW(fwdata []string, ifaces []Interface) []Fwrule {
 				ufw.Port = topartsplit[1]
 				ufw.IP_to = topartsplit[0]
 				ufw.Intfaces = append(ufw.Intfaces, all_ifaces...)
+				ufw.AllIntfaces = true
 			}
 		case 3: // 192.168.7.7 3023/tcp on lo
 			ufw.Port = topartsplit[1]
