@@ -25,26 +25,24 @@ def runp(command):
 	return lines
 
 
-
-def main():
-
-	runp(["curl","-k","--data-binary","@nchecknetraw-nmap.json","-X","POST","http://127.0.0.1:8080/api_nmap"])
-	return
-
-	## hostname -s arg1  -k arg2
-	scanname = "monitor.managedlinux.nl"
+def scan(scanname):
+	global data
 
 	data["Nmap"] = runp(["nmap", scanname ])
-
 	data["Hostname"] = platform.node()
 	data["Scanname"] = scanname
 	now = datetime.datetime.now()
 	data["Date"] = now.strftime("%Y-%m-%d %H:%M:%S")
 
-	f = open("nchecknetraw-nmap.json", "w")
+	f = open("/tmp/nchecknetraw-nmap.json", "w")
 	f.write(json.dumps(data))
 	f.close()
 
-	runp(["curl","-k","--data-binary","@nchecknetraw-nmap.json","-X","POST","http://127.0.0.1:8080/api_nmap"])
+	runp(["curl","-k","--data-binary","@/tmp/nchecknetraw-nmap.json","-X","POST","http://127.0.0.1:8080/api_nmap"])
+
+def main():
+	scannames = SCANNAMES
+	for s in scannames:
+		scan(s)
 
 main()
