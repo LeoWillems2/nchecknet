@@ -7,13 +7,13 @@ Run the webserver.
 
 Use utils for:
 
-  -NchecknetUrl string
+*  -NchecknetUrl string
     	NchecknetServer URL (default "https://nchecknet.lewi.nl")
-  -cn string
+*  -cn string
     	Create collector script for Nmap-site
-  -cs string
+*  -cs string
     	Create collector script for FQDN (server)
-  -ns string
+*  -ns string
     	New Server
 
 Copy the server-collector script to the server that must be checked.
