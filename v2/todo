@@ -5,11 +5,6 @@
 
 
 utils:
-	- insert new server
 	- refuse new serverdata if no server known
-	- install mqtt
 	- webserver:
-		- Document server
-		- Mermaid local
-	- create raw-server collector
-	- create raw-namp collectors
+	- create eth0 raw-nmap collectors: extend to ipv6 and more interfaces

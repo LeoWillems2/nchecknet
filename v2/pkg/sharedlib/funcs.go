@@ -15,6 +15,7 @@ type RawDataNmap struct {
 	Nmap []string
 	Hostname string
 	Scanname string
+	IPv string
 	Date string
 	Key string
 }
@@ -155,15 +156,10 @@ func ProcessRawNmapDataJSON(rdata RawDataNmap) NcheckNetNmap {
 	nmaphost := NmapHost{}
 
 	PORTseen := false
-	IPversion := "v4"
+	IPversion := rdata.IPv
 	IPScanned  := ""
 	for _, line := range rdata.Nmap {
 		if strings.Contains(line, "Nmap scan report for") {
-			x, _ := regexp.MatchString(`.*:.*:.*:`, line)
-			if x {
-				IPversion = "v6"
-			}
-
 			var re *regexp.Regexp
 			if line[len(line)-1] == ')' {
 				// fqdn (ip)
@@ -418,7 +414,7 @@ func ProcessInterfaces(interfaces []string) []Interface {
 		if iface[0] != ' ' {
 			haveIface = true
 			fs := strings.Fields(iface)
-			Iface.Name = fs[0]
+			Iface.Name = strings.Replace(fs[0], ":", "", 1)
 			continue
 		}
 		haveIface = false

@@ -20,6 +20,7 @@ import (
 type dbServer struct {
 	ID         primitive.ObjectID `bson:"_id,omitempty"`
 	Hostname   string             `bson:"hostname,omitempty"`
+	CustomerID string             `bson:"customerid,omitempty"`
 	Key        string             `bson:"key,omitempty"`
 	DateInserted  string          `bson:"dateinserted,omitempty"`
 	Active     bool               `bson:"active,omitempty"`
@@ -87,6 +88,28 @@ func GetServerDataByKeyAndSessionID(key, sessionid string) (dbServerData, error)
         return server, err
 }
 
+func GetLastServerData(key string) (dbServerData, error) {
+	sd := dbServerData{}
+
+        filter := bson.M{"key": key}
+        cursor, err := ServerDataCollection.Find(ctx, filter)
+	if err != nil {
+		log.Println("Error finding documents:", err)
+		return sd, err
+	}
+	for cursor.Next(ctx) {
+		if err := cursor.Decode(&sd); err != nil {
+			log.Println("Error decoding document:", err)
+			return sd, err
+		}
+	}
+
+	if err := cursor.Err(); err != nil {
+		log.Println("Cursor iteration error:", err)
+		return sd, err
+	}
+	return sd, err
+}
 
 func DeleteExistingServerDataIfExists(hostname, key, sessionid string){
         filter := bson.M{"sdata.hostname": hostname, "sdata.key": key, "sessionid": sessionid}
@@ -160,18 +183,25 @@ func InsertServerData(rawjson RawDataServer) {
 
 	sd.Sdata = ProcessRawServerDataJSON(rawjson)
 
+
+	_, err := GetServerByKey(sd.Sdata.Key)
+	if err != nil {
+		log.Println("Server not known, ServerData not Insterted", sd.Sdata.Key)
+		return
+	}
+
 	serverSessionID := CreateSessionID(sd.Sdata.Date)
 
-	//insertServer(sd.Sdata)
 
 	DeleteExistingServerDataIfExists(sd.Sdata.Hostname, sd.Sdata.Key, serverSessionID)
 
 	sd.SessionID = serverSessionID
 	sd.Key = sd.Sdata.Key
 
-	_, err := ServerDataCollection.InsertOne(ctx, sd)
+	_, err = ServerDataCollection.InsertOne(ctx, sd)
 	if err != nil {
-		log.Fatalf("Failed to insert document: %v", err)
+		log.Println("Failed to insert document: %v", err)
+		return
 	}
 
 	log.Println("Serverdata inserted")
@@ -205,7 +235,7 @@ func InsertNmapData(rawjson RawDataNmap) {
 		nd.Key = nd.Ndata.Key
 		_, err := NmapDataCollection.InsertOne(ctx, nd)
 		if err != nil {
-			log.Fatalf("Failed to insert document: %v", err)
+			log.Println("Failed to insert document: %v", err)
 		}
 		if check4ServerAndNmapDocs(nd.Key,nd.SessionID) {
 			log.Println("New Nmap Can report on", nd.Key,nd.SessionID)
@@ -240,7 +270,7 @@ func InsertNmapData(rawjson RawDataNmap) {
 
 	_, err = NmapDataCollection.UpdateByID(ctx, dbnd.ID, update)
 	if err != nil {
-		log.Fatal("Error updating document in NmapDataCollection:", err)
+		log.Println("Error updating document in NmapDataCollection:", err)
 	}
 	if check4ServerAndNmapDocs(dbnd.Key,dbnd.SessionID) {
 		log.Println("Updated Nmap Can report on", dbnd.Key,dbnd.SessionID)
@@ -258,39 +288,11 @@ func check4ServerAndNmapDocs(key,sessionid string) bool {
 	return err1 == nil && err2 == nil
 }
 
-
-/*
-type RouteEntry struct {
-        Dest string
-        Gateway  string
-        Interface  string
-        Supressed       bool
-}
-*/
-func GenPic1(key,sessionid string) string {
-	s, err := GetServerDataByKeyAndSessionID(key, sessionid)
-	if err != nil {
-		log.Println("GenPic: no record found", key, sessionid)
-	}
-
-	txt := "flowchart TD\n"
-
-	txt += fmt.Sprintf(` SERVER["Server<br/>%s<br/>%s"]%c`, key, sessionid, '\n')
-
-	for i, r := range s.Sdata.Routes {
-		txt += fmt.Sprintf(` subgraph N%d["%s"]%c`, i,r.Dest, '\n')
-		txt += fmt.Sprintf(`  n%d["nmap<br/>%s"]%c`, i,"int-addr", '\n')
-		txt += " end\n"
-		txt += fmt.Sprintf(`n%d -- %s ---> SERVER%c`, i, r.Interface, '\n')
-	}
-
-	return txt
-}
-
 func GenPic(key,sessionid string) string {
 	s, err := GetServerDataByKeyAndSessionID(key, sessionid)
 	if err != nil {
 		log.Println("GenPic: no record found", key, sessionid)
+		return ""
 	}
 
 
@@ -301,7 +303,7 @@ func GenPic(key,sessionid string) string {
 
 	for i, iface := range s.Sdata.Interfaces {
 
-		if iface.Name == "lo:" {
+		if iface.Name == "lo" {
 			continue
 		}
 
@@ -312,7 +314,7 @@ func GenPic(key,sessionid string) string {
 
 		ifmap[iface.Name] = i
 
-		txt += fmt.Sprintf(`I%d["%s`, i,iface.Name)
+		txt += fmt.Sprintf(`I%d["<button id=IFN%d>%s</button>`, i,i,iface.Name)
 		for _, a := range iface.V4addresses {
 			txt += "<br/>"+a
 		}
@@ -333,7 +335,8 @@ func GenPic(key,sessionid string) string {
 		txt += fmt.Sprintf(`style N%d fill:#BBDEFB%c`, i, '\n')
 
 		
-		ifi, _ := ifmap[r.Interface+":"]
+		ifi, _ := ifmap[r.Interface]
+		//ifi, _ := ifmap[r.Interface+":"]
 		txt += fmt.Sprintf(`n%d ---> I%d%c`, i, ifi,'\n')
 	}
 
@@ -354,17 +357,163 @@ func CreateNewServer(newserver string, verbose bool) (string, error) {
 	hasher := sha256.New()
 	hasher.Write([]byte(data))
 	hashBytes := hasher.Sum(nil)
-	hexHash := hex.EncodeToString(hashBytes)
+	key := hex.EncodeToString(hashBytes)
 
-	_, err := insertServer(hexHash, newserver)
+	_, err := insertServer(key, newserver)
 
-	
 	if err == nil {
 		if verbose {
-			fmt.Printf("InsertServer(%s): key: %s\n", newserver, hexHash)
+			fmt.Printf("InsertServer(%s): key: %s\n", newserver, key)
 		}
 	} else {
-		hexHash = ""
+		key = ""
 	}
-	return hexHash, err
+	return key, err
+}
+
+func CreateServerCollectorPy(servername, nchecknetserver string) (string, error) {
+
+	script := `#!/usr/bin/python3
+
+import json
+import os
+import platform
+import subprocess
+import datetime
+
+data = {
+	"Listeners": [],
+	"Fwrules": [],
+	"Interfaces": [],
+	"Routes": [],
+	"Hostname": "",
+	"Date": "",
+	"Key": "ABCDEF0123456789"
+}
+
+def runp(command):
+	result = subprocess.run(
+		command,
+		capture_output=True,
+		text=True,
+		check=True
+	)
+	lines = result.stdout.strip().split("\n")
+	return lines
+
+def main():
+	data["Hostname"] = platform.node()
+	data["Interfaces"] = runp(["ifconfig"])
+	data["Listeners"] = runp(["sudo", "netstat", "-tulpn"])
+	data["Routes"] = runp(["netstat", "-rn"])
+	data["Fwrules"] = runp(["sudo", "ufw", "status"])
+
+	now = datetime.datetime.now()
+	data["Date"] = now.strftime("%Y-%m-%d %H:%M:%S")
+
+	f = open("/var/tmp/nchecknetraw-server.json", "w")
+	f.write(json.dumps(data))
+	f.close()
+
+	runp(["curl","-k","--data-binary","@/var/tmp/nchecknetraw-server.json","-X","POST","NCHECKNETSERVER/api_server"])
+	#os.remove("/var/tmp/nchecknetraw-server.json")
+
+main()
+`
+	s, err  := GetServerByHostname(servername)
+	if err != nil {
+		return "", err		
+	}
+	
+	script = strings.Replace(script, "ABCDEF0123456789", s.Key, 1)
+	script = strings.Replace(script, "NCHECKNETSERVER", nchecknetserver, 1)
+
+	return script, nil
+}
+
+func CreateNmapCollectorPy(servername, iface, nchecknetserver string) (string, error) {
+
+	script := `#!/usr/bin/python3
+
+import json
+import platform
+import subprocess
+import datetime
+
+data = {
+	"Nmap": [],
+	"Hostname": "",
+	"Scanname": "",
+	"Date": "",
+	"Key": "ABCDEF0123456789"
+}
+
+def runp(command):
+	result = subprocess.run(
+		command,
+		capture_output=True,
+		text=True,
+		check=True
+	)
+	lines = result.stdout.strip().split("\n")
+	return lines
+
+
+def scan(scanip):
+	global data
+
+	ipv = "4"
+	if ":" in scanip:
+		ipv = "6"
+
+	data["Nmap"] = runp(["nmap", "-"+ipv, scanip ])
+	data["Hostname"] = platform.node()
+	data["Scanname"] = scanip
+	data["IPv"] = ipv
+	now = datetime.datetime.now()
+	data["Date"] = now.strftime("%Y-%m-%d %H:%M:%S")
+
+	f = open("/var/tmp/nchecknetraw-nmap.json", "w")
+	f.write(json.dumps(data))
+	f.close()
+
+	runp(["curl","-k","--data-binary","@/var/tmp/nchecknetraw-nmap.json","-X","POST","NCHECKNETSERVER/api_nmap"])
+	#os.remove("/var/tmp/nchecknetraw-nmap.json")
+
+def main():
+	scanips = SCANIPS
+	for s in scanips:
+		scan(s)
+
+main()
+`
+	s, err  := GetServerByHostname(servername)
+	if err != nil {
+		return "", err		
+	}
+
+	sd, err := GetLastServerData(s.Key)
+	if sd.Key == "" {
+		return "", errors.New("No ServerData found yet")
+	}
+	
+	addresses := ""
+	for _, ifa := range sd.Sdata.Interfaces {
+		if ifa.Name == iface {
+			for _, a:= range ifa.V4addresses {
+				addresses +=  `,"`+a+`"`
+			}
+			for _, a:= range ifa.V6addresses {
+				addresses +=  `,"`+a+`"`
+			}
+		}
+	}
+	addresses = addresses[1:]
+	addresses = "["+addresses+"]"
+
+	script = strings.Replace(script, "ABCDEF0123456789", s.Key, 1)
+	script = strings.Replace(script, "NCHECKNETSERVER", nchecknetserver, 1)
+	script = strings.Replace(script, "SCANIPS", addresses, 1)
+
+	return script, nil
 }

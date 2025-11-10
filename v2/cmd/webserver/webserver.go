@@ -62,16 +62,15 @@ func jsonPostHandlerNmapRawData(w http.ResponseWriter, r *http.Request) {
 func NmapSuggestion(w http.ResponseWriter, r *http.Request) {
 
 	t := `<html>
-<script type="module">
-  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
-</script>
+<script src="/js/mermaid.tiny.js"></script>
+
 <body>
 <H1>Nmap suggesties</H1>
 <p>
 <pre class="mermaid">
 `
 
-	t += sharedlib.GenPic("ABCDEF0123456789","20251106")
+	t += sharedlib.GenPic("3946588e7edb4fd3521002b8539ecf4f2a877a06830df84e488ff9c0a8f03068","20251110")
 	t += `</pre>`
 
 	fmt.Fprintf(w, t)
@@ -79,6 +78,8 @@ func NmapSuggestion(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
+	fileserver := http.FileServer(http.Dir("./webroot"))
+	http.Handle("/", fileserver)
 	http.HandleFunc("/api_nmap", jsonPostHandlerNmapRawData)
 	http.HandleFunc("/api_server", jsonPostHandlerServerRawData)
 	http.HandleFunc("/nmap_suggestion", NmapSuggestion)
