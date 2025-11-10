@@ -8,13 +8,13 @@ Run the webserver.
 Use utils for:
 
 *  -NchecknetUrl string
-    	** NchecknetServer URL (default "https://nchecknet.lewi.nl")
+    	--> NchecknetServer URL (default "https://nchecknet.lewi.nl")
 *  -cn string
-    	Create collector script for Nmap-site
+    	--> Create collector script for Nmap-site
 *  -cs string
-    	Create collector script for FQDN (server)
+    	--> Create collector script for FQDN (server)
 *  -ns string
-    	New Server
+    	--> New Server
 
 Copy the server-collector script to the server that must be checked.
 Run the script once per day. (or more frequent, the last run wil overwrite prevous runs of this day.)
