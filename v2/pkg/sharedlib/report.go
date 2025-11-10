@@ -75,7 +75,7 @@ func compareFromUFW_(FwrulesByPort map[string][]Fwrule,
 			}
 
 			for _, listener := range listeners {
-				log.Printf("FW port %5s/%s (%s) is %s-ed with listener: %v\n", fwport, fwrule.Proto, fwrule.IP_to, fwrule.Ruletype, listener)
+				log.Printf("FW port %5s/%s (to: %s) (from: %s) is %s-ed with listener: %v\n", fwport, fwrule.Proto, fwrule.IP_to,fwrule.IP_from, fwrule.Ruletype, listener)
 			}
 		}
 	}

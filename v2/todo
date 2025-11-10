@@ -5,6 +5,5 @@
 
 
 utils:
-	- refuse new serverdata if no server known
 	- webserver:
 	- create eth0 raw-nmap collectors: extend to ipv6 and more interfaces
