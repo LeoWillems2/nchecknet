@@ -86,7 +86,7 @@ func main() {
 	sharedlib.DBConnect()
 
 	// Start the server
-	port := ":8080"
+	port := ":8087"
 	fmt.Printf("Server starting on port %s\n", port)
 
 	if err := http.ListenAndServe(port, nil); err != nil {

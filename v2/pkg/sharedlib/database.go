@@ -1,11 +1,15 @@
 package sharedlib
 
 import (
+	"strconv"
+	"crypto/sha256"
+	"encoding/hex"
 	"context"
 	"fmt"
 	"log"
 	"time"
 	"strings"
+	"errors"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -110,35 +114,32 @@ func GetServerByKey(key string) (dbServer, error) {
 }
 
 // insertServer inserts a new Server if it does not already exist. It also checks for double Keys.
-func insertServer(sdata NcheckNetServer) dbServer {
+func insertServer(key, fqdn string) (dbServer, error) {
 
 	s := dbServer{}
 
-	s, err := GetServerByHostname(sdata.Hostname)
+	s, err := GetServerByHostname(fqdn)
 
 	if err == nil {
-		//log.Println("Insert Server: exists")
-		return s
+		return dbServer{}, errors.New("insertServer: fqdn exists")
 	}
 
 	// check for double key
-	s, err = GetServerByKey(sdata.Key)
+	s, err = GetServerByKey(key)
 	if err == nil {
-		log.Fatalln("Insert Server: Key e1 already in use, not inserted", s)
-		return dbServer{}
+		return dbServer{}, errors.New("insertServer: key exists")
 	}
 
-	s.Hostname = sdata.Hostname
-	s.Key = sdata.Key
+	s.Hostname = fqdn
+	s.Key = key
 	s.Active = true
 	s.DateInserted = time.Now().Format("02/01/2006 15:04:05")
 	_, err = ServersCollection.InsertOne(ctx, s)
 	if err != nil {
-		log.Fatalln("Failed to insert document: %v\n", err)
-		return dbServer{}
+		return dbServer{}, err
 	}
 
-	return s
+	return s, nil
 }
 
 func CreateSessionID(date string) string {
@@ -161,7 +162,7 @@ func InsertServerData(rawjson RawDataServer) {
 
 	serverSessionID := CreateSessionID(sd.Sdata.Date)
 
-	insertServer(sd.Sdata)
+	//insertServer(sd.Sdata)
 
 	DeleteExistingServerDataIfExists(sd.Sdata.Hostname, sd.Sdata.Key, serverSessionID)
 
@@ -337,4 +338,33 @@ func GenPic(key,sessionid string) string {
 	}
 
 	return txt
+}
+
+/* Create a new server document */
+func CreateNewServer(newserver string, verbose bool) (string, error) {
+
+	if strings.Count(newserver, ".") < 2 {
+                return "", errors.New("Error: newserver is not an FQDN")
+        }
+
+	// gen Key
+	seconds := time.Now().Unix()
+	secondsString := strconv.FormatInt(seconds, 10)
+	data := newserver+secondsString
+	hasher := sha256.New()
+	hasher.Write([]byte(data))
+	hashBytes := hasher.Sum(nil)
+	hexHash := hex.EncodeToString(hashBytes)
+
+	_, err := insertServer(hexHash, newserver)
+
+	
+	if err == nil {
+		if verbose {
+			fmt.Printf("InsertServer(%s): key: %s\n", newserver, hexHash)
+		}
+	} else {
+		hexHash = ""
+	}
+	return hexHash, err
 }

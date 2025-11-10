@@ -38,7 +38,7 @@ def scan(scanname):
 	f.write(json.dumps(data))
 	f.close()
 
-	runp(["curl","-k","--data-binary","@/tmp/nchecknetraw-nmap.json","-X","POST","http://127.0.0.1:8080/api_nmap"])
+	runp(["curl","-k","--data-binary","@/tmp/nchecknetraw-nmap.json","-X","POST","https://nchecknet.lewi.nl/api_nmap"])
 
 def main():
 	scannames = SCANNAMES

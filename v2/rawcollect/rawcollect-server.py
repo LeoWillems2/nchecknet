@@ -30,7 +30,7 @@ def runp(command):
 
 
 def main():
-	runp(["curl","-k","--data-binary","@nchecknetraw-server.json","-X","POST","http://127.0.0.1:8080/api_server"])
+	runp(["curl","-k","--data-binary","@nchecknetraw-server.json","-X","POST","https://nchecknet.lewi.nl/api_server"])
 	return
 
 	data["Hostname"] = platform.node()
@@ -47,6 +47,6 @@ def main():
 	f.write(json.dumps(data))
 	f.close()
 
-	runp(["curl","-k","--data-binary","@nchecknetraw-server.json","-X","POST","http://127.0.0.1:8080/api_server"])
+	runp(["curl","-k","--data-binary","@nchecknetraw-server.json","-X","POST","https://nchecknet.lewi.nl/api_server"])
 
 main()
