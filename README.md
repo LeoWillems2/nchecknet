@@ -8,7 +8,7 @@ Run the webserver.
 Use utils for:
 
 *  -NchecknetUrl string
-    	NchecknetServer URL (default "https://nchecknet.lewi.nl")
+    	** NchecknetServer URL (default "https://nchecknet.lewi.nl")
 *  -cn string
     	Create collector script for Nmap-site
 *  -cs string
