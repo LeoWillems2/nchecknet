@@ -3,7 +3,6 @@
 
 
 
-
-utils:
-	- webserver:
-	- create eth0 raw-nmap collectors: extend to ipv6 and more interfaces
+* webserver: nicer and more completr
+* create eth0 raw-nmap collectors: extend to  more interfaces
+* more reports
