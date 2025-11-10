@@ -10,8 +10,8 @@
 
 execute/
 execute/*
-data/
-data/*
+webroot
+webroot/*
 
 # Test binary, built with `go test -c`
 *.test

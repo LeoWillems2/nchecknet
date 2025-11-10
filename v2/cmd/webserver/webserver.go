@@ -3,11 +3,14 @@ package main
 
 import (
 	"github.com/LeoWillems2/nchecknet/pkg/sharedlib"
+	"github.com/gorilla/websocket"
 	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 )
+
+
 
 func jsonPostHandlerServerRawData(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
@@ -74,12 +77,62 @@ func NmapSuggestion(w http.ResponseWriter, r *http.Request) {
 	t += `</pre>`
 
 	fmt.Fprintf(w, t)
-	
 }
+
+// Upgrader is used to upgrade HTTP connections to WebSocket connections.
+var upgrader = websocket.Upgrader{
+        CheckOrigin: func(r *http.Request) bool {
+                // Allow all connections by default
+                return true
+        },
+}
+
+// handleWebSocket handles WebSocket requests from clients.
+func handleWebSocket(w http.ResponseWriter, r *http.Request) {
+        // Upgrade the HTTP connection to a WebSocket connection
+        conn, err := upgrader.Upgrade(w, r, nil)
+        if err != nil {
+                log.Println("Upgrade error:", err)
+                return
+        }
+        defer conn.Close()
+
+        log.Println("Client connected")
+
+/*
+
+        // Read messages from the WebSocket connection
+        for {
+                _, message, err := conn.ReadMessage()
+                if err != nil {
+                        log.Println("Read error:", err)
+                        break
+                }
+
+                log.Printf("Received: %s", message)
+                m := Message{}
+                err = json.Unmarshal(message, &m)
+                if err != nil {
+                        panic(err)
+                }
+
+                // Echo the message back to the client
+                //if err := conn.WriteMessage(messageType, message); err != nil {
+                //log.Println("Write error:", err)
+                //break
+                //}
+        }
+
+        log.Println("Client disconnected")
+*/
+}
+
+
 
 func main() {
 	fileserver := http.FileServer(http.Dir("./webroot"))
 	http.Handle("/", fileserver)
+	http.HandleFunc("/ws", handleWebSocket)
 	http.HandleFunc("/api_nmap", jsonPostHandlerNmapRawData)
 	http.HandleFunc("/api_server", jsonPostHandlerServerRawData)
 	http.HandleFunc("/nmap_suggestion", NmapSuggestion)
