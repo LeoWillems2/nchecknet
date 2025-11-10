@@ -1,6 +1,7 @@
 # nchecknet
 Nchecknet compares ufw against netstat -ntlp, netstat -rn, ifconfig and nmap
 
+Required: mongodb@localhost
 Usage:
 
 Run execute/webserver.
