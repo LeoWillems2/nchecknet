@@ -89,7 +89,18 @@ var upgrader = websocket.Upgrader{
 
 // handleWebSocket handles WebSocket requests from clients.
 func handleWebSocket(w http.ResponseWriter, r *http.Request) {
-        // Upgrade the HTTP connection to a WebSocket connection
+
+	type MessageIn struct {
+		Function string
+		Hostname string
+	}
+
+	type MessageOut struct {
+		Function string
+		ArrData []string
+	}
+
+	// Upgrade the HTTP connection to a WebSocket connection
         conn, err := upgrader.Upgrade(w, r, nil)
         if err != nil {
                 log.Println("Upgrade error:", err)
@@ -99,32 +110,55 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request) {
 
         log.Println("Client connected")
 
-/*
 
         // Read messages from the WebSocket connection
         for {
-                _, message, err := conn.ReadMessage()
+                messageType, message, err := conn.ReadMessage()
                 if err != nil {
                         log.Println("Read error:", err)
                         break
                 }
 
-                log.Printf("Received: %s", message)
-                m := Message{}
-                err = json.Unmarshal(message, &m)
+
+                //log.Printf("Received: %s", message)
+                mi := MessageIn{}
+                err = json.Unmarshal(message, &mi)
                 if err != nil {
                         panic(err)
                 }
 
+				log.Println(mi.Function)
+
+				mo := MessageOut{}
+				switch (mi.Function){
+				case "GetServers":
+					mo.Function = "FillServers"
+					alls, _ := sharedlib.GetServers() 
+					for _, s := range alls {
+						mo.ArrData = append(mo.ArrData, s.Hostname)
+					}
+				case "GetSessionIDs":
+					mo.Function = "FillSessionIDs"
+					alls, _ := sharedlib.GetSessionIDs(mi.Hostname) 
+					mo.ArrData = alls
+				}
+
+				moj, err := json.Marshal(mo)
+
+				if err != nil {
+					log.Println("mo marshal failed", err)
+					continue
+				}
+
                 // Echo the message back to the client
-                //if err := conn.WriteMessage(messageType, message); err != nil {
-                //log.Println("Write error:", err)
-                //break
-                //}
+                if err := conn.WriteMessage(messageType, moj); err != nil {
+                	log.Println("Write error:", err)
+                }
+
+
         }
 
         log.Println("Client disconnected")
-*/
 }
 
 

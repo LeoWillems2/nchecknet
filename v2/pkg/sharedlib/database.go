@@ -88,6 +88,50 @@ func GetServerDataByKeyAndSessionID(key, sessionid string) (dbServerData, error)
         return server, err
 }
 
+func GetServers() ([]dbServer, error) {
+	sd := []dbServer{}
+
+
+	cursor, err := ServersCollection.Find(ctx, bson.D{}) 
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    if err = cursor.All(ctx, &sd); err != nil {
+        log.Println(err)
+    }
+	
+	return sd, err
+}
+
+func GetSessionIDs(hostname string) ([]string, error) {
+	ss := []string{}
+
+	s, err := GetServerByHostname(hostname)
+	 if err != nil {
+        log.Fatal(err)
+    }
+
+	filter := bson.M{"key": s.Key}
+    cursor, err := ServerDataCollection.Find(ctx, filter)
+    if err != nil {
+        log.Fatal(err)
+    }
+
+   for cursor.Next(ctx) {
+        sd := dbServerData{}
+        if err = cursor.Decode(&sd); err != nil {
+            log.Fatal(err)
+        }
+        ss = append(ss, sd.SessionID)
+    }
+    if err := cursor.Err(); err != nil {
+        log.Println(err)
+    }
+
+	return ss, err
+}
+
 func GetLastServerData(key string) (dbServerData, error) {
 	sd := dbServerData{}
 
