@@ -35,7 +35,7 @@ func main() {
 	}
 
 	if *NmapCollectorPy != "" {
-		script, err := sharedlib.CreateNmapCollectorPy(*NmapCollectorPy, "eth0", *NchecknetServer)
+		script, err := sharedlib.CreateNmapCollectorPy(*NmapCollectorPy, "ens3", *NchecknetServer)
 		if err != nil {
 			log.Println(err)
 			os.Exit(2)

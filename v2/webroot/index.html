@@ -11,36 +11,39 @@
 <body>
     <div>
         <ul class="nav nav-tabs" role="tablist">
-            <li class="nav-item" role="presentation"><a class="nav-link active" role="tab" data-bs-toggle="tab" href="#tab-1">Reports</a></li>
-            <li class="nav-item" role="presentation"><a class="nav-link" role="tab" data-bs-toggle="tab" href="#tab-2">Nmap</a></li>
+            <li class="nav-item" role="presentation"><a class="nav-link active" role="tab" data-bs-toggle="tab" href="#tab-1">Systems</a></li>
+            <li class="nav-item" role="presentation"><a class="nav-link" role="tab" data-bs-toggle="tab" href="#tab-2">Reports</a></li>
         </ul>
         <div class="tab-content">
             <div class="tab-pane active" role="tabpanel" id="tab-1">
                 <div class="container">
                     <div class="row" style="height: 20px;"></div>
-                    <div class="row">
+                    <div class="row" style="height: 140px;">
                         <div class="col col-xl-2"><select id="Servers" style="width: 200px;">
                                 <optgroup label="Servers"></optgroup>
                             </select></div>
                         <div class="col col-xl-2"><select id="SessionIDs" style="width: 100px;">
                                 <optgroup label="Sessions">
-                                    <option value="14">--</option>
+                                    <option value="12" selected="">--</option>
                                 </optgroup>
                             </select></div>
                         <div class="col"></div>
                     </div>
                 </div>
+                <div class="container">
+                    <div class="col">
+                        <div id="nmapsuggestion"></div>
+                    </div>
+                </div>
             </div>
             <div class="tab-pane" role="tabpanel" id="tab-2">
-                <p>Content for tab 2.</p>
+                <div class="container">
+                    <div class="row"></div>
+                </div>
             </div>
-            <div class="tab-pane" role="tabpanel" id="tab-3">
-                <p>Content for tab 3.</p>
-            </div>
+            <div class="tab-pane" role="tabpanel" id="tab-3"></div>
         </div>
     </div>
-    <div class="container"></div>
-    <div class="container"></div>
     <script src="assets/js/jquery.min.js"></script>
     <script src="assets/bootstrap/js/bootstrap.min.js"></script>
     <script src="/js/mermaid.tiny.js"></script>

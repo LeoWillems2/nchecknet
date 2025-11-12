@@ -3,11 +3,26 @@ $(document).ready(Ready);
 
 var ws;
 
+
 function Ready() {
-    ws = new WebSocket("ws://" + window.location.host + "/ws");
+
+    // prep
+
+    $("#nmapsuggestion").html("<pre class='mermaid' id=mermaidnmap></pre><div id=x></div>");
+  
+    $('.nav-tabs > li:first-child > a')[0].click();
+
+    const mermaidAPI = mermaid.mermaidAPI
+    mermaidAPI.initialize({ startOnLoad: false })
+
+    wsstring = "wss://";
+    if (window.location.host == "127.0.0.1:8087" ) {
+        wsstring = "ws://";
+    }
+    ws = new WebSocket(wsstring + window.location.host + "/ws");
 
     ws.onopen = () => {
-        console.log("WebSocket connection established");
+        //console.log("WebSocket connection established");
         GetMessage();
     };
 
@@ -22,12 +37,40 @@ function Ready() {
             FillSessionIDs(m);
             return;
         }
+        if (m.Function == "FillNmapSuggestion") {
+            FillNmapSuggestion(m);
+            return;
+        }
     };
 
     ws.onclose = () => {
         console.log("WebSocket connection closed");
-        //setTimeout(Ready, 5000);
     };
+
+    $("#Servers").on("change", function() {
+        hn = $(this).val();
+        mo = {};
+        mo.Function = "GetSessionIDs";
+        mo.Hostname = hn;
+        SendMessage(mo);
+
+    });
+
+    $("#SessionIDs").on("change", function () {
+        si = $(this).val();
+        mo = {};
+        mo.Function = "GetNmapSuggestion";
+
+       
+        mo.Hostname = $("#Servers").val();
+        mo.SessionID = si;
+
+       
+
+
+        SendMessage(mo);
+
+    });
 }
 
 function SendMessage(message) {
@@ -44,9 +87,24 @@ function GetMessage() {
 function FillSessionIDs(m) {
     $("#SessionIDs").find('option').remove();
 
+    s0 = "";
     for (i = m.ArrData.length-1; i> -1;  --i) {
         s = m.ArrData[i];
-        $("#SessionIDs").append('<option value="' + s + '">' + s + '</option');
+        $("#SessionIDs").append('<option value="' + s + '">' + s + '</option>');
+        if (i==m.ArrData.length-1){
+            s0=s;
+        }
+    }
+
+    
+
+    if (s0.length > 0) {
+        mo = {};
+        mo.Function = "GetNmapSuggestion";
+        mo.Hostname = m.Hostname;
+        mo.SessionID = s0;
+
+        SendMessage(mo);
     }
 }
 
@@ -57,13 +115,27 @@ function FillServers(m) {
         if (i==0){
             s0=s;
         }
-        $("#Servers").append('<option value="'+s+'">'+s+'</option');
+        $("#Servers").append('<option value="'+s+'">'+s+'</option>');
     }
 
     if (s0.length > 0){
-        m = {};
-        m.Function = "GetSessionIDs";
-        m.Hostname = s0;
-        SendMessage(m);
+        mo = {};
+        mo.Function = "GetSessionIDs";
+        mo.Hostname = s0;
+        SendMessage(mo);
     }
+}
+
+function FillNmapSuggestion(m) {   
+
+   $("#mermaidnmap").html(m.ArrData[0]);
+
+   mermaid.init();
+
+    setTimeout(function () {
+        $("#mermaidnmap").removeAttr("data-processed");
+        //x = $("#mermaidnmap").html() + " ";
+        //$("#x").html(x);
+    }, 1000);
+
 }

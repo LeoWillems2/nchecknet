@@ -104,7 +104,7 @@ func GetServers() ([]dbServer, error) {
 	return sd, err
 }
 
-func GetSessionIDs(hostname string) ([]string, error) {
+func GetSessionIDs(hostname string) ([]string, string, error) {
 	ss := []string{}
 
 	s, err := GetServerByHostname(hostname)
@@ -129,7 +129,7 @@ func GetSessionIDs(hostname string) ([]string, error) {
         log.Println(err)
     }
 
-	return ss, err
+	return ss, s.Key, err
 }
 
 func GetLastServerData(key string) (dbServerData, error) {
@@ -541,6 +541,7 @@ main()
 		return "", errors.New("No ServerData found yet")
 	}
 	
+
 	addresses := ""
 	for _, ifa := range sd.Sdata.Interfaces {
 		if ifa.Name == iface {
@@ -552,7 +553,10 @@ main()
 			}
 		}
 	}
-	addresses = addresses[1:]
+	
+	if len(addresses)>0 {
+		addresses = addresses[1:]
+	}
 	addresses = "["+addresses+"]"
 
 	script = strings.Replace(script, "ABCDEF0123456789", s.Key, 1)

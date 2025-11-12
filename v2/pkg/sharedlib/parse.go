@@ -449,45 +449,6 @@ func ProcessRoutes(RouteData []string) []RouteEntry {
 }
 
 
-func SuggestNmapLocations() {
-/*
-	//ifaces := GetInterfaces(false)
-	hostname, err := GetFQDN()
-	if err != nil {
-		log.Println("Warning:", err)
-	}
-
-	ProcessRoutes(ReadRoutesProc())
-
-	for _, r := range(RouteTable) {
-		iface := GetInterfaces(false)[r.Interface]
-		for _, a := range(iface.V4addresses) {
-			fmt.Printf("On a host behind %s/%s, run nmapscanner -s %s -k %s\n", r.Interface,r.Dest, a, hostname)
-		}
-		for _, a := range(iface.V6addresses) {
-			fmt.Printf("On a host behind %s/%s, run nmapscanner -s %s -k %s\n", r.Interface,r.Dest, a, hostname)
-		}
-		continue
-	}
-*/
-} 
-
-
-/*
-func DumpData() {
-	type T struct {
-	    S NcheckNetServer
-	    N NcheckNetNmap
-	}
-	t := T{}
-
-	t.S = ProcessRawServerData("data/nchecknetraw-server.json")
-        t.N = ProcessRawNmapData("data/nchecknetraw-nmap.json")
-
-	JsonDump(t, "testdump.json")
-}
-*/
-
 func FWrules2MapByPort(fwr []Fwrule) map[string][]Fwrule {
 	fwrbymap := make(map[string][]Fwrule)
 	for _, r := range(fwr) {
