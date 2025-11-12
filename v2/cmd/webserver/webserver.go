@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"flag"
 )
 
 
@@ -62,22 +63,7 @@ func jsonPostHandlerNmapRawData(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(response)
 }
 
-func NmapSuggestion(w http.ResponseWriter, r *http.Request) {
 
-	t := `<html>
-<script src="/js/mermaid.tiny.js"></script>
-
-<body>
-<H1>Nmap suggesties</H1>
-<p>
-<pre class="mermaid">
-`
-
-	t += sharedlib.GenPic("3946588e7edb4fd3521002b8539ecf4f2a877a06830df84e488ff9c0a8f03068","20251110")
-	t += `</pre>`
-
-	fmt.Fprintf(w, t)
-}
 
 // Upgrader is used to upgrade HTTP connections to WebSocket connections.
 var upgrader = websocket.Upgrader{
@@ -185,15 +171,19 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request) {
         log.Println("Client disconnected")
 }
 
-
+var AllFunctions *bool = flag.Bool("a", false, "All Functions")
 
 func main() {
-	fileserver := http.FileServer(http.Dir("./webroot"))
-	http.Handle("/", fileserver)
-	http.HandleFunc("/ws", handleWebSocket)
+	flag.Parse()
+
 	http.HandleFunc("/api_nmap", jsonPostHandlerNmapRawData)
 	http.HandleFunc("/api_server", jsonPostHandlerServerRawData)
-	http.HandleFunc("/nmap_suggestion", NmapSuggestion)
+
+	if *AllFunctions {
+		http.HandleFunc("/ws", handleWebSocket)
+		fileserver := http.FileServer(http.Dir("./webroot"))
+		http.Handle("/", fileserver)
+	}
 	
 	sharedlib.DBConnect()
 
