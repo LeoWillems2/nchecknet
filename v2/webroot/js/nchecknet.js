@@ -41,6 +41,10 @@ function Ready() {
             FillNmapSuggestion(m);
             return;
         }
+        if (m.Function == "FillData") {
+            FillData(m);
+            return;
+        }
     };
 
     ws.onclose = () => {
@@ -53,23 +57,21 @@ function Ready() {
         mo.Function = "GetSessionIDs";
         mo.Hostname = hn;
         SendMessage(mo);
-
     });
 
     $("#SessionIDs").on("change", function () {
         si = $(this).val();
         mo = {};
         mo.Function = "GetNmapSuggestion";
-
-       
         mo.Hostname = $("#Servers").val();
         mo.SessionID = si;
-
-       
-
-
         SendMessage(mo);
 
+        mo = {};
+        mo.Function = "GetData";
+        mo.Hostname = m.Hostname;
+        mo.SessionID = si;
+        SendMessage(mo);
     });
 }
 
@@ -96,14 +98,17 @@ function FillSessionIDs(m) {
         }
     }
 
-    
-
     if (s0.length > 0) {
         mo = {};
         mo.Function = "GetNmapSuggestion";
         mo.Hostname = m.Hostname;
         mo.SessionID = s0;
+        SendMessage(mo);
 
+        mo = {};
+        mo.Function = "GetData";
+        mo.Hostname = m.Hostname;
+        mo.SessionID = s0;
         SendMessage(mo);
     }
 }
@@ -138,4 +143,9 @@ function FillNmapSuggestion(m) {
         //$("#x").html(x);
     }, 1000);
 
+}
+
+function FillData(m) {
+    console.log(m);
+    $("#DataTabCol1").html("<pre>"+m.ArrData[0]+"</pre>");
 }

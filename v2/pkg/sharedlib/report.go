@@ -1,8 +1,48 @@
 package sharedlib
 
 import (
+	"errors"
 	"log"
+	"encoding/json"
+	"strings"
+
 )
+
+func PrettyPrint(arg string) (string, error) {
+
+	t := ""
+
+	args := strings.Split(arg, ":")
+	if len(args) != 3 {
+		return "", errors.New("PrettyPrint() Bad argcount for -pp")
+	}
+
+	s, err := GetServerByHostname(args[1])
+	if err != nil {
+		return "", err
+	}
+
+	sd, err := GetServerDataByKeyAndSessionID(s.Key,args[2])
+	if err != nil {
+		return "", err
+	}
+
+	sd.Sdata.Key = "";
+	
+	switch args[0]{
+	case "All":
+			b, _ := json.MarshalIndent(sd.Sdata, "", "  ")
+
+			t = string(b)
+
+	default:
+		return "", errors.New ("PrettyPrint() Bad argtype for -pp")
+	}
+	
+	return t, nil
+}
+
+
 
 func createLbP(lis []Listener) (map[string][]Listener) {
 	lbp := make(map[string][]Listener)

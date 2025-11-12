@@ -146,17 +146,25 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request) {
 					mo.ArrData = alls
 				case "GetNmapSuggestion":
 					mo.Function = "FillNmapSuggestion"
-					log.Println(mi.Hostname, mi.SessionID)
 					sn, err := sharedlib.GetServerByHostname(mi.Hostname)
-					//sn, err := sharedlib.GetServerByHostname("monitor.managedlinux.nl")
 					
 					if err != nil {
 						log.Println("GetNmapSuggestion", err, mi.Hostname, sn)
 						continue
 					}
-					//mo.ArrData = append(mo.ArrData,"<pre class=mermaid>"+sharedlib.GenPic(sn.Key,mi.SessionID)+"</pre>")
 					mo.Hostname = mi.Hostname
 					mo.ArrData = append(mo.ArrData,sharedlib.GenPic(sn.Key,mi.SessionID))
+				case "GetData":
+					mo.Function = "FillData"
+					mo.Hostname = mi.Hostname
+
+					t, err := sharedlib.PrettyPrint("All:"+ mi.Hostname+ ":"+mi.SessionID )
+					if err != nil {
+						log.Println("GetData", err, mi.Hostname)
+						continue
+					}
+					mo.ArrData = append(mo.ArrData,t)
+
 				}
 
 				moj, err := json.Marshal(mo)
