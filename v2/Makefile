@@ -1,8 +1,11 @@
 
-all: execute/collectfwdata execute/webserver execute/collectfwdata execute/utils
+all: execute/collectfwdata execute/webserver execute/collectfwdata execute/utils execute/testers
 
 execute/utils: cmd/utils/utils.go pkg/sharedlib/parse.go pkg/sharedlib/database.go pkg/sharedlib/report.go
 	go build -o execute/utils cmd/utils/utils.go
+
+execute/testers: cmd/testers/testers.go pkg/sharedlib/parse.go pkg/sharedlib/database.go pkg/sharedlib/report.go
+	go build -o execute/testers cmd/testers/testers.go
 
 execute/webserver: cmd/webserver/webserver.go pkg/sharedlib/parse.go pkg/sharedlib/database.go pkg/sharedlib/report.go
 	go build -o execute/webserver cmd/webserver/webserver.go

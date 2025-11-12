@@ -5,10 +5,12 @@ import (
 	"io/ioutil"
 	"encoding/json"
 	"log"
+	"fmt"
 	"os"
 	"regexp"
 	"strings"
 	"unicode"
+	"bufio"
 )
 
 type RawDataNmap struct {
@@ -209,6 +211,19 @@ func ProcessRawNmapDataJSON(rdata RawDataNmap) NcheckNetNmap {
 	return nmap
 }
 
+func TestListeners() {
+	lines, err := readLines("testdata/listeners.txt")
+	if err != nil {
+		log.Fatalln("TestListeners()", err)
+		return
+	}
+
+	l := ProcessListeners(lines)
+ 	b, _ := json.MarshalIndent(l, "", "  ")
+	t := string(b)
+	fmt.Println(t)
+}
+
 func ProcessListeners(ssdata []string) []Listener {
 	Listeners := make([]Listener,0)
 	for _, line := range ssdata {
@@ -229,9 +244,10 @@ func ProcessListeners(ssdata []string) []Listener {
 		
 		listener.Command = fs[col][strings.Index(fs[col], "/")+1:]
 		listener.Proto = fs[0]
-		li := strings.LastIndex(fs[4], ":")
+
+		li := strings.LastIndex(fs[3], ":")
 		listener.Port = fs[3][li+1:]
-		tmp := fs[4][:li]
+		tmp := fs[3][:li]
 		fi := strings.SplitN(tmp, "%", 2)
 		listener.IP = fi[0]
 		if listener.IP == "*" {
@@ -247,9 +263,6 @@ func ProcessListeners(ssdata []string) []Listener {
 		}
 		Listeners = append(Listeners, listener)
 	}
-
-	//JsonDump(ListenersByPort, "ListenersByPort.json")
-	//JsonDump(ListenersByRow, "ListenersByRow.json")
 
 	return Listeners
 }
@@ -463,4 +476,27 @@ func Listeners2MapByPort(fwr []Listener) map[string][]Listener{
 		lisbymap[r.Port] = append(lisbymap[r.Port], r)
 	}
 	return lisbymap
+}
+
+
+// readLines reads a file and returns all lines as a slice of strings.
+// It handles file opening, reading line by line, and error checking.
+func readLines(path string) ([]string, error) {
+	file, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	var lines []string //
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		lines = append(lines, scanner.Text())
+	}
+
+	if err := scanner.Err(); err != nil {
+		return nil, err
+	}
+
+	return lines, nil
 }

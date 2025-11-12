@@ -1,0 +1,27 @@
+Active Internet connections (only servers)
+Proto Recv-Q Send-Q Local Address           Foreign Address         State       PID/Program name    
+tcp        0      0 127.0.0.54:53           0.0.0.0:*               LISTEN      9950/systemd-resolv 
+tcp        0      0 127.0.0.1:25            0.0.0.0:*               LISTEN      36420/master        
+tcp        0      0 0.0.0.0:80              0.0.0.0:*               LISTEN      440087/nginx: maste 
+tcp        0      0 0.0.0.0:22              0.0.0.0:*               LISTEN      1/systemd           
+tcp        0      0 0.0.0.0:443             0.0.0.0:*               LISTEN      440087/nginx: maste 
+tcp        0      0 0.0.0.0:8081            0.0.0.0:*               LISTEN      440087/nginx: maste 
+tcp        0      0 0.0.0.0:8080            0.0.0.0:*               LISTEN      440087/nginx: maste 
+tcp        0      0 127.0.0.1:5432          0.0.0.0:*               LISTEN      752134/postgres     
+tcp        0      0 0.0.0.0:10051           0.0.0.0:*               LISTEN      752164/zabbix_serve 
+tcp        0      0 127.0.0.53:53           0.0.0.0:*               LISTEN      9950/systemd-resolv 
+tcp6       0      0 ::1:25                  :::*                    LISTEN      36420/master        
+tcp6       0      0 :::80                   :::*                    LISTEN      440087/nginx: maste 
+tcp6       0      0 :::22                   :::*                    LISTEN      1/systemd           
+tcp6       0      0 :::443                  :::*                    LISTEN      440087/nginx: maste 
+tcp6       0      0 :::10051                :::*                    LISTEN      752164/zabbix_serve 
+tcp6       0      0 :::10050                :::*                    LISTEN      62976/zabbix_agent2 
+tcp6       0      0 ::1:5432                :::*                    LISTEN      752134/postgres     
+udp        0      0 91.98.147.178:68        0.0.0.0:*                           9960/systemd-networ 
+udp        0      0 127.0.0.1:161           0.0.0.0:*                           28496/snmpd         
+udp        0      0 0.0.0.0:1194            0.0.0.0:*                           313999/openvpn      
+udp        0      0 0.0.0.0:1195            0.0.0.0:*                           357732/openvpn      
+udp        0      0 0.0.0.0:1196            0.0.0.0:*                           314201/openvpn      
+udp        0      0 127.0.0.54:53           0.0.0.0:*                           9950/systemd-resolv 
+udp        0      0 127.0.0.53:53           0.0.0.0:*                           9950/systemd-resolv 
+udp6       0      0 ::1:161                 :::*                                28496/snmpd       
