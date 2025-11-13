@@ -11,8 +11,6 @@ import (
 	"flag"
 )
 
-
-
 func jsonPostHandlerServerRawData(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Only POST requests are allowed", http.StatusMethodNotAllowed)
@@ -144,7 +142,7 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request) {
 					mo.Function = "FillData"
 					mo.Hostname = mi.Hostname
 
-					t, err := sharedlib.PrettyPrint("All:"+ mi.Hostname+ ":"+mi.SessionID )
+					t, err := sharedlib.PrettyPrintServerData("All:"+ mi.Hostname+ ":"+mi.SessionID )
 					if err != nil {
 						log.Println("GetData", err, mi.Hostname)
 						continue
@@ -173,9 +171,26 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request) {
 
 var AllFunctions *bool = flag.Bool("a", false, "All Functions")
 
+func TestH(w http.ResponseWriter, r *http.Request) {
+
+    xfwdFor := r.Header.Get("X-Forwarded-For")
+    if xfwdFor != "" {
+        log.Printf("X-Forwarded-For: %s\n", xfwdFor)
+    } else {
+        log.Println("X-Forwarded-For header not present.")
+    }
+    rema := r.RemoteAddr
+    if rema != "" {
+        log.Printf("RemoteAddr: %s\n", rema)
+    } else {
+        log.Println("RemoteAddr header not present.")
+    }
+}
+
 func main() {
 	flag.Parse()
 
+	http.HandleFunc("/test", TestH)
 	http.HandleFunc("/api_nmap", jsonPostHandlerNmapRawData)
 	http.HandleFunc("/api_server", jsonPostHandlerServerRawData)
 

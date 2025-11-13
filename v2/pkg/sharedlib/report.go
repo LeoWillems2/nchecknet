@@ -8,7 +8,7 @@ import (
 
 )
 
-func PrettyPrint(arg string) (string, error) {
+func PrettyPrintServerData(arg string) (string, error) {
 
 	t := ""
 
