@@ -3,10 +3,10 @@
 
 
 
-* webserver: nicer and more completr
-* create eth0 raw-nmap collectors: extend to  more interfaces
+* create raw-nmap collectors:
+     print the code in a nicer box.
+     remove rawnampcollector from utils
+     get the collector from the right sessionid
+     make http://lewi configurable
 * more reports
-
-
-parse ufw: 53 no slash, en 53 (v6)  no slash
 

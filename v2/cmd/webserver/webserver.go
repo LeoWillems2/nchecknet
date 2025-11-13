@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"os"
 	"net/http"
 	"flag"
 )
@@ -78,6 +79,7 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request) {
 		Function string
 		Hostname string
 		SessionID string
+		Data string
 	}
 
 	type MessageOut struct {
@@ -128,6 +130,10 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request) {
 					mo.Hostname = mi.Hostname;
 					alls, _, _ := sharedlib.GetSessionIDs(mi.Hostname) 
 					mo.ArrData = alls
+				case "GetNmapCollector":
+					mo.Function = "FillNmapCollector"
+					t, _ := sharedlib.CreateNmapCollectorPy(mi.Hostname, mi.SessionID, mi.Data[4:], "https://nchecknet.lewi.nl")
+					mo.ArrData = append(mo.ArrData,t)
 				case "GetNmapSuggestion":
 					mo.Function = "FillNmapSuggestion"
 					sn, err := sharedlib.GetServerByHostname(mi.Hostname)
@@ -137,10 +143,13 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request) {
 						continue
 					}
 					mo.Hostname = mi.Hostname
-					mo.ArrData = append(mo.ArrData,sharedlib.GenPic(sn.Key,mi.SessionID))
+					txt, buttons := sharedlib.GenPic(sn.Key,mi.SessionID)
+					mo.ArrData = append(mo.ArrData,txt)
+					mo.ArrData = append(mo.ArrData,buttons)
 				case "GetData":
 					mo.Function = "FillData"
 					mo.Hostname = mi.Hostname
+
 
 					t, err := sharedlib.PrettyPrintServerData("All:"+ mi.Hostname+ ":"+mi.SessionID )
 					if err != nil {
@@ -187,6 +196,16 @@ func TestH(w http.ResponseWriter, r *http.Request) {
     }
 }
 
+func createFile(name, content string) error {
+	file, err := os.Create(name)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+	_, err = file.WriteString(content)
+	return err
+}
+
 func main() {
 	flag.Parse()
 
@@ -196,6 +215,7 @@ func main() {
 
 	if *AllFunctions {
 		http.HandleFunc("/ws", handleWebSocket)
+		//http.HandleFunc("/rawnmapcollector", handleRawNmapCollector)
 		fileserver := http.FileServer(http.Dir("./webroot"))
 		http.Handle("/", fileserver)
 	}

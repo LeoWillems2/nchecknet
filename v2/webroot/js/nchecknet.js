@@ -6,10 +6,8 @@ var ws;
 
 function Ready() {
 
-    // prep
 
-    $("#nmapsuggestion").html("<pre class='mermaid' id=mermaidnmap></pre><div id=x></div>");
-  
+    $("#nmapsuggestion").html("<pre class='mermaid' id=mermaidnmap></pre><div id=x></div><div id=intbuttons></div>");
     $('.nav-tabs > li:first-child > a')[0].click();
 
     const mermaidAPI = mermaid.mermaidAPI
@@ -45,6 +43,10 @@ function Ready() {
             FillData(m);
             return;
         }
+        if (m.Function == "FillNmapCollector") {
+            FillNmapCollector(m);
+            return;
+        }
     };
 
     ws.onclose = () => {
@@ -67,15 +69,14 @@ function Ready() {
         mo.SessionID = si;
         SendMessage(mo);
 
-        mo = {};
         mo.Function = "GetData";
-        mo.Hostname = m.Hostname;
-        mo.SessionID = si;
         SendMessage(mo);
     });
+
 }
 
 function SendMessage(message) {
+	//console.log(JSON.stringify(message));
     ws.send(JSON.stringify(message));
 }  
 
@@ -133,19 +134,30 @@ function FillServers(m) {
 
 function FillNmapSuggestion(m) {   
 
+
    $("#mermaidnmap").html(m.ArrData[0]);
+   $("#intbuttons").html(m.ArrData[1]);
+    $("#nmaprawcollector").html("");
 
    mermaid.init();
 
     setTimeout(function () {
         $("#mermaidnmap").removeAttr("data-processed");
-        //x = $("#mermaidnmap").html() + " ";
-        //$("#x").html(x);
+	    $(".IFN").on("click", function() {
+		id = $(this).attr("id");
+		m.Function = "GetNmapCollector";
+		m.Hostname = $("#Servers").val();
+		m.SessionID = $("#SessionIDs").val();
+		m.Data = id;
+		SendMessage(m);
+	    });
     }, 1000);
 
 }
 
 function FillData(m) {
-    console.log(m);
     $("#DataTabCol1").html("<pre>"+m.ArrData[0]+"</pre>");
+}
+function FillNmapCollector(m) {
+    $("#nmaprawcollector").html("<br/><pre>"+m.ArrData[0]+"</pre>");
 }

@@ -8,15 +8,15 @@
     <link rel="stylesheet" href="assets/bootstrap/css/bootstrap.min.css">
 </head>
 
-<body>
+<body style="background: var(--bs-light-bg-subtle);">
     <div>
         <ul class="nav nav-tabs" role="tablist">
-            <li class="nav-item" role="presentation"><a class="nav-link" role="tab" data-bs-toggle="tab" href="#tab-1">Systems</a></li>
+            <li class="nav-item" role="presentation"><a class="nav-link active" role="tab" data-bs-toggle="tab" href="#tab-1">Systems</a></li>
             <li class="nav-item" role="presentation"><a class="nav-link" role="tab" data-bs-toggle="tab" href="#tab-2">Reports</a></li>
-            <li class="nav-item" role="presentation"><a class="nav-link active" role="tab" data-bs-toggle="tab" href="#tab-3">Data</a></li>
+            <li class="nav-item" role="presentation"><a class="nav-link" role="tab" data-bs-toggle="tab" href="#tab-3">Data</a></li>
         </ul>
         <div class="tab-content">
-            <div class="tab-pane" role="tabpanel" id="tab-1">
+            <div class="tab-pane active" role="tabpanel" id="tab-1">
                 <div class="container">
                     <div class="row" style="height: 20px;"></div>
                     <div class="row" style="height: 140px;">
@@ -42,7 +42,7 @@
                     <div class="row"></div>
                 </div>
             </div>
-            <div class="tab-pane active" role="tabpanel" id="tab-3">
+            <div class="tab-pane" role="tabpanel" id="tab-3">
                 <div class="container">
                     <div class="row">
                         <div class="col" id="DataTabCol1"></div>
@@ -52,7 +52,11 @@
         </div>
     </div>
     <div class="container"></div>
-    <div class="container"></div>
+    <div class="container">
+        <div class="col" style="border-radius: 3px;background: var(--bs-focus-ring-color);margin-left: 0px;border: 2px solid var(--bs-primary);">
+            <p id="nmaprawcollector" style="margin-left: 5px;"></p>
+        </div>
+    </div>
     <script src="assets/js/jquery.min.js"></script>
     <script src="assets/bootstrap/js/bootstrap.min.js"></script>
     <script src="/js/mermaid.tiny.js"></script>

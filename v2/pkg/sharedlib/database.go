@@ -332,15 +332,17 @@ func check4ServerAndNmapDocs(key,sessionid string) bool {
 	return err1 == nil && err2 == nil
 }
 
-func GenPic(key,sessionid string) string {
+func GenPic(key,sessionid string) (string, string) {
 	s, err := GetServerDataByKeyAndSessionID(key, sessionid)
 	if err != nil {
 		log.Println("GenPic: no record found", key, sessionid)
-		return ""
+		return "", ""
 	}
 
 
 	ifmap := make(map[string]int)
+
+	buttons := ""
 
 	txt := "flowchart TD\n"
 	txt += fmt.Sprintf(`subgraph Nmaps["%s"]%c`, s.Sdata.Hostname, '\n')
@@ -358,7 +360,9 @@ func GenPic(key,sessionid string) string {
 
 		ifmap[iface.Name] = i
 
-		txt += fmt.Sprintf(`I%d["<button id=IFN%d>%s</button>`, i,i,iface.Name)
+		buttons += fmt.Sprintf(`<button class='IFN btn btn-primary' id='IFN-%d'>%s</button>&nbsp;`, i, iface.Name)
+
+		txt += fmt.Sprintf(`I%d["%s`,i,iface.Name)
 		for _, a := range iface.V4addresses {
 			txt += "<br/>"+a
 		}
@@ -380,11 +384,10 @@ func GenPic(key,sessionid string) string {
 
 		
 		ifi, _ := ifmap[r.Interface]
-		//ifi, _ := ifmap[r.Interface+":"]
 		txt += fmt.Sprintf(`n%d ---> I%d%c`, i, ifi,'\n')
 	}
 
-	return txt
+	return txt, buttons
 }
 
 /* Create a new server document */
@@ -475,9 +478,11 @@ main()
 	return script, nil
 }
 
-func CreateNmapCollectorPy(servername, iface, nchecknetserver string) (string, error) {
+func CreateNmapCollectorPy(servername, sessionid, iface, nchecknetserver string) (string, error) {
 
 	script := `#!/usr/bin/python3
+
+# Run this script daily from the networks in front of IFACE.
 
 import json
 import platform
@@ -531,27 +536,26 @@ def main():
 
 main()
 `
-	s, err  := GetServerByHostname(servername)
+	s, err := GetServerByHostname(servername)
 	if err != nil {
-		return "", err		
+		return "", err
 	}
 
-	sd, err := GetLastServerData(s.Key)
-	if sd.Key == "" {
-		return "", errors.New("No ServerData found yet")
+	sd, err := GetServerDataByKeyAndSessionID(s.Key, sessionid)
+	if err!= nil {
+		return "", err
 	}
-	
+
+	i, _ := strconv.Atoi(iface)
 
 	addresses := ""
-	for _, ifa := range sd.Sdata.Interfaces {
-		if ifa.Name == iface {
-			for _, a:= range ifa.V4addresses {
-				addresses +=  `,"`+a+`"`
-			}
-			for _, a:= range ifa.V6addresses {
-				addresses +=  `,"`+a+`"`
-			}
-		}
+	ifa := sd.Sdata.Interfaces[i]
+
+	for _, a:= range ifa.V4addresses {
+		addresses +=  `,"`+a+`"`
+	}
+	for _, a:= range ifa.V6addresses {
+		addresses +=  `,"`+a+`"`
 	}
 	
 	if len(addresses)>0 {
@@ -559,9 +563,10 @@ main()
 	}
 	addresses = "["+addresses+"]"
 
-	script = strings.Replace(script, "ABCDEF0123456789", s.Key, 1)
+	script = strings.Replace(script, "ABCDEF0123456789", sd.Key, 1)
 	script = strings.Replace(script, "NCHECKNETSERVER", nchecknetserver, 1)
 	script = strings.Replace(script, "SCANIPS", addresses, 1)
+	script = strings.Replace(script, "IFACE", ifa.Name, 1)
 
 	return script, nil
 }

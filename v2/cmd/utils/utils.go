@@ -15,7 +15,6 @@ import (
 var NewServer *string = flag.String("ns", "", "New Server")
 var Verbose *bool = flag.Bool("v", false, "Verbose")
 var ServerCollectorPy *string = flag.String("cs", "", "Create collector script for FQDN (server)")
-var NmapCollectorPy *string = flag.String("cn", "", "Create collector script for Nmap-site")
 var NchecknetServer *string = flag.String("NchecknetUrl", "https://nchecknet.lewi.nl", "NchecknetServer URL")
 var PrettyPrint *string = flag.String("pp", "", "PrettyPrint [Struct:HN:SID]")
 
@@ -31,17 +30,6 @@ func main() {
 			os.Exit(2)
 		} else {
 			fmt.Println(*NewServer, key)
-			os.Exit(0)
-		}
-	}
-
-	if *NmapCollectorPy != "" {
-		script, err := sharedlib.CreateNmapCollectorPy(*NmapCollectorPy, "ens3", *NchecknetServer)
-		if err != nil {
-			log.Println(err)
-			os.Exit(2)
-		} else {
-			fmt.Println(script)
 			os.Exit(0)
 		}
 	}
