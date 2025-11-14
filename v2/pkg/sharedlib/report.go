@@ -5,6 +5,7 @@ import (
 	"log"
 	"encoding/json"
 	"strings"
+	"fmt"
 
 )
 
@@ -105,20 +106,65 @@ func CompareFromUFWViewpoint(hostname, sessionid string) {
 func compareFromUFWViewpoint_(FwrulesByPort map[string][]Fwrule,
                 ListenersByPort map[string][]Listener ) {
 
+	UfwIDX := make(map[string]string)
+	LisIDX := make(map[string]string)
+
+	t := fmt.Sprintf(`<html>
+<body>
+<pre class=mermaid>
+flowchart TD
+subgraph SERVER["monitor.managedlinux.nl (IP's)"]
+`)
+	
+	
+	t += `subgraph FROM["UFW From (To) Port/Proto"]` + "\n"
 	for fwport, fwrules := range FwrulesByPort {
 		for _, fwrule := range fwrules {
-			listeners, ok := ListenersByPort[fwport]
+			_, ok := ListenersByPort[fwport]
 			if !ok {
-				log.Printf("FW port %5s/%s (%s) is %s-ed but has no listening process\n",
-					fwport, fwrule.Proto, fwrule.IP_to, fwrule.Ruletype)
 				continue
 			}
-
-			for _, listener := range listeners {
-				//log.Printf("FW port %5s/%s (to: %s) (from: %s) is %s-ed with listener: %v\n", fwport, fwrule.Proto, fwrule.IP_to,fwrule.IP_from, fwrule.Ruletype, listener)
-				log.Printf("%s %s-%s/%s-%s\n", fwrule.IP_from, fwrule.IP_to, fwport,fwrule.Proto,listener.Command)
+			x := fmt.Sprintf(" %s-%s-%s-%s", fwrule.IP_from, fwrule.IP_to, fwrule.Port, fwrule.Proto)
+			x += fmt.Sprintf(`["%s (%s)<br/>%s/%s"]%c`, fwrule.IP_from, fwrule.IP_to, fwrule.Port, fwrule.Proto, '\n')
+			_, ok = UfwIDX[fwrule.Port+"/"+fwrule.Proto]
+			if !ok {
+				t += x
+				UfwIDX[fwrule.Port+"/"+fwrule.Proto] = x
 			}
 		}
 	}
+	t += "end\n"
+
+	t += `subgraph COMMANDS["Commands"]` + "\n"
+	for lport, listeners := range ListenersByPort {
+
+         for _, l := range listeners {
+		x := fmt.Sprintf(` L%s-%s/%s-%s`, l.Bound2interface, lport,l.Proto,l.Command)
+		x += fmt.Sprintf(`["L%s-%s/%s<br/>%s"]%c`,l.Bound2interface, lport,l.Proto,l.Command, '\n')
+		_, ok := LisIDX[l.Port+"/"+l.Proto]
+		if  !ok {
+			t += x
+			LisIDX[l.Port+"/"+l.Proto] = x
+		}
+	 }
+	}
+	t += "end\n"
+	t += "end\n"
+
+	for fp, ftxt := range UfwIDX {
+		ltxt, ok := LisIDX[fp]
+		if ok {
+		     t += fmt.Sprintf(`%s ---> %s%c`, ftxt,ltxt, '\n')
+		}
+	}
+	
+	t += `
+</pre>
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+  mermaid.initialize({ startOnLoad: true });
+</script>
+`
+	fmt.Println(t)
 }
 

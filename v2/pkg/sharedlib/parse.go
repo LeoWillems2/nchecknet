@@ -270,8 +270,9 @@ func ProcessListeners(ssdata []string) []Listener {
 		} else {
 			listener.IPversion = "v4"
 		}
-		if len(fi) > 1 {
-			listener.Bound2interface = fi[1]
+		log.Println(len(fi), fi)
+		if len(fi) > 0 {
+			listener.Bound2interface = fi[0]
 		}
 		Listeners = append(Listeners, listener)
 	}
