@@ -4,9 +4,6 @@
 
 
 * create raw-nmap collectors:
-     print the code in a nicer box.
-     remove rawnampcollector from utils
-     get the collector from the right sessionid
      make http://lewi configurable
 * more reports
 

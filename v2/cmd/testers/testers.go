@@ -10,13 +10,17 @@ import (
 )
 
 var Listeners *bool = flag.Bool("l", false, "Dump Listeners")
+var Interfaces *bool = flag.Bool("i", false, "Dump Interfaces")
 
 func main() {
         flag.Parse()
 
 	sharedlib.DBConnect()
 
-	if *Listeners {
+	if  *Listeners {
 		sharedlib.TestListeners()
+	}
+	if *Interfaces {
+		sharedlib.TestInterfaces()
 	}
 }

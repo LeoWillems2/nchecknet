@@ -1,6 +1,5 @@
 package sharedlib
 
-
 import (
 	"io/ioutil"
 	"encoding/json"
@@ -224,6 +223,19 @@ func TestListeners() {
 	fmt.Println(t)
 }
 
+func TestInterfaces() {
+	lines, err := readLines("testdata/ifconfig.txt")
+	if err != nil {
+		log.Fatalln("TestInterfaces()", err)
+		return
+	}
+
+	l := ProcessInterfaces(lines)
+ 	b, _ := json.MarshalIndent(l, "", "  ")
+	t := string(b)
+	fmt.Println(t)
+}
+
 func ProcessListeners(ssdata []string) []Listener {
 	Listeners := make([]Listener,0)
 	for _, line := range ssdata {
@@ -404,6 +416,8 @@ func ProcessFW(fwdata []string, ifaces []Interface) []Fwrule {
 func ProcessInterfaces(interfaces []string) []Interface {
 	Interfaces := make([]Interface, 0)
 	Iface := Interface{}
+
+	interfaces = append(interfaces, "\n") // fix sometimes missing last line
 
 	haveIface := false
 	for _, iface := range(interfaces) {
