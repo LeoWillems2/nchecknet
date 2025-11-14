@@ -73,12 +73,31 @@ func Test() {
 	//insertNmapData()
 }
 
+func GetNmapDataByHostnameAndSessionID(hostname, sessionid string) (dbNmapData, error) {
+	s, err := GetServerByHostname(hostname)
+	if err != nil {
+		return dbNmapData{}, err
+	}
+	return GetNmapDataByKeyAndSessionID(s.Key, sessionid)
+	
+}
+	
 
 func GetNmapDataByKeyAndSessionID(key, sessionid string) (dbNmapData, error) {
         filter := bson.M{"key": key, "sessionid": sessionid}
         nmap := dbNmapData{}
         err := NmapDataCollection.FindOne(ctx, filter).Decode(&nmap)
         return nmap, err
+}
+
+func GetServerDataByHostnameAndSessionID(hostname, sessionid string) (dbServerData, error) {
+        s, err := GetServerByHostname(hostname)
+        if err != nil {
+		log.Printf("GetServerDataByHostnameAndSessionID failed: [%s][%s]%v\n", hostname, sessionid, err)
+                return dbServerData{}, err
+	}
+        
+	return GetServerDataByKeyAndSessionID(s.Key, sessionid)
 }
 
 func GetServerDataByKeyAndSessionID(key, sessionid string) (dbServerData, error) {
@@ -167,12 +186,14 @@ func DeleteExistingServerDataIfExists(hostname, key, sessionid string){
 		log.Println("Serverdata deleted")
 	}
 }
+
 func GetServerByHostname(hostname string) (dbServer, error) {
         filter := bson.M{"hostname": hostname}
         server := dbServer{}
         err := ServersCollection.FindOne(ctx, filter).Decode(&server)
         return server, err
 }
+
 func GetServerByKey(key string) (dbServer, error) {
         filter := bson.M{"key": key}
         server := dbServer{}
@@ -362,7 +383,7 @@ func GenPic(key,sessionid string) (string, string) {
 
 		buttons += fmt.Sprintf(`<button class='IFN btn btn-primary' id='IFN-%d'>%s</button>&nbsp;`, i, iface.Name)
 
-		txt += fmt.Sprintf(`I%d["%s`,i,iface.Name)
+		txt += fmt.Sprintf(`I%d["<button class=IFN id='IFN-%d'>%s</button>`,i,i,iface.Name)
 		for _, a := range iface.V4addresses {
 			txt += "<br/>"+a
 		}
@@ -513,11 +534,13 @@ def scan(scanip):
 
 	ipv = "4"
 	if ":" in scanip:
+		return			## tja
 		ipv = "6"
+		scanip = scanip + "%"+iface
 
 	data["Nmap"] = runp(["nmap", "-"+ipv, scanip ])
 	data["Hostname"] = platform.node()
-	data["Scanname"] = scanip
+	data["Scanname"] = "SCANNAME"
 	data["IPv"] = ipv
 	now = datetime.datetime.now()
 	data["Date"] = now.strftime("%Y-%m-%d %H:%M:%S")
@@ -566,6 +589,7 @@ main()
 	script = strings.Replace(script, "ABCDEF0123456789", sd.Key, 1)
 	script = strings.Replace(script, "NCHECKNETSERVER", nchecknetserver, 1)
 	script = strings.Replace(script, "SCANIPS", addresses, 1)
+	script = strings.Replace(script, "SCANNAME", servername, 1)
 	script = strings.Replace(script, "IFACE", ifa.Name, 1)
 
 	return script, nil

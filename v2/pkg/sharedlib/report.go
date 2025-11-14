@@ -89,20 +89,20 @@ func compareFromListeners_(FwrulesByPort map[string][]Fwrule,
 
 }
 
-func CompareFromUFW(key, sessionid string) {
-	sd, err := GetServerDataByKeyAndSessionID(key,sessionid)
+func CompareFromUFWViewpoint(hostname, sessionid string) {
+	sd, err := GetServerDataByHostnameAndSessionID(hostname,sessionid)
 	if err != nil {
-		log.Fatalln("GetServerDataByKeyAndSessionID: no doc:",key,sessionid)
+		log.Fatalln("CompareFromUFWViewpoint: no doc:",hostname,sessionid)
 		return
 	}
 
 	LbP := createLbP(sd.Sdata.Listeners);
 	FbP := createFbP(sd.Sdata.Fwrules);
 
-	compareFromUFW_(FbP,LbP)
+	compareFromUFWViewpoint_(FbP,LbP)
 }
 
-func compareFromUFW_(FwrulesByPort map[string][]Fwrule,
+func compareFromUFWViewpoint_(FwrulesByPort map[string][]Fwrule,
                 ListenersByPort map[string][]Listener ) {
 
 	for fwport, fwrules := range FwrulesByPort {
@@ -115,7 +115,8 @@ func compareFromUFW_(FwrulesByPort map[string][]Fwrule,
 			}
 
 			for _, listener := range listeners {
-				log.Printf("FW port %5s/%s (to: %s) (from: %s) is %s-ed with listener: %v\n", fwport, fwrule.Proto, fwrule.IP_to,fwrule.IP_from, fwrule.Ruletype, listener)
+				//log.Printf("FW port %5s/%s (to: %s) (from: %s) is %s-ed with listener: %v\n", fwport, fwrule.Proto, fwrule.IP_to,fwrule.IP_from, fwrule.Ruletype, listener)
+				log.Printf("%s %s-%s/%s-%s\n", fwrule.IP_from, fwrule.IP_to, fwport,fwrule.Proto,listener.Command)
 			}
 		}
 	}

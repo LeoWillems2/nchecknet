@@ -10,8 +10,13 @@ function Ready() {
     $("#nmapsuggestion").html("<pre class='mermaid' id=mermaidnmap></pre><div id=x></div><div id=intbuttons></div>");
     $('.nav-tabs > li:first-child > a')[0].click();
 
-    const mermaidAPI = mermaid.mermaidAPI
-    mermaidAPI.initialize({ startOnLoad: false })
+    //const mermaidAPI = mermaid.mermaidAPI
+    //mermaidAPI.initialize({
+	//startOnLoad: false
+    //});
+	mermaid.initialize({
+	  securityLevel: 'antiscript',
+	});
 
     wsstring = "wss://";
     if (window.location.host == "127.0.0.1:8087" ) {
@@ -52,6 +57,7 @@ function Ready() {
     ws.onclose = () => {
         console.log("WebSocket connection closed");
     };
+
 
     $("#Servers").on("change", function() {
         hn = $(this).val();
@@ -136,7 +142,7 @@ function FillNmapSuggestion(m) {
 
 
    $("#mermaidnmap").html(m.ArrData[0]);
-   $("#intbuttons").html(m.ArrData[1]);
+   //$("#intbuttons").html(m.ArrData[1]);
     $("#nmaprawcollector").html("");
 
    mermaid.init();
@@ -150,6 +156,9 @@ function FillNmapSuggestion(m) {
 		m.SessionID = $("#SessionIDs").val();
 		m.Data = id;
 		SendMessage(m);
+	    });
+	    $("#XYZ").on("click", function() {
+		console.log("XYZ");
 	    });
     }, 1000);
 
