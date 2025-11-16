@@ -3,17 +3,16 @@ $(document).ready(Ready);
 
 var ws;
 
+var ClearReportTab = false;
 
 function Ready() {
 
 
-    $("#nmapsuggestion").html("<pre class='mermaid' id=mermaidnmap></pre><div id=x></div><div id=intbuttons></div>");
+    // $("#nmapsuggestion").html("<pre class='mermaid' id=mermaidnmap></pre>");
+    //   ---> done on tab change    $("#chartreport").html("<pre class='mermaid' id=mermaidchartreport></pre>");
     $('.nav-tabs > li:first-child > a')[0].click();
 
-    //const mermaidAPI = mermaid.mermaidAPI
-    //mermaidAPI.initialize({
-	//startOnLoad: false
-    //});
+   
 	mermaid.initialize({
 	  securityLevel: 'antiscript',
 	});
@@ -52,6 +51,10 @@ function Ready() {
             FillNmapCollector(m);
             return;
         }
+        if (m.Function == "FillChartReport") {
+            FillChartReport(m);
+            return;
+        }
     };
 
     ws.onclose = () => {
@@ -60,6 +63,8 @@ function Ready() {
 
 
     $("#Servers").on("change", function() {
+        ClearReportTab = true;
+
         hn = $(this).val();
         mo = {};
         mo.Function = "GetSessionIDs";
@@ -68,6 +73,9 @@ function Ready() {
     });
 
     $("#SessionIDs").on("change", function () {
+        ClearReportTab = true;
+
+
         si = $(this).val();
         mo = {};
         mo.Function = "GetNmapSuggestion";
@@ -79,6 +87,29 @@ function Ready() {
         SendMessage(mo);
     });
 
+    $("#chartredraw").on("click", function(){
+        charttype = $("#charttype").val();        // todo...... doorgeven
+        unhide = $("#charthide").prop('checked');
+        m = {};
+        m.Function = "GetUfwListenChart";
+        m.Hostname = $("#Servers").val();
+        m.SessionID = $("#SessionIDs").val();
+        if (unhide) {
+            m.Data = "unhide";
+        }
+        SendMessage(m);
+    });
+
+
+    $("#charttabitem").on('shown.bs.tab', function (e) {
+        var target = $(e.target).attr("href");
+        if (target == "#tab-2" && ClearReportTab == true){
+        ClearReportTab = false;
+        $("#chartreport").html("<pre class='mermaid' id=mermaidchartreport></pre>");
+        }
+    });
+
+    
 }
 
 function SendMessage(message) {
@@ -94,6 +125,9 @@ function GetMessage() {
 
 
 function FillSessionIDs(m) {
+    
+    $('.nav-tabs > li:first-child > a')[0].click();
+
     $("#SessionIDs").find('option').remove();
 
     s0 = "";
@@ -121,6 +155,10 @@ function FillSessionIDs(m) {
 }
 
 function FillServers(m) {
+   
+   
+    $('.nav-tabs > li:first-child > a')[0].click();
+
     s0 = "";
     for (i=0; i < m.ArrData.length; ++i){
         s = m.ArrData[i];
@@ -138,17 +176,36 @@ function FillServers(m) {
     }
 }
 
+function FillChartReport(m) {
+    FillChart("#chartreport", m.ArrData[0]);
+    setTimeout(function () {
+        $(".hidefwrule").on("click", function () {
+            csum = $(this).attr("id");
+            mo = {};
+            mo.Function = "HideFwrule";
+            mo.Hostname = $("#Servers").val();
+            mo.SessionID = $("#SessionIDs").val();
+            mo.Data = csum;
+            SendMessage(mo);
+        });
+    }, 500);
+}
+
+function FillChart(d, c){
+    $("#mermaidchartreport").removeAttr("data-processed");
+    $(d).html(c);
+    mermaid.init();
+}
+
 function FillNmapSuggestion(m) {   
-
-
-   $("#mermaidnmap").html(m.ArrData[0]);
-   //$("#intbuttons").html(m.ArrData[1]);
+    $("#nmapsuggestion").html("<pre class='mermaid' id=mermaidnmap></pre>");
+    $("#mermaidnmap").removeAttr("data-processed");
+    $("#mermaidnmap").html(m.ArrData[0]);
     $("#nmaprawcollector").html("");
 
    mermaid.init();
 
     setTimeout(function () {
-        $("#mermaidnmap").removeAttr("data-processed");
 	    $(".IFN").on("click", function() {
 		id = $(this).attr("id");
 		m.Function = "GetNmapCollector";
@@ -157,10 +214,8 @@ function FillNmapSuggestion(m) {
 		m.Data = id;
 		SendMessage(m);
 	    });
-	    $("#XYZ").on("click", function() {
-		console.log("XYZ");
-	    });
-    }, 1000);
+	    
+    }, 500);
 
 }
 
@@ -170,3 +225,4 @@ function FillData(m) {
 function FillNmapCollector(m) {
     $("#nmaprawcollector").html("<br/><pre>"+m.ArrData[0]+"</pre>");
 }
+

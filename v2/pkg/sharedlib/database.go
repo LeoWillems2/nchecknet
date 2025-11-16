@@ -11,6 +11,7 @@ import (
 	"strings"
 	"errors"
 
+	
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -173,6 +174,44 @@ func GetLastServerData(key string) (dbServerData, error) {
 	}
 	return sd, err
 }
+
+func HideFwrule(hostname, sessionid, csum string) error {
+	dbsd, err := GetServerDataByHostnameAndSessionID(hostname,sessionid)
+	if err != nil {
+			return err
+	}
+
+	
+	for i, fwr := range dbsd.Sdata.Fwrules {
+		tc := createFwruleCsum(fwr)
+		if tc == csum[1:] {
+
+			if csum[0] == 'H' {
+				dbsd.Sdata.Fwrules [i].Supressed = true
+			} else {
+				dbsd.Sdata.Fwrules [i].Supressed = false
+			}
+		
+			// Update
+			update := bson.D{
+		{Key: "$set", Value: bson.D{
+			{Key: "sdata", Value: dbsd.Sdata},
+		}},
+	}
+		
+			_, err = ServerDataCollection.UpdateByID(ctx, dbsd.ID, update)
+			if err != nil {
+				log.Println("Error updating document in ServerDataCollection:", err)
+			}
+			return err
+		
+			
+		}	
+	}
+
+	return errors.New("HideFwrule() not found "+hostname+" "+sessionid)
+}
+
 
 func DeleteExistingServerDataIfExists(hostname, key, sessionid string){
         filter := bson.M{"sdata.hostname": hostname, "sdata.key": key, "sessionid": sessionid}
@@ -353,17 +392,14 @@ func check4ServerAndNmapDocs(key,sessionid string) bool {
 	return err1 == nil && err2 == nil
 }
 
-func GenPic(key,sessionid string) (string, string) {
+func GenPic(key,sessionid string) string {
 	s, err := GetServerDataByKeyAndSessionID(key, sessionid)
 	if err != nil {
 		log.Println("GenPic: no record found", key, sessionid)
-		return "", ""
+		return ""
 	}
 
-
 	ifmap := make(map[string]int)
-
-	buttons := ""
 
 	txt := "flowchart TD\n"
 	txt += fmt.Sprintf(`subgraph Nmaps["%s"]%c`, s.Sdata.Hostname, '\n')
@@ -380,8 +416,6 @@ func GenPic(key,sessionid string) (string, string) {
 		}
 
 		ifmap[iface.Name] = i
-
-		buttons += fmt.Sprintf(`<button class='IFN btn btn-primary' id='IFN-%d'>%s</button>&nbsp;`, i, iface.Name)
 
 		txt += fmt.Sprintf(`I%d["<button class=IFN id='IFN-%d'>%s</button>`,i,i,iface.Name)
 		for _, a := range iface.V4addresses {
@@ -408,7 +442,7 @@ func GenPic(key,sessionid string) (string, string) {
 		txt += fmt.Sprintf(`n%d ---> I%d%c`, i, ifi,'\n')
 	}
 
-	return txt, buttons
+	return txt
 }
 
 /* Create a new server document */

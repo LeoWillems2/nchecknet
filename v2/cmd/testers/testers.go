@@ -27,6 +27,6 @@ func main() {
 		sharedlib.TestInterfaces()
 	}
 	if *CmpUfw {
-		sharedlib.CompareFromUFWViewpoint(*host, *sessionid)
+		sharedlib.CompareFromUFWViewpoint(*host, *sessionid, "")
 	}
 }

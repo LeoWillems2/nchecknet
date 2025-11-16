@@ -143,20 +143,36 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request) {
 						continue
 					}
 					mo.Hostname = mi.Hostname
-					txt, buttons := sharedlib.GenPic(sn.Key,mi.SessionID)
+					txt := sharedlib.GenPic(sn.Key,mi.SessionID)
 					mo.ArrData = append(mo.ArrData,txt)
-					mo.ArrData = append(mo.ArrData,buttons)
 				case "GetData":
 					mo.Function = "FillData"
 					mo.Hostname = mi.Hostname
-
-
 					t, err := sharedlib.PrettyPrintServerData("All:"+ mi.Hostname+ ":"+mi.SessionID )
 					if err != nil {
 						log.Println("GetData", err, mi.Hostname)
 						continue
 					}
 					mo.ArrData = append(mo.ArrData,t)
+				case "GetUfwListenChart":
+					t, err := sharedlib.CompareFromUFWViewpoint(mi.Hostname, mi.SessionID, mi.Data)
+						if err != nil {
+								continue
+						}
+					mo.Function = "FillChartReport"
+					mo.ArrData = append(mo.ArrData,t)
+					
+				case "HideFwrule":
+					sharedlib.HideFwrule(mi.Hostname, mi.SessionID, mi.Data) // mi.Data -> csum
+					//Refresh:
+					
+					t, err := sharedlib.CompareFromUFWViewpoint(mi.Hostname, mi.SessionID, "")
+						if err != nil {
+								continue
+						}
+					mo.Function = "FillChartReport"
+					mo.ArrData = append(mo.ArrData,t)
+					
 
 				}
 

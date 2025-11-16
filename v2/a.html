@@ -1,0 +1,127 @@
+<html>
+<body>
+<pre class=mermaid>
+flowchart TD
+subgraph SERVER["monitor.managedlinux.nl <p style="font-size: 7pt; text-align: right;"><br/>91.98.147.178<br/>fe80::9000:6ff:fe93:ce46<br/>2a01:4f8:c014:ab5d::1<br/>10.9.0.1<br/>fe80::48fe:6772:bf25:f5fb<br/>10.10.0.1<br/>fe80::2e12:7b1e:f4e7:261<br/>10.8.0.1<br/>fe80::f4bb:6967:1d80:cbe0</p> "]
+subgraph FROM["UFW From (To) Port/Proto"]
+ 188.245.255.136-To_AnyIP-1194-udp["188.245.255.136 (To_AnyIP)<br/>1194/udp<br/>eth0-lo-tun0-tun1-tun2"]
+ 37.97.131.118-To_AnyIP-1194-udp["37.97.131.118 (To_AnyIP)<br/>1194/udp<br/>eth0-lo-tun0-tun1-tun2"]
+ 86.87.19.76-To_AnyIP-1194-udp["86.87.19.76 (To_AnyIP)<br/>1194/udp<br/>eth0-lo-tun0-tun1-tun2"]
+ 188.40.83.216-To_AnyIP-1195-udp["188.40.83.216 (To_AnyIP)<br/>1195/udp<br/>eth0-lo-tun0-tun1-tun2"]
+ 23.88.78.109-To_AnyIP-1195-udp["23.88.78.109 (To_AnyIP)<br/>1195/udp<br/>eth0-lo-tun0-tun1-tun2"]
+ 23.88.78.110-To_AnyIP-1195-udp["23.88.78.110 (To_AnyIP)<br/>1195/udp<br/>eth0-lo-tun0-tun1-tun2"]
+ 116.202.208.56-To_AnyIP-1195-udp["116.202.208.56 (To_AnyIP)<br/>1195/udp<br/>eth0-lo-tun0-tun1-tun2"]
+ 162.55.199.5-To_AnyIP-1195-udp["162.55.199.5 (To_AnyIP)<br/>1195/udp<br/>eth0-lo-tun0-tun1-tun2"]
+ 127.0.0.1-To_AnyIP-10050-tcp["127.0.0.1 (To_AnyIP)<br/>10050/tcp<br/>eth0-lo-tun0-tun1-tun2"]
+ 10.8.0.0/24-To_AnyIP-10050-tcp["10.8.0.0/24 (To_AnyIP)<br/>10050/tcp<br/>eth0-lo-tun0-tun1-tun2"]
+ 10.9.0.0/24-To_AnyIP-10050-tcp["10.9.0.0/24 (To_AnyIP)<br/>10050/tcp<br/>eth0-lo-tun0-tun1-tun2"]
+ 127.0.0.1-To_AnyIP-10051-tcp["127.0.0.1 (To_AnyIP)<br/>10051/tcp<br/>eth0-lo-tun0-tun1-tun2"]
+ 10.8.0.0/24-To_AnyIP-10051-tcp["10.8.0.0/24 (To_AnyIP)<br/>10051/tcp<br/>eth0-lo-tun0-tun1-tun2"]
+ 10.9.0.0/24-To_AnyIP-10051-tcp["10.9.0.0/24 (To_AnyIP)<br/>10051/tcp<br/>eth0-lo-tun0-tun1-tun2"]
+ 188.245.255.136-To_AnyIP-22-tcp["188.245.255.136 (To_AnyIP)<br/>22/tcp<br/>eth0-lo-tun0-tun1-tun2"]
+ 10.8.0.133-To_AnyIP-22-tcp["10.8.0.133 (To_AnyIP)<br/>22/tcp<br/>eth0-lo-tun0-tun1-tun2"]
+ 86.87.19.76-To_AnyIP-22-tcp["86.87.19.76 (To_AnyIP)<br/>22/tcp<br/>eth0-lo-tun0-tun1-tun2"]
+ 37.97.131.118-To_AnyIP-22-tcp["37.97.131.118 (To_AnyIP)<br/>22/tcp<br/>eth0-lo-tun0-tun1-tun2"]
+ 31.14.96.139-To_AnyIP-22-tcp["31.14.96.139 (To_AnyIP)<br/>22/tcp<br/>eth0-lo-tun0-tun1-tun2"]
+ 188.245.255.136-To_AnyIP-443-tcp["188.245.255.136 (To_AnyIP)<br/>443/tcp<br/>eth0-lo-tun0-tun1-tun2"]
+ 86.87.19.76-To_AnyIP-443-tcp["86.87.19.76 (To_AnyIP)<br/>443/tcp<br/>eth0-lo-tun0-tun1-tun2"]
+ 31.14.96.139-To_AnyIP-443-tcp["31.14.96.139 (To_AnyIP)<br/>443/tcp<br/>eth0-lo-tun0-tun1-tun2"]
+ 188.245.255.136-To_AnyIP-8080-tcp["188.245.255.136 (To_AnyIP)<br/>8080/tcp<br/>eth0-lo-tun0-tun1-tun2"]
+ 86.87.19.76-To_AnyIP-8080-tcp["86.87.19.76 (To_AnyIP)<br/>8080/tcp<br/>eth0-lo-tun0-tun1-tun2"]
+ 31.14.96.139-To_AnyIP-8080-tcp["31.14.96.139 (To_AnyIP)<br/>8080/tcp<br/>eth0-lo-tun0-tun1-tun2"]
+end
+subgraph COMMANDS["Commands"]
+ L0.0.0.0-22/tcp-systemd["L0.0.0.0-22/tcp<br/>systemd"]
+ L::-22/tcp6-systemd["L::-22/tcp6<br/>systemd"]
+ L0.0.0.0-443/tcp-nginx:["L0.0.0.0-443/tcp<br/>nginx:"]
+ L::-443/tcp6-nginx:["L::-443/tcp6<br/>nginx:"]
+ L0.0.0.0-10051/tcp-zabbix_serve["L0.0.0.0-10051/tcp<br/>zabbix_serve"]
+ L::-10051/tcp6-zabbix_serve["L::-10051/tcp6<br/>zabbix_serve"]
+ L::-10050/tcp6-zabbix_agent2["L::-10050/tcp6<br/>zabbix_agent2"]
+ L0.0.0.0-1196/udp-openvpn["L0.0.0.0-1196/udp<br/>openvpn"]
+ L127.0.0.54-53/tcp-systemd-resolv["L127.0.0.54-53/tcp<br/>systemd-resolv"]
+ L127.0.0.54-53/udp-systemd-resolv["L127.0.0.54-53/udp<br/>systemd-resolv"]
+ L91.98.147.178-68/udp-systemd-networ["L91.98.147.178-68/udp<br/>systemd-networ"]
+ L0.0.0.0-1195/udp-openvpn["L0.0.0.0-1195/udp<br/>openvpn"]
+ L0.0.0.0-80/tcp-nginx:["L0.0.0.0-80/tcp<br/>nginx:"]
+ L::-80/tcp6-nginx:["L::-80/tcp6<br/>nginx:"]
+ L0.0.0.0-8081/tcp-nginx:["L0.0.0.0-8081/tcp<br/>nginx:"]
+ L0.0.0.0-8080/tcp-nginx:["L0.0.0.0-8080/tcp<br/>nginx:"]
+ L0.0.0.0-1194/udp-openvpn["L0.0.0.0-1194/udp<br/>openvpn"]
+end
+end
+ 188.245.255.136-To_AnyIP-1194-udp["188.245.255.136 (To_AnyIP)<br/>1194/udp<br/>eth0-lo-tun0-tun1-tun2"]
+ --->  L0.0.0.0-1194/udp-openvpn["L0.0.0.0-1194/udp<br/>openvpn"]
+
+ 86.87.19.76-To_AnyIP-1194-udp["86.87.19.76 (To_AnyIP)<br/>1194/udp<br/>eth0-lo-tun0-tun1-tun2"]
+ --->  L0.0.0.0-1194/udp-openvpn["L0.0.0.0-1194/udp<br/>openvpn"]
+
+ 116.202.208.56-To_AnyIP-1195-udp["116.202.208.56 (To_AnyIP)<br/>1195/udp<br/>eth0-lo-tun0-tun1-tun2"]
+ --->  L0.0.0.0-1195/udp-openvpn["L0.0.0.0-1195/udp<br/>openvpn"]
+
+ 10.9.0.0/24-To_AnyIP-10051-tcp["10.9.0.0/24 (To_AnyIP)<br/>10051/tcp<br/>eth0-lo-tun0-tun1-tun2"]
+ --->  L0.0.0.0-10051/tcp-zabbix_serve["L0.0.0.0-10051/tcp<br/>zabbix_serve"]
+
+ 31.14.96.139-To_AnyIP-22-tcp["31.14.96.139 (To_AnyIP)<br/>22/tcp<br/>eth0-lo-tun0-tun1-tun2"]
+ --->  L0.0.0.0-22/tcp-systemd["L0.0.0.0-22/tcp<br/>systemd"]
+
+ 86.87.19.76-To_AnyIP-443-tcp["86.87.19.76 (To_AnyIP)<br/>443/tcp<br/>eth0-lo-tun0-tun1-tun2"]
+ --->  L0.0.0.0-443/tcp-nginx:["L0.0.0.0-443/tcp<br/>nginx:"]
+
+ 23.88.78.109-To_AnyIP-1195-udp["23.88.78.109 (To_AnyIP)<br/>1195/udp<br/>eth0-lo-tun0-tun1-tun2"]
+ --->  L0.0.0.0-1195/udp-openvpn["L0.0.0.0-1195/udp<br/>openvpn"]
+
+ 23.88.78.110-To_AnyIP-1195-udp["23.88.78.110 (To_AnyIP)<br/>1195/udp<br/>eth0-lo-tun0-tun1-tun2"]
+ --->  L0.0.0.0-1195/udp-openvpn["L0.0.0.0-1195/udp<br/>openvpn"]
+
+ 162.55.199.5-To_AnyIP-1195-udp["162.55.199.5 (To_AnyIP)<br/>1195/udp<br/>eth0-lo-tun0-tun1-tun2"]
+ --->  L0.0.0.0-1195/udp-openvpn["L0.0.0.0-1195/udp<br/>openvpn"]
+
+ 188.245.255.136-To_AnyIP-8080-tcp["188.245.255.136 (To_AnyIP)<br/>8080/tcp<br/>eth0-lo-tun0-tun1-tun2"]
+ --->  L0.0.0.0-8080/tcp-nginx:["L0.0.0.0-8080/tcp<br/>nginx:"]
+
+ 86.87.19.76-To_AnyIP-8080-tcp["86.87.19.76 (To_AnyIP)<br/>8080/tcp<br/>eth0-lo-tun0-tun1-tun2"]
+ --->  L0.0.0.0-8080/tcp-nginx:["L0.0.0.0-8080/tcp<br/>nginx:"]
+
+ 31.14.96.139-To_AnyIP-8080-tcp["31.14.96.139 (To_AnyIP)<br/>8080/tcp<br/>eth0-lo-tun0-tun1-tun2"]
+ --->  L0.0.0.0-8080/tcp-nginx:["L0.0.0.0-8080/tcp<br/>nginx:"]
+
+ 188.40.83.216-To_AnyIP-1195-udp["188.40.83.216 (To_AnyIP)<br/>1195/udp<br/>eth0-lo-tun0-tun1-tun2"]
+ --->  L0.0.0.0-1195/udp-openvpn["L0.0.0.0-1195/udp<br/>openvpn"]
+
+ 10.8.0.0/24-To_AnyIP-10051-tcp["10.8.0.0/24 (To_AnyIP)<br/>10051/tcp<br/>eth0-lo-tun0-tun1-tun2"]
+ --->  L0.0.0.0-10051/tcp-zabbix_serve["L0.0.0.0-10051/tcp<br/>zabbix_serve"]
+
+ 188.245.255.136-To_AnyIP-22-tcp["188.245.255.136 (To_AnyIP)<br/>22/tcp<br/>eth0-lo-tun0-tun1-tun2"]
+ --->  L0.0.0.0-22/tcp-systemd["L0.0.0.0-22/tcp<br/>systemd"]
+
+ 10.8.0.133-To_AnyIP-22-tcp["10.8.0.133 (To_AnyIP)<br/>22/tcp<br/>eth0-lo-tun0-tun1-tun2"]
+ --->  L0.0.0.0-22/tcp-systemd["L0.0.0.0-22/tcp<br/>systemd"]
+
+ 37.97.131.118-To_AnyIP-22-tcp["37.97.131.118 (To_AnyIP)<br/>22/tcp<br/>eth0-lo-tun0-tun1-tun2"]
+ --->  L0.0.0.0-22/tcp-systemd["L0.0.0.0-22/tcp<br/>systemd"]
+
+ 188.245.255.136-To_AnyIP-443-tcp["188.245.255.136 (To_AnyIP)<br/>443/tcp<br/>eth0-lo-tun0-tun1-tun2"]
+ --->  L0.0.0.0-443/tcp-nginx:["L0.0.0.0-443/tcp<br/>nginx:"]
+
+ 31.14.96.139-To_AnyIP-443-tcp["31.14.96.139 (To_AnyIP)<br/>443/tcp<br/>eth0-lo-tun0-tun1-tun2"]
+ --->  L0.0.0.0-443/tcp-nginx:["L0.0.0.0-443/tcp<br/>nginx:"]
+
+ 37.97.131.118-To_AnyIP-1194-udp["37.97.131.118 (To_AnyIP)<br/>1194/udp<br/>eth0-lo-tun0-tun1-tun2"]
+ --->  L0.0.0.0-1194/udp-openvpn["L0.0.0.0-1194/udp<br/>openvpn"]
+
+ 127.0.0.1-To_AnyIP-10051-tcp["127.0.0.1 (To_AnyIP)<br/>10051/tcp<br/>eth0-lo-tun0-tun1-tun2"]
+ --->  L0.0.0.0-10051/tcp-zabbix_serve["L0.0.0.0-10051/tcp<br/>zabbix_serve"]
+
+ 86.87.19.76-To_AnyIP-22-tcp["86.87.19.76 (To_AnyIP)<br/>22/tcp<br/>eth0-lo-tun0-tun1-tun2"]
+ --->  L0.0.0.0-22/tcp-systemd["L0.0.0.0-22/tcp<br/>systemd"]
+
+style FROM stroke:#FF0000,stroke-width:2px,stroke-dasharray:5 5
+style COMMANDS stroke:#FF0000,stroke-width:2px,stroke-dasharray:5 5
+
+</pre>
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+  mermaid.initialize({ startOnLoad: true });
+</script>
+

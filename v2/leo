@@ -1,0 +1,25 @@
+2025/11/15 10:51:54 {v4 443 tcp [eth0 lo tun0 tun1 tun2] true To_AnyIP 188.245.255.136 ALLOW # Oscar VPN www false}
+2025/11/15 10:51:54 {v4 443 tcp [eth0 lo tun0 tun1 tun2] true To_AnyIP 86.87.19.76 ALLOW # Leo VPN www false}
+2025/11/15 10:51:54 {v4 443 tcp [eth0 lo tun0 tun1 tun2] true To_AnyIP 31.14.96.139 ALLOW # Oscar VPN (petetix) false}
+2025/11/15 10:51:54 {v4 8080 tcp [eth0 lo tun0 tun1 tun2] true To_AnyIP 188.245.255.136 ALLOW # Oscar VPN zabbix web false}
+2025/11/15 10:51:54 {v4 8080 tcp [eth0 lo tun0 tun1 tun2] true To_AnyIP 86.87.19.76 ALLOW # Leo zabbix web false}
+2025/11/15 10:51:54 {v4 8080 tcp [eth0 lo tun0 tun1 tun2] true To_AnyIP 31.14.96.139 ALLOW # Oscar VPN (petetix) false}
+2025/11/15 10:51:54 {v4 1194 udp [eth0 lo tun0 tun1 tun2] true To_AnyIP 188.245.255.136 ALLOW # Oscar VPN / VPN false}
+2025/11/15 10:51:54 {v4 1194 udp [eth0 lo tun0 tun1 tun2] true To_AnyIP 37.97.131.118 ALLOW # system.managedlinux.nl VPN false}
+2025/11/15 10:51:54 {v4 1194 udp [eth0 lo tun0 tun1 tun2] true To_AnyIP 86.87.19.76 ALLOW # Leo VPN false}
+2025/11/15 10:51:54 {v4 1195 udp [eth0 lo tun0 tun1 tun2] true To_AnyIP 188.40.83.216 ALLOW # mongo1.iwoz.io VPN false}
+2025/11/15 10:51:54 {v4 1195 udp [eth0 lo tun0 tun1 tun2] true To_AnyIP 23.88.78.109 ALLOW # mongo2.iwoz.io VPN false}
+2025/11/15 10:51:54 {v4 1195 udp [eth0 lo tun0 tun1 tun2] true To_AnyIP 23.88.78.110 ALLOW # mongo3.iwoz.io VPN false}
+2025/11/15 10:51:54 {v4 1195 udp [eth0 lo tun0 tun1 tun2] true To_AnyIP 116.202.208.56 ALLOW # bernardo.iwoz.io VPN false}
+2025/11/15 10:51:54 {v4 1195 udp [eth0 lo tun0 tun1 tun2] true To_AnyIP 162.55.199.5 ALLOW # elena.iwoz.io VPN false}
+2025/11/15 10:51:54 {v4 10050 tcp [eth0 lo tun0 tun1 tun2] true To_AnyIP 127.0.0.1 ALLOW # zabbix false}
+2025/11/15 10:51:54 {v4 10050 tcp [eth0 lo tun0 tun1 tun2] true To_AnyIP 10.8.0.0/24 ALLOW # zabbix false}
+2025/11/15 10:51:54 {v4 10050 tcp [eth0 lo tun0 tun1 tun2] true To_AnyIP 10.9.0.0/24 ALLOW # zabbix false}
+2025/11/15 10:51:54 {v4 10051 tcp [eth0 lo tun0 tun1 tun2] true To_AnyIP 127.0.0.1 ALLOW # zabbix false}
+2025/11/15 10:51:54 {v4 10051 tcp [eth0 lo tun0 tun1 tun2] true To_AnyIP 10.8.0.0/24 ALLOW # zabbix false}
+2025/11/15 10:51:54 {v4 10051 tcp [eth0 lo tun0 tun1 tun2] true To_AnyIP 10.9.0.0/24 ALLOW # zabbix false}
+2025/11/15 10:51:54 {v4 22 tcp [eth0 lo tun0 tun1 tun2] true To_AnyIP 188.245.255.136 ALLOW # Oscar VPN ssh false}
+2025/11/15 10:51:54 {v4 22 tcp [eth0 lo tun0 tun1 tun2] true To_AnyIP 10.8.0.133 ALLOW # Leo false}
+2025/11/15 10:51:54 {v4 22 tcp [eth0 lo tun0 tun1 tun2] true To_AnyIP 86.87.19.76 ALLOW # Leo thuis false}
+2025/11/15 10:51:54 {v4 22 tcp [eth0 lo tun0 tun1 tun2] true To_AnyIP 37.97.131.118 ALLOW # system.managedlinux.nl ssh (tmp move mediawiki) false}
+2025/11/15 10:51:54 {v4 22 tcp [eth0 lo tun0 tun1 tun2] true To_AnyIP 31.14.96.139 ALLOW # petetix.kwalinux.nl (VPN server) false}

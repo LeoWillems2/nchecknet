@@ -6,6 +6,8 @@ import (
 	"encoding/json"
 	"strings"
 	"fmt"
+	"crypto/sha256"
+	"encoding/hex"
 
 )
 
@@ -90,21 +92,38 @@ func compareFromListeners_(FwrulesByPort map[string][]Fwrule,
 
 }
 
-func CompareFromUFWViewpoint(hostname, sessionid string) {
+func CompareFromUFWViewpoint(hostname, sessionid, hide string) (string, error) {
+
 	sd, err := GetServerDataByHostnameAndSessionID(hostname,sessionid)
 	if err != nil {
-		log.Fatalln("CompareFromUFWViewpoint: no doc:",hostname,sessionid)
-		return
+		return "", err
 	}
+
+	adrs := ""
+	for _, i := range sd.Sdata.Interfaces {
+		for _, a := range i.V4addresses {
+			if a == "127.0.0.1" {
+				//continue
+			}
+			adrs += "<br/>"+a + "&nbsp;&nbsp;"
+		}	
+		for _, a := range i.V6addresses {
+			if a == "::1" {
+				//continue
+			}
+			adrs += "<br/>"+a + "&nbsp;&nbsp;"
+		}	
+	}
+	adrs = `<p style="font-size: 7pt; text-align: right;">` + adrs + `</p>`
 
 	LbP := createLbP(sd.Sdata.Listeners);
 	FbP := createFbP(sd.Sdata.Fwrules);
 
-	compareFromUFWViewpoint_(FbP,LbP)
+	return compareFromUFWViewpoint_(hostname, FbP,LbP, adrs, hide)
 }
 
-func compareFromUFWViewpoint_(FwrulesByPort map[string][]Fwrule,
-                ListenersByPort map[string][]Listener ) {
+func compareFromUFWViewpoint_(hostname string, FwrulesByPort map[string][]Fwrule,
+                ListenersByPort map[string][]Listener, ifaces, hide string ) (string, error) {
 
 	UfwIDX := make(map[string]string)
 	LisIDX := make(map[string]string)
@@ -113,8 +132,8 @@ func compareFromUFWViewpoint_(FwrulesByPort map[string][]Fwrule,
 <body>
 <pre class=mermaid>
 flowchart TD
-subgraph SERVER["monitor.managedlinux.nl (IP's)"]
-`)
+subgraph SERVER["%s %s "]
+`,hostname,ifaces)
 	
 	
 	t += `subgraph FROM["UFW From (To) Port/Proto"]` + "\n"
@@ -122,25 +141,55 @@ subgraph SERVER["monitor.managedlinux.nl (IP's)"]
 		for _, fwrule := range fwrules {
 			_, ok := ListenersByPort[fwport]
 			if !ok {
+				log.Println("compareFromUFWViewpoint_(): Skipping:", fwrule)
 				continue
 			}
+
+			T := "danger"
+			Tx :="H"
+			if fwrule.Supressed && hide != "unhide" {
+				continue
+			}
+
+			if fwrule.Supressed && hide == "unhide" {
+				T = "success"
+				Tx = "U"
+			}
+		
+
+			csum := createFwruleCsum(fwrule)
+
+			ifas := strings.Join(fwrule.Intfaces, "-")
+
+			hb := fmt.Sprintf(`<button style='width:5x;height:5px' class='btn btn-%s hidefwrule' id='%s%s'></button>`,  T, Tx, csum )
+
 			x := fmt.Sprintf(" %s-%s-%s-%s", fwrule.IP_from, fwrule.IP_to, fwrule.Port, fwrule.Proto)
-			x += fmt.Sprintf(`["%s (%s)<br/>%s/%s"]%c`, fwrule.IP_from, fwrule.IP_to, fwrule.Port, fwrule.Proto, '\n')
-			_, ok = UfwIDX[fwrule.Port+"/"+fwrule.Proto]
+			x += fmt.Sprintf(`["%s (%s)<br/>%s/%s<br/>%s<br/><input style='font-size: 7pt;' id='I%s'/> %s"]%c`, fwrule.IP_from, fwrule.IP_to, fwrule.Port, fwrule.Proto,ifas, csum, hb ,'\n')
+			idx := fwrule.IP_from+"-"+fwrule.IP_from+"%"+fwrule.Port+"/"+fwrule.Proto
+
+			_, ok = UfwIDX[idx]
 			if !ok {
 				t += x
-				UfwIDX[fwrule.Port+"/"+fwrule.Proto] = x
+				UfwIDX[idx] = x
 			}
 		}
 	}
 	t += "end\n"
 
-	t += `subgraph COMMANDS["Commands"]` + "\n"
+	t += `subgraph COMMANDS["Commands (Listeners)"]` + "\n"
 	for lport, listeners := range ListenersByPort {
 
          for _, l := range listeners {
-		x := fmt.Sprintf(` L%s-%s/%s-%s`, l.Bound2interface, lport,l.Proto,l.Command)
-		x += fmt.Sprintf(`["L%s-%s/%s<br/>%s"]%c`,l.Bound2interface, lport,l.Proto,l.Command, '\n')
+		//if l.Bound2interface[0:3] == "127" || l.Bound2interface == "::1" {
+			//continue
+		//}
+
+		if l.Supressed {
+				continue
+		}
+
+		x := fmt.Sprintf(` %s-%s/%s-%s`, l.Bound2interface, lport,l.Proto,l.Command)
+		x += fmt.Sprintf(`["%s-%s/%s<br/>%s"]%c`,l.Bound2interface, lport,l.Proto,l.Command, '\n')
 		_, ok := LisIDX[l.Port+"/"+l.Proto]
 		if  !ok {
 			t += x
@@ -152,11 +201,17 @@ subgraph SERVER["monitor.managedlinux.nl (IP's)"]
 	t += "end\n"
 
 	for fp, ftxt := range UfwIDX {
-		ltxt, ok := LisIDX[fp]
+		fpp := strings.Split(fp,"%")
+		ltxt, ok := LisIDX[fpp[1]]
 		if ok {
-		     t += fmt.Sprintf(`%s ---> %s%c`, ftxt,ltxt, '\n')
+			if ftxt[0:4] != " 127" && ftxt[0:5] != " ::1-" {
+		    	 t += fmt.Sprintf(`%s ---> %s%c`, ftxt,ltxt, '\n')
+			}
 		}
 	}
+
+	t += `style FROM stroke:#FF0000,stroke-width:2px,stroke-dasharray:5 5`+"\n"
+	t += `style COMMANDS stroke:#FF0000,stroke-width:2px,stroke-dasharray:5 5`+"\n"
 	
 	t += `
 </pre>
@@ -165,6 +220,21 @@ subgraph SERVER["monitor.managedlinux.nl (IP's)"]
   mermaid.initialize({ startOnLoad: true });
 </script>
 `
-	fmt.Println(t)
+	return t, nil
 }
 
+func createFwruleCsum(fwr Fwrule) string {
+
+	// todo: serialize it better
+
+	fwr.Supressed = false
+	fwr.Comment = ""
+
+	x, _ := json.Marshal(fwr)
+
+	h := sha256.New()
+	h.Write(x)
+
+	return  hex.EncodeToString(h.Sum(nil))
+
+}
