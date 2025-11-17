@@ -132,28 +132,6 @@ func ProcessRawServerDataJSON(rdata RawDataServer) NcheckNetServer {
 	nchecknet.Routes = ProcessRoutes(rdata.Routes)
 	nchecknet.Listeners = ProcessListeners(rdata.Listeners)
 
-
-/*
-	last2, err := GetLast2ServerData(nchecknet.Hostname)
-	if err != nil {
-		log.Println("GetLast2ServerData(): in ProcessRawServerDataJSON failed", err);
-	} else {
-		for i := range nchecknet.Fwrules {
-			csum1 := createFwruleCsum(nchecknet.Fwrules[i])
-			for j in range last2[0].Fwrules  {
-				csum2 := createFwruleCsum( last2[0].Fwrules[j])
-				if csum1 == csum2 {
-					//copy suppressed and comment
-					nchecknet.Fwrules[i].Comment = last2[0].Fwrules[j].Comment
-					nchecknet.Fwrules[i].Supressed = last2[0].Fwrules[j].Supressed
-				}
-			}
-		}
-	}
-*/	
-
-
-
 	return nchecknet
 }
 

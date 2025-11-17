@@ -1,0 +1,8 @@
+#!/bin/sh
+
+while true
+do
+	date
+	./execute/webserver
+	sleep 2
+done

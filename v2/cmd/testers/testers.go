@@ -21,9 +21,17 @@ func main() {
 
 	sharedlib.DBConnect()
 
-	//x , _ := sharedlib.GetLast2ServerData("monitor.managedlinux.nl")
-	//log.Println(x[0].SessionID)
-	//log.Println(x[1].SessionID)
+
+	/*
+	x , _ := sharedlib.GetServerDataByHostnameAndSessionID("monitor.managedlinux.nl", "20251116")
+	for _, f := range x.Sdata.Fwrules{
+		log.Println(x.Sdata.Date, f.Supressed)
+	}
+	*/
+
+	sharedlib.GetLast2ServerData("monitor.managedlinux.nl")
+	//log.Println(x[0].SessionID, x[0].Sdata.Fwrules[14].Supressed)
+	//log.Println(x[1].SessionID, x[1].Sdata.Fwrules[14].Supressed)
 
 	if  *Listeners {
 		sharedlib.TestListeners()

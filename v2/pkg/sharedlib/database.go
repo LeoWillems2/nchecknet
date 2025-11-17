@@ -155,10 +155,10 @@ func GetSessionIDs(hostname string) ([]string, string, error) {
 func GetLast2ServerData(hostname string) ([]dbServerData, error) {
 
         sds := make([]dbServerData,2)
-        sd := dbServerData{}
 
 	s, err := GetServerByHostname(hostname)
 	if err != nil {
+                log.Println("Error finding server:", err)
 		return sds, err
 	}
 
@@ -170,6 +170,7 @@ func GetLast2ServerData(hostname string) ([]dbServerData, error) {
                 return sds, err
         }
         for cursor.Next(ctx) {
+        	sd := dbServerData{}
                 if err := cursor.Decode(&sd); err != nil {
                         log.Println("Error decoding document:", err)
                         return sds, err
@@ -182,6 +183,7 @@ func GetLast2ServerData(hostname string) ([]dbServerData, error) {
                 log.Println("Cursor iteration error:", err)
                 return sds, err
         }
+
         return sds, err
 }
 
@@ -298,7 +300,7 @@ func InsertServerData(rawjson RawDataServer) {
 	sd.Sdata = ProcessRawServerDataJSON(rawjson)
 
 
-	_, err := GetServerByKey(sd.Sdata.Key)
+	s, err := GetServerByKey(sd.Sdata.Key)
 	if err != nil {
 		log.Println("Server not known, ServerData not Insterted", sd.Sdata.Key)
 		return
@@ -308,17 +310,48 @@ func InsertServerData(rawjson RawDataServer) {
 
 
 	DeleteExistingServerDataIfExists(sd.Sdata.Hostname, sd.Sdata.Key, serverSessionID)
-
 	sd.SessionID = serverSessionID
 	sd.Key = sd.Sdata.Key
 
-	_, err = ServerDataCollection.InsertOne(ctx, sd)
+	insertResult, err := ServerDataCollection.InsertOne(ctx, sd)
 	if err != nil {
 		log.Println("Failed to insert document: %v", err)
 		return
 	}
 
 	log.Println("Serverdata inserted")
+
+
+
+	last2, err := GetLast2ServerData(s.Hostname)
+	if err != nil {
+		log.Println("GetLast2ServerData in InsertServerData", err);
+	} else {
+		for i := range last2[1].Sdata.Fwrules {
+			csum1 := createFwruleCsum(last2[1].Sdata.Fwrules[i])
+			for j := range last2[0].Sdata.Fwrules  {
+				csum2 := createFwruleCsum( last2[0].Sdata.Fwrules[j])
+				if csum1 == csum2 {
+					//copy suppressed and comment
+					last2[1].Sdata.Fwrules[i].Comment = last2[0].Sdata.Fwrules[j].Comment
+					last2[1].Sdata.Fwrules[i].Supressed = last2[0].Sdata.Fwrules[j].Supressed
+				}
+			}
+		}
+		// update [0]
+
+		                 update := bson.D{
+                {Key: "$set", Value: bson.D{
+                        {Key: "sdata", Value: last2[0].Sdata},
+                }},
+        	}
+
+                _, err = ServerDataCollection.UpdateByID(ctx, insertResult.InsertedID, update)
+                if err != nil {
+                      log.Println("Error updating document in InsertServerData:", err)
+                      return
+		}
+	}
 
 	if check4ServerAndNmapDocs(sd.Sdata.Key,sd.SessionID) {
 		log.Println("Serverdata Can report on", sd.Sdata.Key,sd.SessionID)
