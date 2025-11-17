@@ -7,6 +7,7 @@ package main
 import (
 	"github.com/LeoWillems2/nchecknet/pkg/sharedlib"
 	"flag"
+	//"log"
 )
 
 var Listeners *bool = flag.Bool("l", false, "Dump Listeners")
@@ -19,6 +20,10 @@ func main() {
         flag.Parse()
 
 	sharedlib.DBConnect()
+
+	//x , _ := sharedlib.GetLast2ServerData("monitor.managedlinux.nl")
+	//log.Println(x[0].SessionID)
+	//log.Println(x[1].SessionID)
 
 	if  *Listeners {
 		sharedlib.TestListeners()

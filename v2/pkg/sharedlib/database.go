@@ -152,27 +152,37 @@ func GetSessionIDs(hostname string) ([]string, string, error) {
 	return ss, s.Key, err
 }
 
-func GetLastServerData(key string) (dbServerData, error) {
-	sd := dbServerData{}
+func GetLast2ServerData(hostname string) ([]dbServerData, error) {
 
-        filter := bson.M{"key": key}
-        cursor, err := ServerDataCollection.Find(ctx, filter)
+        sds := make([]dbServerData,2)
+        sd := dbServerData{}
+
+	s, err := GetServerByHostname(hostname)
 	if err != nil {
-		log.Println("Error finding documents:", err)
-		return sd, err
-	}
-	for cursor.Next(ctx) {
-		if err := cursor.Decode(&sd); err != nil {
-			log.Println("Error decoding document:", err)
-			return sd, err
-		}
+		return sds, err
 	}
 
-	if err := cursor.Err(); err != nil {
-		log.Println("Cursor iteration error:", err)
-		return sd, err
-	}
-	return sd, err
+
+        filter := bson.M{"key": s.Key}
+        cursor, err := ServerDataCollection.Find(ctx, filter)
+        if err != nil {
+                log.Println("Error finding documents:", err)
+                return sds, err
+        }
+        for cursor.Next(ctx) {
+                if err := cursor.Decode(&sd); err != nil {
+                        log.Println("Error decoding document:", err)
+                        return sds, err
+                }
+		sds[0] = sds[1]
+		sds[1] = sd
+        }
+
+        if err := cursor.Err(); err != nil {
+                log.Println("Cursor iteration error:", err)
+                return sds, err
+        }
+        return sds, err
 }
 
 func HideFwrule(hostname, sessionid, csum string) error {

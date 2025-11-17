@@ -238,3 +238,21 @@ func createFwruleCsum(fwr Fwrule) string {
 	return  hex.EncodeToString(h.Sum(nil))
 
 }
+
+func createListenerCsum(lis Listener) string {
+
+	// todo: serialize it better
+
+	lis.Supressed = false
+	lis.Comment = ""
+
+	x, _ := json.Marshal(lis)
+
+	h := sha256.New()
+	h.Write(x)
+
+	return  hex.EncodeToString(h.Sum(nil))
+
+}
+
+

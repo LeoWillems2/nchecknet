@@ -92,11 +92,11 @@ function Ready() {
         unhide = $("#charthide").prop('checked');
         m = {};
         m.Function = "GetUfwListenChart";
-        m.Hostname = $("#Servers").val();
-        m.SessionID = $("#SessionIDs").val();
         if (unhide) {
-            m.Data = "unhide";
-        }
+            m.Hide = "unhide";
+        } else {
+            m.Hide = "hide";
+	}
         SendMessage(m);
     });
 
@@ -112,9 +112,17 @@ function Ready() {
     
 }
 
-function SendMessage(message) {
-	//console.log(JSON.stringify(message));
-    ws.send(JSON.stringify(message));
+function SendMessage(m) {
+	unhide = $("#charthide").prop('checked');
+        if (unhide) { 
+            m.Hide = "unhide";
+        } else {
+            m.Hide = "hide";
+        }
+        m.Hostname = $("#Servers").val();
+        m.SessionID = $("#SessionIDs").val();
+
+    ws.send(JSON.stringify(m));
 }  
 
 function GetMessage() {
@@ -183,9 +191,7 @@ function FillChartReport(m) {
             csum = $(this).attr("id");
             mo = {};
             mo.Function = "HideFwrule";
-            mo.Hostname = $("#Servers").val();
-            mo.SessionID = $("#SessionIDs").val();
-            mo.Data = csum;
+            mo.Csum = csum;
             SendMessage(mo);
         });
     }, 500);
@@ -209,8 +215,6 @@ function FillNmapSuggestion(m) {
 	    $(".IFN").on("click", function() {
 		id = $(this).attr("id");
 		m.Function = "GetNmapCollector";
-		m.Hostname = $("#Servers").val();
-		m.SessionID = $("#SessionIDs").val();
 		m.Data = id;
 		SendMessage(m);
 	    });

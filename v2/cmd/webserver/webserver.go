@@ -80,6 +80,8 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request) {
 		Hostname string
 		SessionID string
 		Data string
+		Hide string
+		Csum string
 	}
 
 	type MessageOut struct {
@@ -155,7 +157,7 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request) {
 					}
 					mo.ArrData = append(mo.ArrData,t)
 				case "GetUfwListenChart":
-					t, err := sharedlib.CompareFromUFWViewpoint(mi.Hostname, mi.SessionID, mi.Data)
+					t, err := sharedlib.CompareFromUFWViewpoint(mi.Hostname, mi.SessionID, mi.Hide)
 						if err != nil {
 								continue
 						}
@@ -163,13 +165,13 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request) {
 					mo.ArrData = append(mo.ArrData,t)
 					
 				case "HideFwrule":
-					sharedlib.HideFwrule(mi.Hostname, mi.SessionID, mi.Data) // mi.Data -> csum
-					//Refresh:
+					log.Println("HideFwrule:", mi.Hide, mi.Csum)
+					sharedlib.HideFwrule(mi.Hostname, mi.SessionID, mi.Csum)
 					
-					t, err := sharedlib.CompareFromUFWViewpoint(mi.Hostname, mi.SessionID, "")
-						if err != nil {
-								continue
-						}
+					t, err := sharedlib.CompareFromUFWViewpoint(mi.Hostname, mi.SessionID,mi.Hide)
+					if err != nil {
+							continue
+					}
 					mo.Function = "FillChartReport"
 					mo.ArrData = append(mo.ArrData,t)
 					
