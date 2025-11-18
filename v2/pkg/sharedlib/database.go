@@ -341,7 +341,6 @@ func InsertServerData(rawjson RawDataServer) {
 
 	serverSessionID := CreateSessionID(sd.Sdata.Date)
 
-
 	DeleteExistingServerDataIfExists(sd.Sdata.Hostname, sd.Sdata.Key, serverSessionID)
 	sd.SessionID = serverSessionID
 	sd.Key = sd.Sdata.Key
@@ -352,22 +351,21 @@ func InsertServerData(rawjson RawDataServer) {
 		return
 	}
 
-	log.Println("Serverdata inserted")
-
-
-
 	last2, err := GetLast2ServerData(s.Hostname)
+
+	log.Println("=0>", last2[0].Sdata.Date) // 17
+	log.Println("=1>", last2[1].Sdata.Date) // 18
 	if err != nil {
 		log.Println("GetLast2ServerData in InsertServerData", err);
 	} else {
-		for i := range last2[1].Sdata.Fwrules {
-			csum1 := createFwruleCsum(last2[1].Sdata.Fwrules[i])
-			for j := range last2[0].Sdata.Fwrules  {
-				csum2 := createFwruleCsum( last2[0].Sdata.Fwrules[j])
+		for i := range last2[0].Sdata.Fwrules {
+			csum1 := createFwruleCsum(last2[0].Sdata.Fwrules[i])
+			for j := range last2[1].Sdata.Fwrules  {
+				csum2 := createFwruleCsum( last2[1].Sdata.Fwrules[j])
 				if csum1 == csum2 {
 					//copy suppressed and comment
-					last2[1].Sdata.Fwrules[i].Comment = last2[0].Sdata.Fwrules[j].Comment
-					last2[1].Sdata.Fwrules[i].Supressed = last2[0].Sdata.Fwrules[j].Supressed
+					last2[1].Sdata.Fwrules[j].Comment = last2[0].Sdata.Fwrules[i].Comment
+					last2[1].Sdata.Fwrules[j].Supressed = last2[0].Sdata.Fwrules[i].Supressed
 				}
 			}
 		}
@@ -375,7 +373,7 @@ func InsertServerData(rawjson RawDataServer) {
 
 		                 update := bson.D{
                 {Key: "$set", Value: bson.D{
-                        {Key: "sdata", Value: last2[0].Sdata},
+                        {Key: "sdata", Value: last2[1].Sdata},
                 }},
         	}
 

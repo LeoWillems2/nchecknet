@@ -3,6 +3,6 @@
 while true
 do
 	date
-	./execute/webserver
+	./bin/collector
 	sleep 2
 done
