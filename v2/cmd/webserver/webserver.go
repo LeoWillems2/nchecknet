@@ -9,59 +9,7 @@ import (
 	"log"
 	"os"
 	"net/http"
-	"flag"
 )
-
-func jsonPostHandlerServerRawData(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		http.Error(w, "Only POST requests are allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
-	data :=  sharedlib.RawDataServer{}
-	
-	err := json.NewDecoder(r.Body).Decode(&data)
-	if err != nil {
-		http.Error(w, fmt.Sprintf("Invalid JSON: %v", err), http.StatusBadRequest)
-		return
-	}
-	defer r.Body.Close()
-
-	sharedlib.InsertServerData(data)
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	
-	response := map[string]string{"message": fmt.Sprintf("Data received successfully!")}
-	
-	json.NewEncoder(w).Encode(response)
-}
-
-func jsonPostHandlerNmapRawData(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		http.Error(w, "Only POST requests are allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
-	data :=  sharedlib.RawDataNmap{}
-	
-	err := json.NewDecoder(r.Body).Decode(&data)
-	if err != nil {
-		http.Error(w, fmt.Sprintf("Invalid JSON: %v", err), http.StatusBadRequest)
-		return
-	}
-	defer r.Body.Close()
-
-	sharedlib.InsertNmapData(data)
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	
-	response := map[string]string{"message": fmt.Sprintf("Data received successfully!")}
-	
-	json.NewEncoder(w).Encode(response)
-}
-
 
 
 // Upgrader is used to upgrade HTTP connections to WebSocket connections.
@@ -82,6 +30,7 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request) {
 		Data string
 		Hide string
 		Csum string
+		ChartType string
 	}
 
 	type MessageOut struct {
@@ -157,15 +106,18 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request) {
 					}
 					mo.ArrData = append(mo.ArrData,t)
 				case "GetUfwListenChart":
-					t, err := sharedlib.CompareFromUFWViewpoint(mi.Hostname, mi.SessionID, mi.Hide)
-						if err != nil {
+					t := ""
+					switch mi.ChartType {
+					case "ufwlisten":
+						t, err = sharedlib.CompareFromUFWViewpoint(mi.Hostname, mi.SessionID, mi.Hide)
+							if err != nil {
 								continue
-						}
+							}	
+					}
 					mo.Function = "FillChartReport"
 					mo.ArrData = append(mo.ArrData,t)
 					
 				case "HideFwrule":
-					log.Println("HideFwrule:", mi.Hide, mi.Csum)
 					sharedlib.HideFwrule(mi.Hostname, mi.SessionID, mi.Csum)
 					
 					t, err := sharedlib.CompareFromUFWViewpoint(mi.Hostname, mi.SessionID,mi.Hide)
@@ -174,8 +126,9 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request) {
 					}
 					mo.Function = "FillChartReport"
 					mo.ArrData = append(mo.ArrData,t)
-					
-
+				
+				case "ChangeFwComment":
+					sharedlib.ChangeFwComment(mi.Hostname, mi.SessionID, mi.Csum, mi.Data)
 				}
 
 				moj, err := json.Marshal(mo)
@@ -192,26 +145,7 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request) {
 
 
         }
-
         log.Println("Client disconnected")
-}
-
-var AllFunctions *bool = flag.Bool("a", false, "All Functions")
-
-func TestH(w http.ResponseWriter, r *http.Request) {
-
-    xfwdFor := r.Header.Get("X-Forwarded-For")
-    if xfwdFor != "" {
-        log.Printf("X-Forwarded-For: %s\n", xfwdFor)
-    } else {
-        log.Println("X-Forwarded-For header not present.")
-    }
-    rema := r.RemoteAddr
-    if rema != "" {
-        log.Printf("RemoteAddr: %s\n", rema)
-    } else {
-        log.Println("RemoteAddr header not present.")
-    }
 }
 
 func createFile(name, content string) error {
@@ -225,26 +159,17 @@ func createFile(name, content string) error {
 }
 
 func main() {
-	flag.Parse()
-
-	http.HandleFunc("/test", TestH)
-	http.HandleFunc("/api_nmap", jsonPostHandlerNmapRawData)
-	http.HandleFunc("/api_server", jsonPostHandlerServerRawData)
-
-	if *AllFunctions {
-		http.HandleFunc("/ws", handleWebSocket)
-		//http.HandleFunc("/rawnmapcollector", handleRawNmapCollector)
-		fileserver := http.FileServer(http.Dir("./webroot"))
-		http.Handle("/", fileserver)
-	}
+	http.HandleFunc("/ws", handleWebSocket)
+	fileserver := http.FileServer(http.Dir("./webroot"))
+	http.Handle("/", fileserver)
 	
 	sharedlib.DBConnect()
 
 	// Start the server
-	port := ":8087"
-	fmt.Printf("Server starting on port %s\n", port)
+	port := ":8086"
+	fmt.Printf("Collector starting on port %s\n", port)
 
 	if err := http.ListenAndServe(port, nil); err != nil {
-		log.Fatal("Server failed to start:", err)
+		log.Fatal("Collector failed to start:", err)
 	}
 }

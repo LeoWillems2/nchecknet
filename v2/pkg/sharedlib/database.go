@@ -187,6 +187,39 @@ func GetLast2ServerData(hostname string) ([]dbServerData, error) {
         return sds, err
 }
 
+func ChangeFwComment(hostname, sessionid, csum, comment string) error {
+	dbsd, err := GetServerDataByHostnameAndSessionID(hostname,sessionid)
+	if err != nil {
+			return err
+	}
+	
+	for i, fwr := range dbsd.Sdata.Fwrules {
+		tc := createFwruleCsum(fwr)
+		if tc == csum[1:] {
+
+
+			dbsd.Sdata.Fwrules [i].Comment = comment
+
+			// Update
+			update := bson.D{
+		{Key: "$set", Value: bson.D{
+			{Key: "sdata", Value: dbsd.Sdata},
+		}},
+	}
+		
+			_, err = ServerDataCollection.UpdateByID(ctx, dbsd.ID, update)
+			if err != nil {
+				log.Println("Error updating document in ServerDataCollection:", err)
+			}
+			return err
+		
+			
+		}	
+	}
+
+	return errors.New("HideFwrule() not found "+hostname+" "+sessionid)
+}
+
 func HideFwrule(hostname, sessionid, csum string) error {
 	dbsd, err := GetServerDataByHostnameAndSessionID(hostname,sessionid)
 	if err != nil {
@@ -353,12 +386,18 @@ func InsertServerData(rawjson RawDataServer) {
 		}
 	}
 
+	log.Println("Serverdata updated for old comments and Supressed's")
+
 	if check4ServerAndNmapDocs(sd.Sdata.Key,sd.SessionID) {
 		log.Println("Serverdata Can report on", sd.Sdata.Key,sd.SessionID)
 	}
+
 	
-	//fmt.Printf("Inserted ID: %v\n", insertResult.InsertedID)
+	
 }
+
+	
+
 
 func InsertNmapData(rawjson RawDataNmap) {
 	nd := dbNmapData{}
@@ -481,7 +520,7 @@ func GenPic(key,sessionid string) string {
 		txt += fmt.Sprintf(`style N%d fill:#BBDEFB%c`, i, '\n')
 
 		
-		ifi, _ := ifmap[r.Interface]
+		ifi := ifmap[r.Interface]
 		txt += fmt.Sprintf(`n%d ---> I%d%c`, i, ifi,'\n')
 	}
 
@@ -492,7 +531,7 @@ func GenPic(key,sessionid string) string {
 func CreateNewServer(newserver string, verbose bool) (string, error) {
 
 	if strings.Count(newserver, ".") < 2 {
-                return "", errors.New("Error: newserver is not an FQDN")
+                return "", errors.New("error: newserver is not an FQDN")
         }
 
 	// gen Key

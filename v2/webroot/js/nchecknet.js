@@ -3,13 +3,9 @@ $(document).ready(Ready);
 
 var ws;
 
-var ClearReportTab = false;
 
 function Ready() {
 
-
-    // $("#nmapsuggestion").html("<pre class='mermaid' id=mermaidnmap></pre>");
-    //   ---> done on tab change    $("#chartreport").html("<pre class='mermaid' id=mermaidchartreport></pre>");
     $('.nav-tabs > li:first-child > a')[0].click();
 
    
@@ -18,7 +14,7 @@ function Ready() {
 	});
 
     wsstring = "wss://";
-    if (window.location.host == "127.0.0.1:8087" ) {
+    if (window.location.host == "127.0.0.1:8086" ) {
         wsstring = "ws://";
     }
     ws = new WebSocket(wsstring + window.location.host + "/ws");
@@ -63,8 +59,6 @@ function Ready() {
 
 
     $("#Servers").on("change", function() {
-        ClearReportTab = true;
-
         hn = $(this).val();
         mo = {};
         mo.Function = "GetSessionIDs";
@@ -73,9 +67,6 @@ function Ready() {
     });
 
     $("#SessionIDs").on("change", function () {
-        ClearReportTab = true;
-
-
         si = $(this).val();
         mo = {};
         mo.Function = "GetNmapSuggestion";
@@ -87,29 +78,33 @@ function Ready() {
         SendMessage(mo);
     });
 
-    $("#chartredraw").on("click", function(){
-        charttype = $("#charttype").val();        // todo...... doorgeven
-        unhide = $("#charthide").prop('checked');
-        m = {};
-        m.Function = "GetUfwListenChart";
-        if (unhide) {
-            m.Hide = "unhide";
-        } else {
-            m.Hide = "hide";
-	}
-        SendMessage(m);
-    });
 
+
+    $("#charthide").on("click", RedrawChart);
+
+    $("#charttype").on("change", RedrawChart);
 
     $("#charttabitem").on('shown.bs.tab', function (e) {
         var target = $(e.target).attr("href");
-        if (target == "#tab-2" && ClearReportTab == true){
-        ClearReportTab = false;
         $("#chartreport").html("<pre class='mermaid' id=mermaidchartreport></pre>");
+        $("#charthide").prop('checked', false);
+        if (target == "#tab-2" ) {
+            RedrawChart();
+            return;
         }
     });
+}
 
-    
+function RedrawChart() {
+    unhide = $("#charthide").prop('checked');
+    m = {};
+    m.Function = "GetUfwListenChart";
+    if (unhide) {
+        m.Hide = "unhide";
+    } else {
+        m.Hide = "hide";
+    }
+    SendMessage(m);
 }
 
 function SendMessage(m) {
@@ -121,6 +116,7 @@ function SendMessage(m) {
         }
         m.Hostname = $("#Servers").val();
         m.SessionID = $("#SessionIDs").val();
+        m.ChartType = $("#charttype").val();
 
     ws.send(JSON.stringify(m));
 }  
@@ -193,6 +189,15 @@ function FillChartReport(m) {
             mo.Function = "HideFwrule";
             mo.Csum = csum;
             SendMessage(mo);
+        });
+        $(".Fwcomment").on("change", function () {
+            csum = $(this).attr("id");
+            cmt = $(this).val();
+            mo = {};
+            mo.Function = "ChangeFwComment";
+            mo.Csum = csum;
+            mo.Data = cmt;
+            SendMessage(mo); 
         });
     }, 500);
 }

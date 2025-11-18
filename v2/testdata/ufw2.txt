@@ -1,0 +1,18 @@
+Status: active
+
+To                         Action      From
+--                         ------      ----
+Anywhere                   DENY        74.7.227.39                # boefje
+Anywhere                   DENY        74.7.227.208               # boefje
+22/tcp                     ALLOW       188.245.255.136            # ssh Oscar (VPN)
+22/tcp                     ALLOW       31.14.96.139               # Oscar VPN (petetix)
+22/tcp                     ALLOW       86.87.19.76                # ssh Leo
+53                         ALLOW       Anywhere                   # DNS for all
+443/tcp                    ALLOW       Anywhere                   # WWW for all
+80/tcp                     ALLOW       Anywhere                   # WWW for all
+10050/tcp                  ALLOW       10.8.0.0/24                # Zabbix
+25/tcp                     ALLOW       91.98.147.178              # SMTP from monitor.managedlinux.nl
+53 (v6)                    ALLOW       Anywhere (v6)              # DNS for all
+443/tcp (v6)               ALLOW       Anywhere (v6)              # WWW for all
+80/tcp (v6)                ALLOW       Anywhere (v6)              # WWW for all
+25/tcp                     ALLOW       2a01:4f8:c014:ab5d::1      # SMTP from monitor.managedlinux.nl

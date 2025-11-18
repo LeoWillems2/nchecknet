@@ -1,0 +1,29 @@
+Status: active
+
+To                         Action      From
+--                         ------      ----
+22/tcp                     ALLOW       188.245.255.136            # Oscar VPN ssh
+443/tcp                    ALLOW       188.245.255.136            # Oscar VPN www
+8080/tcp                   ALLOW       188.245.255.136            # Oscar VPN zabbix web
+1194/udp                   ALLOW       188.245.255.136            # Oscar VPN / VPN
+1195/udp                   ALLOW       188.40.83.216              # mongo1.iwoz.io VPN
+1195/udp                   ALLOW       23.88.78.109               # mongo2.iwoz.io VPN
+1195/udp                   ALLOW       23.88.78.110               # mongo3.iwoz.io VPN
+22/tcp                     ALLOW       10.8.0.133                 # Leo
+22/tcp                     ALLOW       86.87.19.76                # Leo thuis
+22/tcp                     ALLOW       37.97.131.118              # system.managedlinux.nl ssh (tmp move mediawiki)
+1194/udp                   ALLOW       37.97.131.118              # system.managedlinux.nl VPN
+1194/udp                   ALLOW       86.87.19.76                # Leo VPN
+443/tcp                    ALLOW       86.87.19.76                # Leo VPN www
+8080/tcp                   ALLOW       86.87.19.76                # Leo zabbix web
+10050/tcp                  ALLOW       127.0.0.1                  # zabbix
+10051/tcp                  ALLOW       127.0.0.1                  # zabbix
+10050/tcp                  ALLOW       10.8.0.0/24                # zabbix
+10051/tcp                  ALLOW       10.8.0.0/24                # zabbix
+10050/tcp                  ALLOW       10.9.0.0/24                # zabbix
+10051/tcp                  ALLOW       10.9.0.0/24                # zabbix
+1195/udp                   ALLOW       116.202.208.56             # bernardo.iwoz.io VPN
+1195/udp                   ALLOW       162.55.199.5               # elena.iwoz.io VPN
+22/tcp                     ALLOW       31.14.96.139               # petetix.kwalinux.nl (VPN server)
+443/tcp                    ALLOW       31.14.96.139               # Oscar VPN (petetix)
+8080/tcp                   ALLOW       31.14.96.139               # Oscar VPN (petetix)

@@ -1,7 +1,6 @@
 package sharedlib
 
 import (
-	"io/ioutil"
 	"encoding/json"
 	"log"
 	"fmt"
@@ -109,7 +108,7 @@ func trimRightSpace(s string) string {
 }
 
 func ProcessRawServerData(filePath string) NcheckNetServer {
-	data, err := ioutil.ReadFile(filePath)
+	data, err := os.ReadFile(filePath)
 	if err != nil {
 		panic(err)
 	}
@@ -136,7 +135,7 @@ func ProcessRawServerDataJSON(rdata RawDataServer) NcheckNetServer {
 }
 
 func ProcessRawNmapData(filePath string) NcheckNetNmap {
-	data, err := ioutil.ReadFile(filePath)
+	data, err := os.ReadFile(filePath)
 	if err != nil {
 		panic(err)
 	}
@@ -211,6 +210,22 @@ func ProcessRawNmapDataJSON(rdata RawDataNmap) NcheckNetNmap {
 	return nmap
 }
 
+func TestFirewall() {
+
+	ls := TestInterfaces()
+	lines, err := readLines("testdata/ufw2.txt")
+	if err != nil {
+		log.Fatalln("TestFirewall()", err)
+		return
+	}
+
+	l := ProcessFW(lines,ls)
+ 	b, _ := json.MarshalIndent(l, "", "  ")
+	t := string(b)
+	fmt.Println(t)
+}
+
+
 func TestListeners() {
 	lines, err := readLines("testdata/listeners.txt")
 	if err != nil {
@@ -224,17 +239,18 @@ func TestListeners() {
 	fmt.Println(t)
 }
 
-func TestInterfaces() {
+func TestInterfaces() []Interface {
 	lines, err := readLines("testdata/ifconfig.txt")
 	if err != nil {
 		log.Fatalln("TestInterfaces()", err)
-		return
+		return []Interface{}
 	}
 
 	l := ProcessInterfaces(lines)
  	b, _ := json.MarshalIndent(l, "", "  ")
 	t := string(b)
 	fmt.Println(t)
+	return l
 }
 
 func ProcessListeners(ssdata []string) []Listener {
@@ -364,6 +380,7 @@ func ProcessFW(fwdata []string, ifaces []Interface) []Fwrule {
 			all_ifaces = append(all_ifaces, inf.Name)
 		}
 
+		log.Println("-->",len(topartsplit),topartsplit)
 		switch len(topartsplit) {
 		case 1: // 80/tcp
 			ufw.Port = topartsplit[0]
@@ -397,6 +414,8 @@ func ProcessFW(fwdata []string, ifaces []Interface) []Fwrule {
 		case strings.Contains(ufw.Port, "/udp"):
 			ufw.Proto = "udp"
 			ufw.Port = strings.Replace(ufw.Port, "/udp", "", 1)
+		case !strings.Contains(ufw.Port, "/"):
+			ufw.Proto = "tcp+udp"
 		default:
 			log.Println("Bad proto on line: ", line)
 		}
@@ -408,6 +427,13 @@ func ProcessFW(fwdata []string, ifaces []Interface) []Fwrule {
 
 		// Process ufw "From"
 		ufw.IP_from = frompart
+
+		// clone if both tcp and udp   (port without /proto)
+		if ufw.Proto == "tcp+udp"{
+			ufw.Proto = "tcp"
+			Fwrules = append(Fwrules, ufw)
+			ufw.Proto = "udp"
+		}
 
 		Fwrules = append(Fwrules, ufw)
 	}
@@ -429,7 +455,7 @@ func ProcessInterfaces(interfaces []string) []Interface {
 			Iface = Interface{}
 			continue
 		}
-		if haveIface == true {
+		if haveIface {
 			// scan for inet and inet6
 			fs := strings.Fields(trimLeftSpace(iface))
 			switch fs[0] {
