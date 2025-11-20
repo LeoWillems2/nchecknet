@@ -6,6 +6,7 @@ go 1.24.0
 
 require (
 	github.com/LeoWillems2/nchecknet/pkg/sharedlib v0.0.0-00010101000000-000000000000
+	github.com/golang-jwt/jwt/v5 v5.3.0
 	github.com/gorilla/websocket v1.5.3
 )
 
@@ -21,5 +22,5 @@ require (
 	golang.org/x/crypto v0.26.0 // indirect
 	golang.org/x/sync v0.17.0 // indirect
 	golang.org/x/text v0.17.0 // indirect
-	golang.org/x/tools v0.38.0 // indirect
+	gopkg.in/yaml.v2 v2.4.0 // indirect
 )

@@ -9,7 +9,157 @@ import (
 	"log"
 	"os"
 	"net/http"
+	"time"
+	"strings"
+	"errors"
+	"context"
+	"github.com/golang-jwt/jwt/v5"
 )
+
+var YConfig sharedlib.YamlConfig
+
+var jwtSecret = []byte(YConfig.Server.JWTSecret)
+
+type CustomClaims struct {
+        Username string `json:"username"`
+        jwt.RegisteredClaims
+}
+
+type UserLogin struct {
+        Username string `json:"username"`
+        Password string `json:"password"`
+}
+
+func LogOffHandler(w http.ResponseWriter, r *http.Request) {
+	expirationTime := time.Now()
+	http.SetCookie(w, &http.Cookie{
+		Name:     "nchecknettoken", // Name of the cookie
+		Value:    "",
+		Expires:  expirationTime,
+		HttpOnly: true, // ⬅️ CRITICAL: Prevents client-side JavaScript access (XSS defense)
+		Secure:   true, // ⬅️ CRITICAL: Only send over HTTPS (SHOULD be enabled in production)
+		SameSite: http.SameSiteStrictMode, // Good defense against CSRF
+		Path:     "/",
+	})
+
+	w.WriteHeader(http.StatusOK)
+	fmt.Fprintf(w, "Logoff successful.")
+}
+
+func LoginHandler(w http.ResponseWriter, r *http.Request) {
+	var creds UserLogin
+	if err := json.NewDecoder(r.Body).Decode(&creds); err != nil {
+		http.Error(w, "Invalid request payload", http.StatusBadRequest)
+		return
+	}
+
+	// ⚠️ Step 1: AUTHENTICATION (Simulated)
+	if creds.Username != "testuser" || creds.Password != "password123" {
+		http.Error(w, "Invalid credentials", http.StatusUnauthorized)
+		return
+	}
+
+	// Step 2: Create the JWT claims
+	expirationTime := time.Now().Add(24 * time.Hour)
+	claims := &CustomClaims{
+		Username: creds.Username,
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(expirationTime),
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
+		},
+	}
+
+	// Step 3: Create and sign the token
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	tokenString, err := token.SignedString(jwtSecret)
+	if err != nil {
+		http.Error(w, "Internal server error: could not create token", http.StatusInternalServerError)
+		return
+	}
+
+	// 🍪 Step 4: Set the JWT as an HTTP-Only Secure Cookie
+	http.SetCookie(w, &http.Cookie{
+		Name:     "nchecknettoken", // Name of the cookie
+		Value:    tokenString,
+		Expires:  expirationTime,
+		HttpOnly: true, // ⬅️ CRITICAL: Prevents client-side JavaScript access (XSS defense)
+		Secure:   true, // ⬅️ CRITICAL: Only send over HTTPS (SHOULD be enabled in production)
+		SameSite: http.SameSiteStrictMode, // Good defense against CSRF
+		Path:     "/",
+	})
+
+	// Send a simple success message
+	w.WriteHeader(http.StatusOK)
+	fmt.Fprintf(w, "Login successful. JWT set in HTTP-only cookie.")
+}
+
+// The authentication middleware that checks for a valid JWT (now from a cookie)
+func AuthMiddleware(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// 1. Try to read the token from the "jwt_token" cookie
+		cookie, err := r.Cookie("nchecknettoken")
+		if err != nil {
+			// If no cookie, check for Authorization Header as a fallback (for non-browser clients)
+			authHeader := r.Header.Get("Authorization")
+			if authHeader != "" && strings.HasPrefix(authHeader, "Bearer ") {
+				// Handle Bearer token logic here (if you need both methods)
+				// For this example, we'll focus on the cookie, so we skip detailed Bearer logic.
+			}
+			
+			if errors.Is(err, http.ErrNoCookie) {
+				http.Error(w, "Unauthorized: JWT cookie not found", http.StatusUnauthorized)
+				return
+			}
+			http.Error(w, "Unauthorized: Failed to read cookie", http.StatusUnauthorized)
+			return
+		}
+		
+		tokenString := cookie.Value // The JWT is the cookie's value
+
+		// Step 2: Parse and validate the token (Same logic as before)
+		claims := &CustomClaims{}
+		token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
+			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+				return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+			}
+			return jwtSecret, nil
+		})
+
+		if err != nil {
+			if errors.Is(err, jwt.ErrTokenExpired) {
+				http.Error(w, "Token is expired", http.StatusUnauthorized)
+				return
+			}
+			http.Error(w, fmt.Sprintf("Invalid token: %v", err), http.StatusUnauthorized)
+			return
+		}
+
+		if !token.Valid {
+			http.Error(w, "Token is invalid", http.StatusUnauthorized)
+			return
+		}
+
+		// Step 3: Add the user claims to the request context
+		ctx := context.WithValue(r.Context(), "claims", claims)
+		r = r.WithContext(ctx)
+
+		// Step 4: Call the next handler
+		next.ServeHTTP(w, r)
+	}
+}
+
+
+// 2. A handler for a protected route (Same as before)
+func ProtectedHandler(w http.ResponseWriter, r *http.Request) {
+        claims, ok := r.Context().Value("claims").(*CustomClaims)
+        if !ok {
+                http.Error(w, "Could not retrieve user claims from context", http.StatusInternalServerError)
+                return
+        }
+
+        w.WriteHeader(http.StatusOK)
+        fmt.Fprintf(w, "Welcome to the protected area, %s! Your cookie is valid.", claims.Username)
+}
 
 
 // Upgrader is used to upgrade HTTP connections to WebSocket connections.
@@ -83,7 +233,7 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request) {
 					mo.ArrData = alls
 				case "GetNmapCollector":
 					mo.Function = "FillNmapCollector"
-					t, _ := sharedlib.CreateNmapCollectorPy(mi.Hostname, mi.SessionID, mi.Data[4:], "https://nchecknet.lewi.nl")
+					t, _ := sharedlib.CreateNmapCollectorPy(mi.Hostname, mi.SessionID, mi.Data[4:], YConfig.Server.CollectorURL)
 					mo.ArrData = append(mo.ArrData,t)
 				case "GetNmapSuggestion":
 					mo.Function = "FillNmapSuggestion"
@@ -159,9 +309,23 @@ func createFile(name, content string) error {
 }
 
 func main() {
-	http.HandleFunc("/ws", handleWebSocket)
+
+	var err error
+	YConfig, err = sharedlib.GetYamlConfig("etc/nchecknet.yml")
+	if err != nil {
+		log.Fatalln(err)
+		return
+	}
+
+	http.HandleFunc("/ws", AuthMiddleware(handleWebSocket))
+	//http.HandleFunc("/ws", handleWebSocket)
 	fileserver := http.FileServer(http.Dir("./webroot"))
 	http.Handle("/", fileserver)
+
+	http.HandleFunc("/login", LoginHandler)
+	http.HandleFunc("/logoff", LogOffHandler)
+
+	http.HandleFunc("/protected", AuthMiddleware(ProtectedHandler))
 	
 	sharedlib.DBConnect()
 

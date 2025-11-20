@@ -1,82 +1,81 @@
 <!DOCTYPE html>
-<html data-bs-theme="light" lang="en">
-
+<html lang="en">
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
-    <title>nchecknet</title>
-    <link rel="stylesheet" href="assets/bootstrap/css/bootstrap.min.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nchecknet Login</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 400px; margin: 50px auto; padding: 20px; border: 1px solid #ccc; border-radius: 8px; }
+        input[type="text"], input[type="password"] { width: 100%; padding: 10px; margin: 8px 0; display: inline-block; border: 1px solid #ccc; border-box: border-box; }
+        button { background-color: #c2ddf8; color: white; padding: 14px 20px; margin: 8px 0; border: none; cursor: pointer; width: 100%; }
+        button:hover { opacity: 0.8; }
+        #message { margin-top: 15px; padding: 10px; border-radius: 4px; }
+        .success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+    </style>
 </head>
+<body>
+    <h2>🔐 Login to Nchecknet</h2>
+    <form id="loginForm">
+        <label for="username"><b>Username</b></label>
+        <input type="text" placeholder="Enter Username" name="username" required>
 
-<body style="background: var(--bs-light-bg-subtle);">
-    <div>
-        <ul class="nav nav-tabs" role="tablist">
-            <li class="nav-item" role="presentation"><a class="nav-link" role="tab" data-bs-toggle="tab" href="#tab-1">Systems</a></li>
-            <li class="nav-item" role="presentation"><a class="nav-link active" role="tab" data-bs-toggle="tab" id="charttabitem" href="#tab-2">Charts</a></li>
-            <li class="nav-item" role="presentation"><a class="nav-link" role="tab" data-bs-toggle="tab" href="#tab-3">Data</a></li>
-        </ul>
-        <div class="tab-content">
-            <div class="tab-pane" role="tabpanel" id="tab-1">
-                <div class="container">
-                    <div class="row" style="height: 20px;"></div>
-                    <div class="row" style="height: 140px;">
-                        <div class="col col-xl-2"><select id="Servers" style="width: 200px;">
-                                <optgroup label="Servers"></optgroup>
-                            </select></div>
-                        <div class="col col-xl-2"><select id="SessionIDs" style="width: 100px;">
-                                <optgroup label="Sessions">
-                                    <option value="12" selected="">--</option>
-                                </optgroup>
-                            </select></div>
-                        <div class="col"></div>
-                    </div>
-                </div>
-                <div class="container">
-                    <div class="col">
-                        <div id="nmapsuggestion"></div>
-                    </div>
-                </div>
-                <div class="container">
-                    <div class="col" style="border-radius: 3px;background: var(--bs-focus-ring-color);margin-left: 0px;border: 2px solid var(--bs-primary);">
-                        <p id="nmaprawcollector" style="margin-left: 5px;"></p>
-                    </div>
-                </div>
-            </div>
-            <div class="tab-pane active" role="tabpanel" id="tab-2">
-                <div class="container" style="height: 20px;"></div>
-                <div class="container">
-                    <div class="row">
-                        <div class="col col-lg-5"><select id="charttype">
-                                <optgroup label="Charts">
-                                    <option value="ufwlisten" selected="">UfwListen</option>
-                                </optgroup>
-                            </select></div>
-                        <div class="col"></div>
-                        <div class="col">
-                            <div class="form-check"><input class="form-check-input" type="checkbox" id="charthide"><label class="form-check-label" for="formCheck-1">Show hidden&nbsp; objects</label></div>
-                        </div>
-                    </div>
-                </div>
-                <div class="container">
-                    <div class="row">
-                        <div class="col" id="chartreport"></div>
-                    </div>
-                </div>
-            </div>
-            <div class="tab-pane" role="tabpanel" id="tab-3">
-                <div class="container">
-                    <div class="row">
-                        <div class="col" id="DataTabCol1"></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="container"></div>
-    <script src="assets/js/jquery.min.js"></script>
-    <script src="assets/bootstrap/js/bootstrap.min.js"></script>
-    <script src="/js/mermaid.tiny.js"></script>
-    <script src="/js/nchecknet.js"></script>
+        <label for="password"><b>Password</b></label>
+        <input type="password" placeholder="Enter Password" name="password" required>
+        
+        <button type="submit">Login</button>
+    </form>
+
+    <div id="message"></div>
+    
+    <hr>
+
+    <script>
+        const loginForm = document.getElementById('loginForm');
+        const messageDiv = document.getElementById('message');
+        serverUrl = String(window.location);
+	if ( serverUrl.slice(-1) === '/'){
+		serverUrl = serverUrl.substr(0,serverUrl.length-1);
+	}
+
+        // Helper function to display messages
+        function displayMessage(text, type) {
+            messageDiv.textContent = text;
+            messageDiv.className = type;
+        }
+
+        // --- Login Function ---
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(loginForm);
+            const data = Object.fromEntries(formData.entries());
+
+            try {
+                // We must add {credentials: 'include'} so the browser sends any existing cookie
+                // and, more importantly, accepts the 'Set-Cookie' header from the server response.
+                const response = await fetch(`${serverUrl}/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data),
+                    credentials: 'include' 
+                });
+
+                if (response.ok) {
+                    const resultText = await response.text();
+                    // The server response says: "Login successful. JWT set in HTTP-only cookie."
+                    displayMessage(`SUCCESS: ${resultText}`, 'success');
+		    window.location.assign("main.html");
+		    //await accessProtected();
+                } else {
+                    const errorText = await response.text();
+                    displayMessage(`LOGIN FAILED (${response.status}): ${errorText}`, 'error');
+                }
+            } catch (error) {
+                displayMessage(`Network Error: ${error.message}`, 'error');
+            }
+        });
+    </script>
 </body>
-
 </html>

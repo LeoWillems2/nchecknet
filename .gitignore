@@ -11,6 +11,9 @@
 bin/
 bin/*
 
+etc
+etc/*
+
 # Test binary, built with `go test -c`
 *.test
 

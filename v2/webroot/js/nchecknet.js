@@ -55,8 +55,12 @@ function Ready() {
 
     ws.onclose = () => {
         console.log("WebSocket connection closed");
+	window.location.assign("/index.html");
     };
 
+    $("#logoff").on("click", function() {
+	window.location.assign("/logoff");
+    });
 
     $("#Servers").on("change", function() {
         hn = $(this).val();
