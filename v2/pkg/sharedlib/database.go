@@ -10,13 +10,23 @@ import (
 	"time"
 	"strings"
 	"errors"
-
-	
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"golang.org/x/crypto/bcrypt"
 )
+
+type dbUser struct {
+	ID         primitive.ObjectID `bson:"_id,omitempty"`
+	Name   string             `bson:"name,omitempty"`
+	PassHash   string             `bson:"passhash,omitempty"`
+	AccessRight   string             `bson:"accessright,omitempty"`
+	Owner   string             `bson:"owner,omitempty"`
+	Active   bool             `bson:"active,omitempty"`
+	DateInserted   string             `bson:"dateinserted,omitempty"`
+	Token   string             `bson:"token,omitempty"`
+}
 
 type dbServer struct {
 	ID         primitive.ObjectID `bson:"_id,omitempty"`
@@ -24,6 +34,7 @@ type dbServer struct {
 	CustomerID string             `bson:"customerid,omitempty"`
 	Key        string             `bson:"key,omitempty"`
 	DateInserted  string          `bson:"dateinserted,omitempty"`
+	Owner  string          `bson:"owner,omitempty"`
 	Active     bool               `bson:"active,omitempty"`
 }
 
@@ -44,6 +55,7 @@ type dbNmapData struct {
 var ServersCollection *mongo.Collection
 var ServerDataCollection *mongo.Collection
 var NmapDataCollection *mongo.Collection
+var UsersCollection *mongo.Collection
 var ctx = context.Background()
 
 func DBConnect() (*mongo.Client, error) {
@@ -63,6 +75,7 @@ func DBConnect() (*mongo.Client, error) {
 	ServersCollection = client.Database("nchecknet").Collection("servers")
 	ServerDataCollection = client.Database("nchecknet").Collection("serverdata")
 	NmapDataCollection = client.Database("nchecknet").Collection("nmapdata")
+	UsersCollection = client.Database("nchecknet").Collection("users")
 
 	return client, nil
 
@@ -108,11 +121,12 @@ func GetServerDataByKeyAndSessionID(key, sessionid string) (dbServerData, error)
         return server, err
 }
 
-func GetServers() ([]dbServer, error) {
+func GetServers(owner string) ([]dbServer, error) {
 	sd := []dbServer{}
 
+	filter := bson.M{"owner": owner}
 
-	cursor, err := ServersCollection.Find(ctx, bson.D{}) 
+	cursor, err := ServersCollection.Find(ctx, filter) 
     if err != nil {
         log.Fatal(err)
     }
@@ -707,4 +721,92 @@ main()
 	script = strings.Replace(script, "IFACE", ifa.Name, 1)
 
 	return script, nil
+}
+
+func NoAccess2DB(owner, hostname string) bool {
+	s, err := GetServerByHostname(hostname)
+		if err != nil {
+			log.Println("NoAccess2DB(), no host: ", owner, hostname)
+			return true
+	}
+	
+	if  s.Owner == owner {
+		return false
+	}
+
+	log.Println("NoAccess2DB(), bad pair: ", s.Owner , owner, s.Hostname)
+	return true
+}
+
+
+func CheckPasswordHash(password, hash string) bool {
+	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
+	return err == nil
+}
+
+func HashPassword(password string) (string, error) {
+	bytes, err := bcrypt.GenerateFromPassword([]byte(password), 14)
+	return string(bytes), err
+}
+
+func GetUserByToken(token string) (dbUser, error) {
+        filter := bson.M{"token": token}
+        u := dbUser{}
+        err := UsersCollection.FindOne(ctx, filter).Decode(&u)
+        return u, err
+}
+
+func GetUserByName(name string) (dbUser, error) {
+        filter := bson.M{"name": name}
+        u := dbUser{}
+        err := UsersCollection.FindOne(ctx, filter).Decode(&u)
+        return u, err
+}
+
+func CreateUser(name, password, owner, rights string) (dbUser, error) {
+
+	_, err := GetUserByName(name)
+
+	if err == nil {
+		return dbUser{}, errors.New("CreateUser: user exists")
+	}
+
+	h, err := HashPassword(password)
+	if err != nil {
+		log.Println("can not hash password")
+		return dbUser{}, err
+	}
+
+	u := dbUser{}
+	u.Name = name
+	u.PassHash = h
+	u.Active = true
+	u.Owner = owner
+	u.AccessRight = rights
+	u.DateInserted = time.Now().Format("02/01/2006 15:04:05")
+
+	_, err = UsersCollection.InsertOne(ctx, u)
+	if err != nil {
+		return dbUser{}, err
+	}
+
+	return u, nil
+}
+
+func UpdateUserToken(name, token string) error {
+	u , err := GetUserByName(name)
+	if err != nil {
+		return err
+	}
+
+	update := bson.D{
+	{Key: "$set", Value: bson.D{
+		{Key: "token", Value: token},
+	}},}
+
+	_, err = UsersCollection.UpdateByID(ctx, u.ID, update)
+	if err != nil {
+		log.Println("Error updating Token in document in UsersCollection:", err)
+	}
+	return err
 }

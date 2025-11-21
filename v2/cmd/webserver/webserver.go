@@ -42,6 +42,14 @@ func LogOffHandler(w http.ResponseWriter, r *http.Request) {
 		Path:     "/",
 	})
 
+	_x := r.Context().Value("claims")
+        x, ok := _x.(*CustomClaims)
+	if !ok {
+		log.Println("claim has wrong type?")
+		return
+	}
+	sharedlib.UpdateUserToken(x.Username, "")
+
 	w.WriteHeader(http.StatusOK)
 	fmt.Fprintf(w, "Logoff successful.")
 }
@@ -53,13 +61,18 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// ⚠️ Step 1: AUTHENTICATION (Simulated)
-	if creds.Username != "testuser" || creds.Password != "password123" {
+	u, err := sharedlib.GetUserByName(creds.Username)
+	if err != nil {
 		http.Error(w, "Invalid credentials", http.StatusUnauthorized)
 		return
 	}
 
-	// Step 2: Create the JWT claims
+	if !sharedlib.CheckPasswordHash(creds.Password, u.PassHash) {
+		http.Error(w, "Invalid credentials.", http.StatusUnauthorized)
+		return
+	}
+
+	// Create the JWT claims
 	expirationTime := time.Now().Add(24 * time.Hour)
 	claims := &CustomClaims{
 		Username: creds.Username,
@@ -69,7 +82,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 		},
 	}
 
-	// Step 3: Create and sign the token
+	// Create and sign the token
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	tokenString, err := token.SignedString(jwtSecret)
 	if err != nil {
@@ -88,6 +101,8 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 		Path:     "/",
 	})
 
+	sharedlib.UpdateUserToken(creds.Username, tokenString)
+
 	// Send a simple success message
 	w.WriteHeader(http.StatusOK)
 	fmt.Fprintf(w, "Login successful. JWT set in HTTP-only cookie.")
@@ -96,7 +111,8 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 // The authentication middleware that checks for a valid JWT (now from a cookie)
 func AuthMiddleware(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// 1. Try to read the token from the "jwt_token" cookie
+
+		// Try to read the token from the "jwt_token" cookie
 		cookie, err := r.Cookie("nchecknettoken")
 		if err != nil {
 			// If no cookie, check for Authorization Header as a fallback (for non-browser clients)
@@ -139,11 +155,11 @@ func AuthMiddleware(next http.HandlerFunc) http.HandlerFunc {
 			return
 		}
 
-		// Step 3: Add the user claims to the request context
+		// Add the user claims to the request context
 		ctx := context.WithValue(r.Context(), "claims", claims)
 		r = r.WithContext(ctx)
 
-		// Step 4: Call the next handler
+		// Call the next handler
 		next.ServeHTTP(w, r)
 	}
 }
@@ -172,6 +188,19 @@ var upgrader = websocket.Upgrader{
 
 // handleWebSocket handles WebSocket requests from clients.
 func handleWebSocket(w http.ResponseWriter, r *http.Request) {
+
+        _x := r.Context().Value("claims")
+        x, ok := _x.(*CustomClaims)
+        if !ok {
+                log.Println("claim has wrong type?")
+                return
+        }
+
+	user, err := sharedlib.GetUserByName(x.Username)
+	if err != nil {
+		log.Println("NO User?");
+		return
+	}
 
 	type MessageIn struct {
 		Function string
@@ -208,85 +237,90 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request) {
                         break
                 }
 
-
-                //log.Printf("Received: %s", message)
                 mi := MessageIn{}
                 err = json.Unmarshal(message, &mi)
                 if err != nil {
                         panic(err)
                 }
 
-				log.Println(mi.Function)
+		log.Println(mi.Function)
 
-				mo := MessageOut{}
-				switch (mi.Function){
-				case "GetServers":
-					mo.Function = "FillServers"
-					alls, _ := sharedlib.GetServers() 
-					for _, s := range alls {
-						mo.ArrData = append(mo.ArrData, s.Hostname)
-					}
-				case "GetSessionIDs":
-					mo.Function = "FillSessionIDs"
-					mo.Hostname = mi.Hostname;
-					alls, _, _ := sharedlib.GetSessionIDs(mi.Hostname) 
-					mo.ArrData = alls
-				case "GetNmapCollector":
-					mo.Function = "FillNmapCollector"
-					t, _ := sharedlib.CreateNmapCollectorPy(mi.Hostname, mi.SessionID, mi.Data[4:], YConfig.Server.CollectorURL)
-					mo.ArrData = append(mo.ArrData,t)
-				case "GetNmapSuggestion":
-					mo.Function = "FillNmapSuggestion"
-					sn, err := sharedlib.GetServerByHostname(mi.Hostname)
-					
+		mo := MessageOut{}
+		switch (mi.Function){
+		case "GetServers":
+			mo.Function = "FillServers"
+			alls, _ := sharedlib.GetServers(user.Owner) 
+			for _, s := range alls {
+				mo.ArrData = append(mo.ArrData, s.Hostname)
+			}
+		case "GetSessionIDs":
+			if sharedlib.NoAccess2DB(user.Owner, mi.Hostname) { return }
+			mo.Function = "FillSessionIDs"
+			mo.Hostname = mi.Hostname;
+			alls, _, _ := sharedlib.GetSessionIDs(mi.Hostname) 
+			mo.ArrData = alls
+		case "GetNmapCollector":
+			if sharedlib.NoAccess2DB(user.Owner, mi.Hostname) { return }
+			mo.Function = "FillNmapCollector"
+			t, _ := sharedlib.CreateNmapCollectorPy(mi.Hostname, mi.SessionID, mi.Data[4:], YConfig.Server.CollectorURL)
+			mo.ArrData = append(mo.ArrData,t)
+		case "GetNmapSuggestion":
+			if sharedlib.NoAccess2DB(user.Owner, mi.Hostname) { return }
+			mo.Function = "FillNmapSuggestion"
+			sn, err := sharedlib.GetServerByHostname(mi.Hostname)
+			
+			if err != nil {
+				log.Println("GetNmapSuggestion", err, mi.Hostname, sn)
+				continue
+			}
+			mo.Hostname = mi.Hostname
+			txt := sharedlib.GenPic(sn.Key,mi.SessionID)
+			mo.ArrData = append(mo.ArrData,txt)
+		case "GetData":
+			if sharedlib.NoAccess2DB(user.Owner, mi.Hostname) { return }
+			mo.Function = "FillData"
+			mo.Hostname = mi.Hostname
+			t, err := sharedlib.PrettyPrintServerData("All:"+ mi.Hostname+ ":"+mi.SessionID )
+			if err != nil {
+				log.Println("GetData", err, mi.Hostname)
+				continue
+			}
+			mo.ArrData = append(mo.ArrData,t)
+		case "GetUfwListenChart":
+			if sharedlib.NoAccess2DB(user.Owner, mi.Hostname) { return }
+			t := ""
+			switch mi.ChartType {
+			case "ufwlisten":
+				t, err = sharedlib.CompareFromUFWViewpoint(mi.Hostname, mi.SessionID, mi.Hide)
 					if err != nil {
-						log.Println("GetNmapSuggestion", err, mi.Hostname, sn)
 						continue
-					}
-					mo.Hostname = mi.Hostname
-					txt := sharedlib.GenPic(sn.Key,mi.SessionID)
-					mo.ArrData = append(mo.ArrData,txt)
-				case "GetData":
-					mo.Function = "FillData"
-					mo.Hostname = mi.Hostname
-					t, err := sharedlib.PrettyPrintServerData("All:"+ mi.Hostname+ ":"+mi.SessionID )
-					if err != nil {
-						log.Println("GetData", err, mi.Hostname)
-						continue
-					}
-					mo.ArrData = append(mo.ArrData,t)
-				case "GetUfwListenChart":
-					t := ""
-					switch mi.ChartType {
-					case "ufwlisten":
-						t, err = sharedlib.CompareFromUFWViewpoint(mi.Hostname, mi.SessionID, mi.Hide)
-							if err != nil {
-								continue
-							}	
-					}
-					mo.Function = "FillChartReport"
-					mo.ArrData = append(mo.ArrData,t)
-					
-				case "HideFwrule":
-					sharedlib.HideFwrule(mi.Hostname, mi.SessionID, mi.Csum)
-					
-					t, err := sharedlib.CompareFromUFWViewpoint(mi.Hostname, mi.SessionID,mi.Hide)
-					if err != nil {
-							continue
-					}
-					mo.Function = "FillChartReport"
-					mo.ArrData = append(mo.ArrData,t)
-				
-				case "ChangeFwComment":
-					sharedlib.ChangeFwComment(mi.Hostname, mi.SessionID, mi.Csum, mi.Data)
-				}
-
-				moj, err := json.Marshal(mo)
-
-				if err != nil {
-					log.Println("mo marshal failed", err)
+					}	
+			}
+			mo.Function = "FillChartReport"
+			mo.ArrData = append(mo.ArrData,t)
+			
+		case "HideFwrule":
+			if sharedlib.NoAccess2DB(user.Owner, mi.Hostname) { return }
+			sharedlib.HideFwrule(mi.Hostname, mi.SessionID, mi.Csum)
+			
+			t, err := sharedlib.CompareFromUFWViewpoint(mi.Hostname, mi.SessionID,mi.Hide)
+			if err != nil {
 					continue
-				}
+			}
+			mo.Function = "FillChartReport"
+			mo.ArrData = append(mo.ArrData,t)
+		
+		case "ChangeFwComment":
+			if sharedlib.NoAccess2DB(user.Owner, mi.Hostname) { return }
+			sharedlib.ChangeFwComment(mi.Hostname, mi.SessionID, mi.Csum, mi.Data)
+		}
+
+		moj, err := json.Marshal(mo)
+
+		if err != nil {
+			log.Println("mo marshal failed", err)
+			continue
+		}
 
                 // Echo the message back to the client
                 if err := conn.WriteMessage(messageType, moj); err != nil {
@@ -323,7 +357,7 @@ func main() {
 	http.Handle("/", fileserver)
 
 	http.HandleFunc("/login", LoginHandler)
-	http.HandleFunc("/logoff", LogOffHandler)
+	http.HandleFunc("/logoff", AuthMiddleware(LogOffHandler))
 
 	http.HandleFunc("/protected", AuthMiddleware(ProtectedHandler))
 	

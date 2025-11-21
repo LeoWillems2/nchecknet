@@ -14,6 +14,12 @@ import (
 
 var YConfig sharedlib.YamlConfig
 
+var NewUser *string = flag.String("nu", "", "New User")
+var Password *string = flag.String("P", "", "Password")
+var Owner *string = flag.String("O", "", "Owner")
+var Rights *string = flag.String("R", "", "Rights")
+
+
 var NewServer *string = flag.String("ns", "", "New Server")
 var Verbose *bool = flag.Bool("v", false, "Verbose")
 var ServerCollectorPy *string = flag.String("cs", "", "Create collector script for FQDN (server)")
@@ -31,6 +37,18 @@ func main() {
         }
 
 	sharedlib.DBConnect()
+
+	if *NewUser != "" {
+
+
+		// check -P -R -O
+
+
+		_, err := sharedlib.CreateUser(*NewUser, *Password, *Owner, *Rights)
+		if  err != nil {
+			log.Println(err)
+		}
+	}
 
 	if *NewServer != "" {
 		key, err := sharedlib.CreateNewServer(*NewServer, *Verbose)
