@@ -12,6 +12,7 @@ bin/
 bin/*
 
 etc/nchecknet.yml
+etc/nchecknet.yml
 
 # Test binary, built with `go test -c`
 *.test

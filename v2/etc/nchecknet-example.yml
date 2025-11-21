@@ -1,3 +1,0 @@
-server:
-  collectorurl: "https://FQDN"
-  jwtsecret: "a long secret"
