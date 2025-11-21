@@ -14,14 +14,13 @@ import (
 
 var YConfig sharedlib.YamlConfig
 
-var NewUser *string = flag.String("nu", "", "New User")
+var NewUser *string = flag.String("nu", "", "New User, add: -P -O -R")
 var Password *string = flag.String("P", "", "Password")
 var Owner *string = flag.String("O", "", "Owner")
 var Rights *string = flag.String("R", "", "Rights")
 
 
-var NewServer *string = flag.String("ns", "", "New Server")
-var Verbose *bool = flag.Bool("v", false, "Verbose")
+var NewServer *string = flag.String("ns", "", "New Server, add: -O")
 var ServerCollectorPy *string = flag.String("cs", "", "Create collector script for FQDN (server)")
 var PrettyPrint *string = flag.String("pp", "", "PrettyPrint [Struct:HN:SID]")
 
@@ -51,7 +50,10 @@ func main() {
 	}
 
 	if *NewServer != "" {
-		key, err := sharedlib.CreateNewServer(*NewServer, *Verbose)
+
+		// check -O
+
+		key, err := sharedlib.CreateNewServer(*NewServer, *Owner)
 		if err != nil {
 			log.Println(err)
 			os.Exit(2)
@@ -62,7 +64,7 @@ func main() {
 	}
 
 	if *ServerCollectorPy != "" {
-		script, err := sharedlib.CreateServerCollectorPy(*ServerCollectorPy, YConfig.Server.CollectorURL)
+		script, err := sharedlib.CreateServerCollectorPy(*ServerCollectorPy, YConfig.Collector.CollectorURL)
 		if err != nil {
 			log.Println(err)
 			os.Exit(2)

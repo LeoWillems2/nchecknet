@@ -8,8 +8,6 @@ Run execute/webserver.
 
 Use utils for:
 
-*  -cn string
-    	--> Create collector script for Nmap-site
 *  -cs string
     	--> Create collector script for FQDN (server)
 *  -ns string

@@ -81,11 +81,6 @@ func DBConnect() (*mongo.Client, error) {
 
 }
 
-func Test() {
-	DBConnect()
-	//insertServerData()
-	//insertNmapData()
-}
 
 func GetNmapDataByHostnameAndSessionID(hostname, sessionid string) (dbNmapData, error) {
 	s, err := GetServerByHostname(hostname)
@@ -300,7 +295,7 @@ func GetServerByKey(key string) (dbServer, error) {
 }
 
 // insertServer inserts a new Server if it does not already exist. It also checks for double Keys.
-func insertServer(key, fqdn string) (dbServer, error) {
+func insertServer(key, fqdn, owner string) (dbServer, error) {
 
 	s := dbServer{}
 
@@ -318,6 +313,7 @@ func insertServer(key, fqdn string) (dbServer, error) {
 
 	s.Hostname = fqdn
 	s.Key = key
+	s.Owner = owner
 	s.Active = true
 	s.DateInserted = time.Now().Format("02/01/2006 15:04:05")
 	_, err = ServersCollection.InsertOne(ctx, s)
@@ -361,7 +357,7 @@ func InsertServerData(rawjson RawDataServer) {
 
 	insertResult, err := ServerDataCollection.InsertOne(ctx, sd)
 	if err != nil {
-		log.Println("Failed to insert document: %v", err)
+		log.Println("Failed to insert document: ", err)
 		return
 	}
 
@@ -433,7 +429,7 @@ func InsertNmapData(rawjson RawDataNmap) {
 		nd.Key = nd.Ndata.Key
 		_, err := NmapDataCollection.InsertOne(ctx, nd)
 		if err != nil {
-			log.Println("Failed to insert document: %v", err)
+			log.Println("Failed to insert document:", err)
 		}
 		if check4ServerAndNmapDocs(nd.Key,nd.SessionID) {
 			log.Println("New Nmap Can report on", nd.Key,nd.SessionID)
@@ -461,8 +457,8 @@ func InsertNmapData(rawjson RawDataNmap) {
 
 	// Update
 	update := bson.D{
-		{"$set", bson.D{
-			{"ndata", dbnd.Ndata},
+		{Key: "$set", Value: bson.D{
+			{Key: "ndata", Value: dbnd.Ndata},
 		}},
 	}
 
@@ -540,7 +536,7 @@ func GenPic(key,sessionid string) string {
 }
 
 /* Create a new server document */
-func CreateNewServer(newserver string, verbose bool) (string, error) {
+func CreateNewServer(newserver, owner string) (string, error) {
 
 	if strings.Count(newserver, ".") < 2 {
                 return "", errors.New("error: newserver is not an FQDN")
@@ -555,13 +551,9 @@ func CreateNewServer(newserver string, verbose bool) (string, error) {
 	hashBytes := hasher.Sum(nil)
 	key := hex.EncodeToString(hashBytes)
 
-	_, err := insertServer(key, newserver)
+	_, err := insertServer(key, newserver, owner)
 
-	if err == nil {
-		if verbose {
-			fmt.Printf("InsertServer(%s): key: %s\n", newserver, key)
-		}
-	} else {
+	if err != nil {
 		key = ""
 	}
 	return key, err
@@ -750,6 +742,10 @@ func HashPassword(password string) (string, error) {
 }
 
 func GetUserByToken(token string) (dbUser, error) {
+
+	// CAVEAT EMPTOR: JWT tokens are not per se unique but
+	// for different users they are!
+
         filter := bson.M{"token": token}
         u := dbUser{}
         err := UsersCollection.FindOne(ctx, filter).Decode(&u)

@@ -60,14 +60,21 @@ func jsonPostHandlerNmapRawData(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
+	// Read the config file
+	YConfig, err := sharedlib.GetYamlConfig("etc/nchecknet.yml")
+	if err != nil {
+		log.Fatalln(err)
+		return
+	}
 
+	// Anyone with a key is allowed in.
 	http.HandleFunc("/api_nmap", jsonPostHandlerNmapRawData)
 	http.HandleFunc("/api_server", jsonPostHandlerServerRawData)
 
 	sharedlib.DBConnect()
 
 	// Start the server
-	port := ":8087"
+	port := YConfig.Collector.Port
 	fmt.Printf("Collector starting on port %s\n", port)
 
 	if err := http.ListenAndServe(port, nil); err != nil {

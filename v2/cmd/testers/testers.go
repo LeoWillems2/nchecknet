@@ -22,7 +22,6 @@ func main() {
 
 	sharedlib.DBConnect()
 
-	sharedlib.TestYaml()
 
 
 	if  *Firewall {
