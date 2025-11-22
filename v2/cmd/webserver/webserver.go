@@ -1,18 +1,18 @@
 package main
 
-
 import (
-	"github.com/LeoWillems2/nchecknet/pkg/sharedlib"
-	"github.com/gorilla/websocket"
+	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
-	"time"
 	"strings"
-	"errors"
-	"context"
+	"time"
+
+	"github.com/LeoWillems2/nchecknet/pkg/sharedlib"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/gorilla/websocket"
 )
 
 // YConfig holds the configuration stuff
@@ -243,24 +243,24 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request) {
 			switch (mi.Function){
 			case "GetServers":
 				mo.Function = "FillServers"
-				alls, _ := sharedlib.GetServers(user.Owner) 
+				alls, _ := sharedlib.GetServers(user) 
 				for _, s := range alls {
 					log.Println("server:", s.Hostname)
 					mo.ArrData = append(mo.ArrData, s.Hostname)
 				}
 			case "GetSessionIDs":
-				if sharedlib.NoAccess2DB(user.Owner, mi.Hostname) { return }
+				if sharedlib.NoAccess2DB(user, mi.Hostname) { return }
 				mo.Function = "FillSessionIDs"
 				mo.Hostname = mi.Hostname;
 				alls, _, _ := sharedlib.GetSessionIDs(mi.Hostname) 
 				mo.ArrData = alls
 			case "GetNmapCollector":
-				if sharedlib.NoAccess2DB(user.Owner, mi.Hostname) { return }
+				if sharedlib.NoAccess2DB(user, mi.Hostname) { return }
 				mo.Function = "FillNmapCollector"
 				t, _ := sharedlib.CreateNmapCollectorPy(mi.Hostname, mi.SessionID, mi.Data[4:], YConfig.Collector.CollectorURL)
 				mo.ArrData = append(mo.ArrData,t)
 			case "GetNmapSuggestion":
-				if sharedlib.NoAccess2DB(user.Owner, mi.Hostname) { return }
+				if sharedlib.NoAccess2DB(user, mi.Hostname) { return }
 				mo.Function = "FillNmapSuggestion"
 				sn, err := sharedlib.GetServerByHostname(mi.Hostname)
 				
@@ -272,7 +272,7 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request) {
 				txt := sharedlib.GenPic(sn.Key,mi.SessionID)
 				mo.ArrData = append(mo.ArrData,txt)
 			case "GetData":
-				if sharedlib.NoAccess2DB(user.Owner, mi.Hostname) { return }
+				if sharedlib.NoAccess2DB(user, mi.Hostname) { return }
 				mo.Function = "FillData"
 				mo.Hostname = mi.Hostname
 				t, err := sharedlib.PrettyPrintServerData("All:"+ mi.Hostname+ ":"+mi.SessionID )
@@ -282,7 +282,7 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request) {
 				}
 				mo.ArrData = append(mo.ArrData,t)
 			case "GetUfwListenChart":
-				if sharedlib.NoAccess2DB(user.Owner, mi.Hostname) { return }
+				if sharedlib.NoAccess2DB(user, mi.Hostname) { return }
 				t := ""
 				switch mi.ChartType {
 				case "ufwlisten":
@@ -295,19 +295,32 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request) {
 				mo.ArrData = append(mo.ArrData,t)
 				
 			case "HideFwrule":
-				if sharedlib.NoAccess2DB(user.Owner, mi.Hostname) { return }
-				sharedlib.HideFwrule(mi.Hostname, mi.SessionID, mi.Csum)
+				if sharedlib.NoAccess2DB(user, mi.Hostname) { return }
+				if user.AccessRight != "w" && user.AccessRight != "a" {
+					mo.Function = "Error"
+					mo.ArrData = append(mo.ArrData,"No access rights")
 				
-				t, err := sharedlib.CompareFromUFWViewpoint(mi.Hostname, mi.SessionID,mi.Hide)
-				if err != nil {
-						continue
+				} else {
+					sharedlib.HideFwrule(mi.Hostname, mi.SessionID, mi.Csum)
+				
+				
+					t, err := sharedlib.CompareFromUFWViewpoint(mi.Hostname, mi.SessionID,mi.Hide)
+					if err != nil {
+							continue
+					}
+					mo.Function = "FillChartReport"
+					mo.ArrData = append(mo.ArrData,t)
 				}
-				mo.Function = "FillChartReport"
-				mo.ArrData = append(mo.ArrData,t)
 			
 			case "ChangeFwComment":
-				if sharedlib.NoAccess2DB(user.Owner, mi.Hostname) { return }
-				sharedlib.ChangeFwComment(mi.Hostname, mi.SessionID, mi.Csum, mi.Data)
+				if sharedlib.NoAccess2DB(user, mi.Hostname) { return }
+				if user.AccessRight != "w" && user.AccessRight != "a" {
+					mo.Function = "Error"
+					mo.ArrData = append(mo.ArrData,"No access rights")
+				
+				} else {
+					sharedlib.ChangeFwComment(mi.Hostname, mi.SessionID, mi.Csum, mi.Data)
+				}
 			}
 
 			moj, err := json.Marshal(mo)

@@ -116,11 +116,13 @@ func GetServerDataByKeyAndSessionID(key, sessionid string) (dbServerData, error)
         return server, err
 }
 
-func GetServers(owner string) ([]dbServer, error) {
-	log.Println("GetServers:", owner)
+func GetServers(user dbUser) ([]dbServer, error) {
 	sd := []dbServer{}
 
-	filter := bson.M{"owner": owner}
+	filter := bson.M{"owner": user.Owner}
+	if user.AccessRight == "a" {
+		filter = bson.M{}
+	}
 
 	cursor, err := ServersCollection.Find(ctx, filter) 
     if err != nil {
@@ -130,7 +132,6 @@ func GetServers(owner string) ([]dbServer, error) {
     if err = cursor.All(ctx, &sd); err != nil {
         log.Println(err)
     }
-	
 	return sd, err
 }
 
@@ -716,19 +717,22 @@ main()
 	return script, nil
 }
 
-func NoAccess2DB(owner, hostname string) bool {
-	//log.Println("NoAccess2DB:", owner, hostname)
+func NoAccess2DB(user dbUser, hostname string) bool {
+	if user.AccessRight == "a" {
+		return false
+	}
+	
 	s, err := GetServerByHostname(hostname)
 		if err != nil {
-			log.Println("NoAccess2DB(), no host: ", owner, hostname)
+			log.Println("NoAccess2DB(), no host: ", user.Name, hostname)
 			return true
 	}
 	
-	if  s.Owner == owner {
+	if  s.Owner == user.Owner {
 		return false
 	}
 
-	log.Println("NoAccess2DB(), bad pair: ", s.Owner , owner, s.Hostname)
+	log.Println("NoAccess2DB(), bad pair: ", s.Owner , user.Name, s.Hostname)
 	return true
 }
 

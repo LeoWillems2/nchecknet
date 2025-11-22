@@ -25,8 +25,12 @@ function Ready() {
     };
 
     ws.onmessage = (event) => {
-        console.log(event.data);
+        //console.log(event.data);
         m = JSON.parse(event.data);
+        if (m.Function == "Error"){
+            alert(m.ArrData[0]);
+            return;
+        }
         if (m.Function == "FillServers") {
             FillServers(m);
             return;
