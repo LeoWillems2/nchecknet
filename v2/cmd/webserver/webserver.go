@@ -224,11 +224,12 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request) {
 
         // Read messages from the WebSocket connection
         for {
-            _, message, err := conn.ReadMessage()
+            messageType, message, err := conn.ReadMessage()
              if err != nil {
                   log.Println("Read error:", err)
                   break
-        	  }
+		}
+
 
             mi := MessageIn{}
             err = json.Unmarshal(message, &mi)
@@ -236,12 +237,15 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request) {
                  panic(err)
             }
 
+			//log.Println(mi.Function)
+
 			mo := MessageOut{}
 			switch (mi.Function){
 			case "GetServers":
 				mo.Function = "FillServers"
 				alls, _ := sharedlib.GetServers(user.Owner) 
 				for _, s := range alls {
+					log.Println("server:", s.Hostname)
 					mo.ArrData = append(mo.ArrData, s.Hostname)
 				}
 			case "GetSessionIDs":
@@ -306,7 +310,6 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request) {
 				sharedlib.ChangeFwComment(mi.Hostname, mi.SessionID, mi.Csum, mi.Data)
 			}
 
-			/*
 			moj, err := json.Marshal(mo)
 
 			if err != nil {
@@ -314,11 +317,10 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request) {
 				continue
 			}
 
-            // Echo the message back to the client
+            // Answer
             if err := conn.WriteMessage(messageType, moj); err != nil {
                 log.Println("Write error:", err)
             }
-			*/
         }
         //log.Println("Client disconnected")
 }

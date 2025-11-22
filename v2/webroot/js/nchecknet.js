@@ -25,7 +25,7 @@ function Ready() {
     };
 
     ws.onmessage = (event) => {
-        //console.log(event.data);
+        console.log(event.data);
         m = JSON.parse(event.data);
         if (m.Function == "FillServers") {
             FillServers(m);

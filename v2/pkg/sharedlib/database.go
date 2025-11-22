@@ -117,6 +117,7 @@ func GetServerDataByKeyAndSessionID(key, sessionid string) (dbServerData, error)
 }
 
 func GetServers(owner string) ([]dbServer, error) {
+	log.Println("GetServers:", owner)
 	sd := []dbServer{}
 
 	filter := bson.M{"owner": owner}
@@ -716,6 +717,7 @@ main()
 }
 
 func NoAccess2DB(owner, hostname string) bool {
+	//log.Println("NoAccess2DB:", owner, hostname)
 	s, err := GetServerByHostname(hostname)
 		if err != nil {
 			log.Println("NoAccess2DB(), no host: ", owner, hostname)

@@ -17,13 +17,13 @@ type YamlConfig struct {
 // ServerConfig holds the server-specific settings.
 type ServerConfig struct {
 	JWTSecret string    `yaml:"jwtsecret"`
-	Port string    `yaml:"serverport"`
+	Port string    `yaml:"port"`
 }
 
 // CollectorConfig holds the server-specific settings.
 type CollectorConfig struct {
 	CollectorURL string `yaml:"collectorurl"`
-	Port string    `yaml:"serverport"`
+	Port string    `yaml:"port"`
 }
 
 func GetYamlConfig(configPath string) (YamlConfig, error) {
