@@ -3,7 +3,10 @@
 
 
 
-* create raw-nmap collectors:
-     make http://lewi configurable
 * more reports
+
+
+ipv6 in fw rules chart opnemen
+
+Data tab regenereren bij openen, niet al eerder.
 
