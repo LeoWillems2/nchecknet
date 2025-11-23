@@ -21,7 +21,8 @@ Use ./bin/utils for:
    
 * Rights:
 
-
+|symbol|description|
+|--|--|
 |a|admin, see all systems|
 |w|edit comments and hide systems|
 |r|read-only|
