@@ -21,9 +21,10 @@ Use ./bin/utils for:
    
 * Rights:
 
-  |a|admin, see all systems|
-  |w|edit comments and hide systems|
-  |r|read-only|
+
+|a|admin, see all systems|
+|w|edit comments and hide systems|
+|r|read-only|
   
 
 Copy the server-collector script to the server that must be checked.
