@@ -18,7 +18,9 @@ Use ./bin/utils for:
     	--> Add a new Server
 *  -nu string
 		--> Add a new User (also set -P(assword), -O(wner), -R(ights).
-   ** Rights: 'a' admin, see all systems, 'w' edit comments and hide systems, 'r' read-only
+   ```
+  Rights: 'a' admin, see all systems, 'w' edit comments and hide systems, 'r' read-only
+  ```
 
 Copy the server-collector script to the server that must be checked.
 Run the script once per day. (or more frequent, the last run wil overwrite prevous runs of this day.)
