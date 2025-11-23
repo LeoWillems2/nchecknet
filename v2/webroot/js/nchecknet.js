@@ -8,13 +8,13 @@ function Ready() {
 
     $('.nav-tabs > li:first-child > a')[0].click();
 
-   
-	mermaid.initialize({
-	  securityLevel: 'antiscript',
-	});
+
+    mermaid.initialize({
+        securityLevel: 'antiscript',
+    });
 
     wsstring = "wss://";
-    if (window.location.host == "127.0.0.1:8086" ) {
+    if (window.location.host == "127.0.0.1:8086") {
         wsstring = "ws://";
     }
     ws = new WebSocket(wsstring + window.location.host + "/ws");
@@ -27,7 +27,7 @@ function Ready() {
     ws.onmessage = (event) => {
         //console.log(event.data);
         m = JSON.parse(event.data);
-        if (m.Function == "Error"){
+        if (m.Function == "Error") {
             alert(m.ArrData[0]);
             return;
         }
@@ -59,14 +59,14 @@ function Ready() {
 
     ws.onclose = () => {
         console.log("WebSocket connection closed");
-	window.location.assign("/index.html");
+        window.location.assign("/index.html");
     };
 
-    $("#logoff").on("click", function() {
-	window.location.assign("/logoff");
+    $("#logoff").on("click", function () {
+        window.location.assign("/logoff");
     });
 
-    $("#Servers").on("change", function() {
+    $("#Servers").on("change", function () {
         hn = $(this).val();
         mo = {};
         mo.Function = "GetSessionIDs";
@@ -96,7 +96,7 @@ function Ready() {
         var target = $(e.target).attr("href");
         $("#chartreport").html("<pre class='mermaid' id=mermaidchartreport></pre>");
         $("#charthide").prop('checked', false);
-        if (target == "#tab-2" ) {
+        if (target == "#tab-2") {
             RedrawChart();
             return;
         }
@@ -116,18 +116,18 @@ function RedrawChart() {
 }
 
 function SendMessage(m) {
-	unhide = $("#charthide").prop('checked');
-        if (unhide) { 
-            m.Hide = "unhide";
-        } else {
-            m.Hide = "hide";
-        }
-        m.Hostname = $("#Servers").val();
-        m.SessionID = $("#SessionIDs").val();
-        m.ChartType = $("#charttype").val();
+    unhide = $("#charthide").prop('checked');
+    if (unhide) {
+        m.Hide = "unhide";
+    } else {
+        m.Hide = "hide";
+    }
+    m.Hostname = $("#Servers").val();
+    m.SessionID = $("#SessionIDs").val();
+    m.ChartType = $("#charttype").val();
 
     ws.send(JSON.stringify(m));
-}  
+}
 
 function GetMessage() {
     m = {};
@@ -137,17 +137,17 @@ function GetMessage() {
 
 
 function FillSessionIDs(m) {
-    
+
     $('.nav-tabs > li:first-child > a')[0].click();
 
     $("#SessionIDs").find('option').remove();
 
     s0 = "";
-    for (i = m.ArrData.length-1; i> -1;  --i) {
+    for (i = m.ArrData.length - 1; i > -1; --i) {
         s = m.ArrData[i];
         $("#SessionIDs").append('<option value="' + s + '">' + s + '</option>');
-        if (i==m.ArrData.length-1){
-            s0=s;
+        if (i == m.ArrData.length - 1) {
+            s0 = s;
         }
     }
 
@@ -167,20 +167,20 @@ function FillSessionIDs(m) {
 }
 
 function FillServers(m) {
-   
-   
+
+
     $('.nav-tabs > li:first-child > a')[0].click();
 
     s0 = "";
-    for (i=0; i < m.ArrData.length; ++i){
+    for (i = 0; i < m.ArrData.length; ++i) {
         s = m.ArrData[i];
-        if (i==0){
-            s0=s;
+        if (i == 0) {
+            s0 = s;
         }
-        $("#Servers").append('<option value="'+s+'">'+s+'</option>');
+        $("#Servers").append('<option value="' + s + '">' + s + '</option>');
     }
 
-    if (s0.length > 0){
+    if (s0.length > 0) {
         mo = {};
         mo.Function = "GetSessionIDs";
         mo.Hostname = s0;
@@ -198,6 +198,14 @@ function FillChartReport(m) {
             mo.Csum = csum;
             SendMessage(mo);
         });
+        $(".hidelistener").on("click", function () {
+            csum = $(this).attr("id");
+            mo = {};
+            mo.Function = "HideListener";
+            mo.Csum = csum;
+            console.log(csum);
+            SendMessage(mo);
+        });
         $(".Fwcomment").on("change", function () {
             csum = $(this).attr("id");
             cmt = $(this).val();
@@ -205,41 +213,50 @@ function FillChartReport(m) {
             mo.Function = "ChangeFwComment";
             mo.Csum = csum;
             mo.Data = cmt;
-            SendMessage(mo); 
+            SendMessage(mo);
+        });
+        $(".Liscomment").on("change", function () {
+            csum = $(this).attr("id");
+            cmt = $(this).val();
+            mo = {};
+            mo.Function = "ChangeLisComment";
+            mo.Csum = csum;
+            mo.Data = cmt;
+            SendMessage(mo);
         });
     }, 500);
 }
 
-function FillChart(d, c){
+function FillChart(d, c) {
     $("#mermaidchartreport").removeAttr("data-processed");
     $(d).html(c);
     mermaid.init();
 }
 
-function FillNmapSuggestion(m) {   
+function FillNmapSuggestion(m) {
     $("#nmapsuggestion").html("<pre class='mermaid' id=mermaidnmap></pre>");
     $("#mermaidnmap").removeAttr("data-processed");
     $("#mermaidnmap").html(m.ArrData[0]);
     $("#nmaprawcollector").html("");
 
-   mermaid.init();
+    mermaid.init();
 
     setTimeout(function () {
-	    $(".IFN").on("click", function() {
-		id = $(this).attr("id");
-		m.Function = "GetNmapCollector";
-		m.Data = id;
-		SendMessage(m);
-	    });
-	    
+        $(".IFN").on("click", function () {
+            id = $(this).attr("id");
+            m.Function = "GetNmapCollector";
+            m.Data = id;
+            SendMessage(m);
+        });
+
     }, 500);
 
 }
 
 function FillData(m) {
-    $("#DataTabCol1").html("<pre>"+m.ArrData[0]+"</pre>");
+    $("#DataTabCol1").html("<pre>" + m.ArrData[0] + "</pre>");
 }
 function FillNmapCollector(m) {
-    $("#nmaprawcollector").html("<br/><pre>"+m.ArrData[0]+"</pre>");
+    $("#nmaprawcollector").html("<br/><pre>" + m.ArrData[0] + "</pre>");
 }
 

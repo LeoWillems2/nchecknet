@@ -1,55 +1,55 @@
 package sharedlib
 
 import (
-	"strconv"
+	"context"
 	"crypto/sha256"
 	"encoding/hex"
-	"context"
-	"fmt"
-	"log"
-	"time"
-	"strings"
 	"errors"
+	"fmt"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"golang.org/x/crypto/bcrypt"
+	"log"
+	"strconv"
+	"strings"
+	"time"
 )
 
 type dbUser struct {
-	ID         primitive.ObjectID `bson:"_id,omitempty"`
-	Name   string             `bson:"name,omitempty"`
-	PassHash   string             `bson:"passhash,omitempty"`
-	AccessRight   string             `bson:"accessright,omitempty"`
-	Owner   string             `bson:"owner,omitempty"`
-	Active   bool             `bson:"active,omitempty"`
-	DateInserted   string             `bson:"dateinserted,omitempty"`
-	Token   string             `bson:"token,omitempty"`
+	ID           primitive.ObjectID `bson:"_id,omitempty"`
+	Name         string             `bson:"name,omitempty"`
+	PassHash     string             `bson:"passhash,omitempty"`
+	AccessRight  string             `bson:"accessright,omitempty"`
+	Owner        string             `bson:"owner,omitempty"`
+	Active       bool               `bson:"active,omitempty"`
+	DateInserted string             `bson:"dateinserted,omitempty"`
+	Token        string             `bson:"token,omitempty"`
 }
 
 type dbServer struct {
-	ID         primitive.ObjectID `bson:"_id,omitempty"`
-	Hostname   string             `bson:"hostname,omitempty"`
-	CustomerID string             `bson:"customerid,omitempty"`
-	Key        string             `bson:"key,omitempty"`
-	DateInserted  string          `bson:"dateinserted,omitempty"`
-	Owner  string          `bson:"owner,omitempty"`
-	Active     bool               `bson:"active,omitempty"`
+	ID           primitive.ObjectID `bson:"_id,omitempty"`
+	Hostname     string             `bson:"hostname,omitempty"`
+	CustomerID   string             `bson:"customerid,omitempty"`
+	Key          string             `bson:"key,omitempty"`
+	DateInserted string             `bson:"dateinserted,omitempty"`
+	Owner        string             `bson:"owner,omitempty"`
+	Active       bool               `bson:"active,omitempty"`
 }
 
 type dbServerData struct {
-	ID         primitive.ObjectID `bson:"_id,omitempty"`
-	SessionID string         `bson:"sessionid,omitempty"`
-	Key string         `bson:"key,omitempty"`
-	Sdata NcheckNetServer         `bson:"sdata,omitempty"`
+	ID        primitive.ObjectID `bson:"_id,omitempty"`
+	SessionID string             `bson:"sessionid,omitempty"`
+	Key       string             `bson:"key,omitempty"`
+	Sdata     NcheckNetServer    `bson:"sdata,omitempty"`
 }
 
 type dbNmapData struct {
-	ID     primitive.ObjectID `bson:"_id,omitempty"`
-	SessionID  string             `bson:"sessionid,omitempty"`
-	Key  string             `bson:"key,omitempty"`
-	Ndata NcheckNetNmap             `bson:"ndata,omitempty"`
+	ID        primitive.ObjectID `bson:"_id,omitempty"`
+	SessionID string             `bson:"sessionid,omitempty"`
+	Key       string             `bson:"key,omitempty"`
+	Ndata     NcheckNetNmap      `bson:"ndata,omitempty"`
 }
 
 var ServersCollection *mongo.Collection
@@ -81,39 +81,37 @@ func DBConnect() (*mongo.Client, error) {
 
 }
 
-
 func GetNmapDataByHostnameAndSessionID(hostname, sessionid string) (dbNmapData, error) {
 	s, err := GetServerByHostname(hostname)
 	if err != nil {
 		return dbNmapData{}, err
 	}
 	return GetNmapDataByKeyAndSessionID(s.Key, sessionid)
-	
+
 }
-	
 
 func GetNmapDataByKeyAndSessionID(key, sessionid string) (dbNmapData, error) {
-        filter := bson.M{"key": key, "sessionid": sessionid}
-        nmap := dbNmapData{}
-        err := NmapDataCollection.FindOne(ctx, filter).Decode(&nmap)
-        return nmap, err
+	filter := bson.M{"key": key, "sessionid": sessionid}
+	nmap := dbNmapData{}
+	err := NmapDataCollection.FindOne(ctx, filter).Decode(&nmap)
+	return nmap, err
 }
 
 func GetServerDataByHostnameAndSessionID(hostname, sessionid string) (dbServerData, error) {
-        s, err := GetServerByHostname(hostname)
-        if err != nil {
+	s, err := GetServerByHostname(hostname)
+	if err != nil {
 		log.Printf("GetServerDataByHostnameAndSessionID failed: [%s][%s]%v\n", hostname, sessionid, err)
-                return dbServerData{}, err
+		return dbServerData{}, err
 	}
-        
+
 	return GetServerDataByKeyAndSessionID(s.Key, sessionid)
 }
 
 func GetServerDataByKeyAndSessionID(key, sessionid string) (dbServerData, error) {
-        filter := bson.M{"key": key, "sessionid": sessionid}
-        server := dbServerData{}
-        err := ServerDataCollection.FindOne(ctx, filter).Decode(&server)
-        return server, err
+	filter := bson.M{"key": key, "sessionid": sessionid}
+	server := dbServerData{}
+	err := ServerDataCollection.FindOne(ctx, filter).Decode(&server)
+	return server, err
 }
 
 func GetServers(user dbUser) ([]dbServer, error) {
@@ -124,14 +122,14 @@ func GetServers(user dbUser) ([]dbServer, error) {
 		filter = bson.M{}
 	}
 
-	cursor, err := ServersCollection.Find(ctx, filter) 
-    if err != nil {
-        log.Fatal(err)
-    }
+	cursor, err := ServersCollection.Find(ctx, filter)
+	if err != nil {
+		log.Fatal(err)
+	}
 
-    if err = cursor.All(ctx, &sd); err != nil {
-        log.Println(err)
-    }
+	if err = cursor.All(ctx, &sd); err != nil {
+		log.Println(err)
+	}
 	return sd, err
 }
 
@@ -139,161 +137,232 @@ func GetSessionIDs(hostname string) ([]string, string, error) {
 	ss := []string{}
 
 	s, err := GetServerByHostname(hostname)
-	 if err != nil {
-        log.Fatal(err)
-    }
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	filter := bson.M{"key": s.Key}
-    cursor, err := ServerDataCollection.Find(ctx, filter)
-    if err != nil {
-        log.Fatal(err)
-    }
+	cursor, err := ServerDataCollection.Find(ctx, filter)
+	if err != nil {
+		log.Fatal(err)
+	}
 
-   for cursor.Next(ctx) {
-        sd := dbServerData{}
-        if err = cursor.Decode(&sd); err != nil {
-            log.Fatal(err)
-        }
-        ss = append(ss, sd.SessionID)
-    }
-    if err := cursor.Err(); err != nil {
-        log.Println(err)
-    }
+	for cursor.Next(ctx) {
+		sd := dbServerData{}
+		if err = cursor.Decode(&sd); err != nil {
+			log.Fatal(err)
+		}
+		ss = append(ss, sd.SessionID)
+	}
+	if err := cursor.Err(); err != nil {
+		log.Println(err)
+	}
 
 	return ss, s.Key, err
 }
 
 func GetLast2ServerData(hostname string) ([]dbServerData, error) {
 
-        sds := make([]dbServerData,2)
+	sds := make([]dbServerData, 2)
 
 	s, err := GetServerByHostname(hostname)
 	if err != nil {
-                log.Println("Error finding server:", err)
+		log.Println("Error finding server:", err)
 		return sds, err
 	}
 
-
-        filter := bson.M{"key": s.Key}
-        cursor, err := ServerDataCollection.Find(ctx, filter)
-        if err != nil {
-                log.Println("Error finding documents:", err)
-                return sds, err
-        }
-        for cursor.Next(ctx) {
-        	sd := dbServerData{}
-                if err := cursor.Decode(&sd); err != nil {
-                        log.Println("Error decoding document:", err)
-                        return sds, err
-                }
+	filter := bson.M{"key": s.Key}
+	cursor, err := ServerDataCollection.Find(ctx, filter)
+	if err != nil {
+		log.Println("Error finding documents:", err)
+		return sds, err
+	}
+	for cursor.Next(ctx) {
+		sd := dbServerData{}
+		if err := cursor.Decode(&sd); err != nil {
+			log.Println("Error decoding document:", err)
+			return sds, err
+		}
 		sds[0] = sds[1]
 		sds[1] = sd
-        }
+	}
 
-        if err := cursor.Err(); err != nil {
-                log.Println("Cursor iteration error:", err)
-                return sds, err
-        }
+	if err := cursor.Err(); err != nil {
+		log.Println("Cursor iteration error:", err)
+		return sds, err
+	}
 
-        return sds, err
+	return sds, err
 }
 
 func ChangeFwComment(hostname, sessionid, csum, comment string) error {
-	dbsd, err := GetServerDataByHostnameAndSessionID(hostname,sessionid)
+	dbsd, err := GetServerDataByHostnameAndSessionID(hostname, sessionid)
 	if err != nil {
-			return err
+		return err
 	}
-	
+
 	for i, fwr := range dbsd.Sdata.Fwrules {
 		tc := createFwruleCsum(fwr)
 		if tc == csum[1:] {
 
-
-			dbsd.Sdata.Fwrules [i].Comment = comment
+			dbsd.Sdata.Fwrules[i].Comment = comment
 
 			// Update
 			update := bson.D{
-		{Key: "$set", Value: bson.D{
-			{Key: "sdata", Value: dbsd.Sdata},
-		}},
-	}
-		
+				{Key: "$set", Value: bson.D{
+					{Key: "sdata", Value: dbsd.Sdata},
+				}},
+			}
+
 			_, err = ServerDataCollection.UpdateByID(ctx, dbsd.ID, update)
 			if err != nil {
 				log.Println("Error updating document in ServerDataCollection:", err)
 			}
 			return err
-		
-			
-		}	
+
+		}
 	}
 
-	return errors.New("HideFwrule() not found "+hostname+" "+sessionid)
+	return errors.New("Fwrule() not found " + hostname + " " + sessionid)
+}
+
+func ChangeLisComment(hostname, sessionid, csum, comment string) error {
+	dbsd, err := GetServerDataByHostnameAndSessionID(hostname, sessionid)
+	if err != nil {
+		return err
+	}
+
+	for i, lis := range dbsd.Sdata.Listeners {
+		tc := createListenerCsum(lis)
+		if tc == csum[1:] {
+
+			dbsd.Sdata.Listeners[i].Comment = comment
+
+			// Update
+			update := bson.D{
+				{Key: "$set", Value: bson.D{
+					{Key: "sdata", Value: dbsd.Sdata},
+				}},
+			}
+
+			_, err = ServerDataCollection.UpdateByID(ctx, dbsd.ID, update)
+			if err != nil {
+				log.Println("Error updating document in ServerDataCollection:", err)
+			}
+			return err
+
+		}
+	}
+
+	return errors.New("Listener() not found " + hostname + " " + sessionid)
 }
 
 func HideFwrule(hostname, sessionid, csum string) error {
-	dbsd, err := GetServerDataByHostnameAndSessionID(hostname,sessionid)
+	dbsd, err := GetServerDataByHostnameAndSessionID(hostname, sessionid)
 	if err != nil {
-			return err
+		return err
 	}
 
-	
 	for i, fwr := range dbsd.Sdata.Fwrules {
 		tc := createFwruleCsum(fwr)
 		if tc == csum[1:] {
 
 			if csum[0] == 'H' {
-				dbsd.Sdata.Fwrules [i].Supressed = true
+				dbsd.Sdata.Fwrules[i].Supressed = true
 			} else {
-				dbsd.Sdata.Fwrules [i].Supressed = false
+				dbsd.Sdata.Fwrules[i].Supressed = false
 			}
-		
+
 			// Update
 			update := bson.D{
-		{Key: "$set", Value: bson.D{
-			{Key: "sdata", Value: dbsd.Sdata},
-		}},
-	}
-		
+				{Key: "$set", Value: bson.D{
+					{Key: "sdata", Value: dbsd.Sdata},
+				}},
+			}
+
 			_, err = ServerDataCollection.UpdateByID(ctx, dbsd.ID, update)
 			if err != nil {
 				log.Println("Error updating document in ServerDataCollection:", err)
 			}
 			return err
-		
-			
-		}	
+
+		}
 	}
 
-	return errors.New("HideFwrule() not found "+hostname+" "+sessionid)
+	return errors.New("HideFwrule() not found " + hostname + " " + sessionid)
 }
 
+func HideListener(hostname, sessionid, csum string) error {
+	dbsd, err := GetServerDataByHostnameAndSessionID(hostname, sessionid)
+	if err != nil {
+		return err
+	}
 
-func DeleteExistingServerDataIfExists(hostname, key, sessionid string){
-        filter := bson.M{"sdata.hostname": hostname, "sdata.key": key, "sessionid": sessionid}
+	for i, lis := range dbsd.Sdata.Listeners {
+
+		tc := createListenerCsum(lis)
+		if tc == csum[1:] {
+
+			if csum[0] == 'H' {
+				dbsd.Sdata.Listeners[i].Supressed = true
+			} else {
+				dbsd.Sdata.Listeners[i].Supressed = false
+			}
+
+			// Update
+			update := bson.D{
+				{Key: "$set", Value: bson.D{
+					{Key: "sdata", Value: dbsd.Sdata},
+				}},
+			}
+
+			_, err = ServerDataCollection.UpdateByID(ctx, dbsd.ID, update)
+			if err != nil {
+				log.Println("Error updating document in ServerDataCollection:", err)
+			}
+			return err
+
+		}
+	}
+
+	return errors.New("HideListener() not found " + hostname + " " + sessionid)
+}
+
+func DeleteExistingServerDataIfExists(hostname, key, sessionid string) {
+	filter := bson.M{"sdata.hostname": hostname, "sdata.key": key, "sessionid": sessionid}
 	// feitelijk hoeft de lookup niet.
 
-        serverdata := dbServerData{}
-        err := ServerDataCollection.FindOne(ctx, filter).Decode(&serverdata)
+	serverdata := dbServerData{}
+	err := ServerDataCollection.FindOne(ctx, filter).Decode(&serverdata)
 
 	if err == nil {
-        	ServerDataCollection.DeleteOne(ctx, filter)
+		ServerDataCollection.DeleteOne(ctx, filter)
 		log.Println("Serverdata deleted")
 	}
 }
 
 func GetServerByHostname(hostname string) (dbServer, error) {
-        filter := bson.M{"hostname": hostname}
-        server := dbServer{}
-        err := ServersCollection.FindOne(ctx, filter).Decode(&server)
-        return server, err
+	filter := bson.M{"hostname": hostname}
+	server := dbServer{}
+	err := ServersCollection.FindOne(ctx, filter).Decode(&server)
+
+	if err != nil {
+		return server, fmt.Errorf(" GetServerByHostname() no host: %v", err)
+	}
+
+	return server, err
 }
 
 func GetServerByKey(key string) (dbServer, error) {
-        filter := bson.M{"key": key}
-        server := dbServer{}
-        err := ServersCollection.FindOne(ctx, filter).Decode(&server)
-        return server, err
+	filter := bson.M{"key": key}
+	server := dbServer{}
+	err := ServersCollection.FindOne(ctx, filter).Decode(&server)
+
+	if err != nil {
+		return server, fmt.Errorf(" GetServerByKey() no host: %v", err)
+	}
+
+	return server, err
 }
 
 // insertServer inserts a new Server if it does not already exist. It also checks for double Keys.
@@ -344,7 +413,6 @@ func InsertServerData(rawjson RawDataServer) {
 
 	sd.Sdata = ProcessRawServerDataJSON(rawjson)
 
-
 	s, err := GetServerByKey(sd.Sdata.Key)
 	if err != nil {
 		log.Println("Server not known, ServerData not Insterted", sd.Sdata.Key)
@@ -368,12 +436,12 @@ func InsertServerData(rawjson RawDataServer) {
 	log.Println("=0>", last2[0].Sdata.Date) // 17
 	log.Println("=1>", last2[1].Sdata.Date) // 18
 	if err != nil {
-		log.Println("GetLast2ServerData in InsertServerData", err);
+		log.Println("GetLast2ServerData fail in InsertServerData", err)
 	} else {
 		for i := range last2[0].Sdata.Fwrules {
 			csum1 := createFwruleCsum(last2[0].Sdata.Fwrules[i])
-			for j := range last2[1].Sdata.Fwrules  {
-				csum2 := createFwruleCsum( last2[1].Sdata.Fwrules[j])
+			for j := range last2[1].Sdata.Fwrules {
+				csum2 := createFwruleCsum(last2[1].Sdata.Fwrules[j])
 				if csum1 == csum2 {
 					//copy suppressed and comment
 					last2[1].Sdata.Fwrules[j].Comment = last2[0].Sdata.Fwrules[i].Comment
@@ -381,33 +449,44 @@ func InsertServerData(rawjson RawDataServer) {
 				}
 			}
 		}
+
+
+		for i := range last2[0].Sdata.Listeners {
+			csum1 := createListenerCsum(last2[0].Sdata.Listeners[i])
+			for j := range last2[1].Sdata.Listeners {
+				csum2 := createListenerCsum(last2[1].Sdata.Listeners[j])
+				if csum1 == csum2 {
+					//copy suppressed and comment
+					last2[1].Sdata.Listeners[j].Comment = last2[0].Sdata.Listeners[i].Comment
+					last2[1].Sdata.Listeners[j].Supressed = last2[0].Sdata.Listeners[i].Supressed
+				}
+			}
+		}
+
+
+		
 		// update [0]
 
-		                 update := bson.D{
-                {Key: "$set", Value: bson.D{
-                        {Key: "sdata", Value: last2[1].Sdata},
-                }},
-        	}
+		update := bson.D{
+			{Key: "$set", Value: bson.D{
+				{Key: "sdata", Value: last2[1].Sdata},
+			}},
+		}
 
-                _, err = ServerDataCollection.UpdateByID(ctx, insertResult.InsertedID, update)
-                if err != nil {
-                      log.Println("Error updating document in InsertServerData:", err)
-                      return
+		_, err = ServerDataCollection.UpdateByID(ctx, insertResult.InsertedID, update)
+		if err != nil {
+			log.Println("Error updating document in InsertServerData:", err)
+			return
 		}
 	}
 
 	log.Println("Serverdata updated for old comments and Supressed's")
 
-	if check4ServerAndNmapDocs(sd.Sdata.Key,sd.SessionID) {
-		log.Println("Serverdata Can report on", sd.Sdata.Key,sd.SessionID)
+	if check4ServerAndNmapDocs(sd.Sdata.Key, sd.SessionID) {
+		log.Println("Serverdata Can report on", sd.Sdata.Key, sd.SessionID)
 	}
 
-	
-	
 }
-
-	
-
 
 func InsertNmapData(rawjson RawDataNmap) {
 	nd := dbNmapData{}
@@ -422,7 +501,6 @@ func InsertNmapData(rawjson RawDataNmap) {
 		return
 	}
 
-
 	// first get an existing one
 	dbnd, err := GetNmapDataByKeyAndSessionID(nd.Ndata.Key, SessionID)
 	if err != nil { //new
@@ -433,10 +511,10 @@ func InsertNmapData(rawjson RawDataNmap) {
 		if err != nil {
 			log.Println("Failed to insert document:", err)
 		}
-		if check4ServerAndNmapDocs(nd.Key,nd.SessionID) {
-			log.Println("New Nmap Can report on", nd.Key,nd.SessionID)
+		if check4ServerAndNmapDocs(nd.Key, nd.SessionID) {
+			log.Println("New Nmap Can report on", nd.Key, nd.SessionID)
 		}
-		return;
+		return
 	}
 
 	//update the Host part
@@ -444,8 +522,8 @@ func InsertNmapData(rawjson RawDataNmap) {
 	for i, host := range dbnd.Ndata.NmapHosts {
 		// test: zit er al een host in de rij? dan replcace
 		if host.IPversion == nd.Ndata.NmapHosts[0].IPversion &&
-		   host.FromHostname == nd.Ndata.NmapHosts[0].FromHostname   &&
-		   host.ScannedHostname == nd.Ndata.NmapHosts[0].ScannedHostname {
+			host.FromHostname == nd.Ndata.NmapHosts[0].FromHostname &&
+			host.ScannedHostname == nd.Ndata.NmapHosts[0].ScannedHostname {
 			dbnd.Ndata.NmapHosts[i] = nd.Ndata.NmapHosts[0]
 			log.Println("Nmap Session existing updated")
 			found = true
@@ -453,7 +531,7 @@ func InsertNmapData(rawjson RawDataNmap) {
 		}
 	}
 	if !found {
-		dbnd.Ndata.NmapHosts = append(dbnd.Ndata.NmapHosts,nd.Ndata.NmapHosts[0] )
+		dbnd.Ndata.NmapHosts = append(dbnd.Ndata.NmapHosts, nd.Ndata.NmapHosts[0])
 		log.Println("Nmap Session existing extended")
 	}
 
@@ -468,12 +546,12 @@ func InsertNmapData(rawjson RawDataNmap) {
 	if err != nil {
 		log.Println("Error updating document in NmapDataCollection:", err)
 	}
-	if check4ServerAndNmapDocs(dbnd.Key,dbnd.SessionID) {
-		log.Println("Updated Nmap Can report on", dbnd.Key,dbnd.SessionID)
+	if check4ServerAndNmapDocs(dbnd.Key, dbnd.SessionID) {
+		log.Println("Updated Nmap Can report on", dbnd.Key, dbnd.SessionID)
 	}
 }
 
-func check4ServerAndNmapDocs(key,sessionid string) bool {
+func check4ServerAndNmapDocs(key, sessionid string) bool {
 
 	_, err1 := GetServerDataByKeyAndSessionID(key, sessionid)
 	_, err2 := GetNmapDataByKeyAndSessionID(key, sessionid)
@@ -484,7 +562,7 @@ func check4ServerAndNmapDocs(key,sessionid string) bool {
 	return err1 == nil && err2 == nil
 }
 
-func GenPic(key,sessionid string) string {
+func GenPic(key, sessionid string) string {
 	s, err := GetServerDataByKeyAndSessionID(key, sessionid)
 	if err != nil {
 		log.Println("GenPic: no record found", key, sessionid)
@@ -509,12 +587,12 @@ func GenPic(key,sessionid string) string {
 
 		ifmap[iface.Name] = i
 
-		txt += fmt.Sprintf(`I%d["<button class=IFN id='IFN-%d'>%s</button>`,i,i,iface.Name)
+		txt += fmt.Sprintf(`I%d["<button class=IFN id='IFN-%d'>%s</button>`, i, i, iface.Name)
 		for _, a := range iface.V4addresses {
-			txt += "<br/>"+a
+			txt += "<br/>" + a
 		}
 		for _, a := range iface.V6addresses {
-			txt += "<br/>"+a
+			txt += "<br/>" + a
 		}
 		txt += "\"]\n"
 
@@ -523,15 +601,14 @@ func GenPic(key,sessionid string) string {
 	txt += fmt.Sprintf(`style Nmaps fill:#BBDEFB%c`, '\n')
 
 	for i, r := range s.Sdata.Routes {
-		txt += fmt.Sprintf(` subgraph N%d["%s"]%c`, i,r.Dest, '\n')
+		txt += fmt.Sprintf(` subgraph N%d["%s"]%c`, i, r.Dest, '\n')
 		txt += fmt.Sprintf(`  n%d["nmap"]%c`, i, '\n')
 		txt += " end\n"
 		txt += fmt.Sprintf(`n%d@{ shape: rounded}%c`, i, '\n')
 		txt += fmt.Sprintf(`style N%d fill:#BBDEFB%c`, i, '\n')
 
-		
 		ifi := ifmap[r.Interface]
-		txt += fmt.Sprintf(`n%d ---> I%d%c`, i, ifi,'\n')
+		txt += fmt.Sprintf(`n%d ---> I%d%c`, i, ifi, '\n')
 	}
 
 	return txt
@@ -541,13 +618,13 @@ func GenPic(key,sessionid string) string {
 func CreateNewServer(newserver, owner string) (string, error) {
 
 	if strings.Count(newserver, ".") < 2 {
-                return "", errors.New("error: newserver is not an FQDN")
-        }
+		return "", errors.New("error: newserver is not an FQDN")
+	}
 
 	// gen Key
 	seconds := time.Now().Unix()
 	secondsString := strconv.FormatInt(seconds, 10)
-	data := newserver+secondsString
+	data := newserver + secondsString
 	hasher := sha256.New()
 	hasher.Write([]byte(data))
 	hashBytes := hasher.Sum(nil)
@@ -610,11 +687,11 @@ def main():
 
 main()
 `
-	s, err  := GetServerByHostname(servername)
+	s, err := GetServerByHostname(servername)
 	if err != nil {
-		return "", err		
+		return "", err
 	}
-	
+
 	script = strings.Replace(script, "ABCDEF0123456789", s.Key, 1)
 	script = strings.Replace(script, "NCHECKNETSERVER", nchecknetserver, 1)
 
@@ -687,7 +764,7 @@ main()
 	}
 
 	sd, err := GetServerDataByKeyAndSessionID(s.Key, sessionid)
-	if err!= nil {
+	if err != nil {
 		return "", err
 	}
 
@@ -696,17 +773,17 @@ main()
 	addresses := ""
 	ifa := sd.Sdata.Interfaces[i]
 
-	for _, a:= range ifa.V4addresses {
-		addresses +=  `,"`+a+`"`
+	for _, a := range ifa.V4addresses {
+		addresses += `,"` + a + `"`
 	}
-	for _, a:= range ifa.V6addresses {
-		addresses +=  `,"`+a+`"`
+	for _, a := range ifa.V6addresses {
+		addresses += `,"` + a + `"`
 	}
-	
-	if len(addresses)>0 {
+
+	if len(addresses) > 0 {
 		addresses = addresses[1:]
 	}
-	addresses = "["+addresses+"]"
+	addresses = "[" + addresses + "]"
 
 	script = strings.Replace(script, "ABCDEF0123456789", sd.Key, 1)
 	script = strings.Replace(script, "NCHECKNETSERVER", nchecknetserver, 1)
@@ -721,21 +798,20 @@ func NoAccess2DB(user dbUser, hostname string) bool {
 	if user.AccessRight == "a" {
 		return false
 	}
-	
+
 	s, err := GetServerByHostname(hostname)
-		if err != nil {
-			log.Println("NoAccess2DB(), no host: ", user.Name, hostname)
-			return true
+	if err != nil {
+		log.Printf("NoAccess2DB(), no acces for %s to %s: %v \n", user.Name, hostname, err)
+		return true
 	}
-	
-	if  s.Owner == user.Owner {
+
+	if s.Owner == user.Owner {
 		return false
 	}
 
-	log.Println("NoAccess2DB(), bad pair: ", s.Owner , user.Name, s.Hostname)
+	log.Println("NoAccess2DB(), bad pair: ", s.Owner, user.Name, s.Hostname)
 	return true
 }
-
 
 func CheckPasswordHash(password, hash string) bool {
 	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
@@ -752,17 +828,17 @@ func GetUserByToken(token string) (dbUser, error) {
 	// CAVEAT EMPTOR: JWT tokens are not per se unique but
 	// for different users they are!
 
-        filter := bson.M{"token": token}
-        u := dbUser{}
-        err := UsersCollection.FindOne(ctx, filter).Decode(&u)
-        return u, err
+	filter := bson.M{"token": token}
+	u := dbUser{}
+	err := UsersCollection.FindOne(ctx, filter).Decode(&u)
+	return u, err
 }
 
 func GetUserByName(name string) (dbUser, error) {
-        filter := bson.M{"name": name}
-        u := dbUser{}
-        err := UsersCollection.FindOne(ctx, filter).Decode(&u)
-        return u, err
+	filter := bson.M{"name": name}
+	u := dbUser{}
+	err := UsersCollection.FindOne(ctx, filter).Decode(&u)
+	return u, err
 }
 
 func CreateUser(name, password, owner, rights string) (dbUser, error) {
@@ -796,15 +872,15 @@ func CreateUser(name, password, owner, rights string) (dbUser, error) {
 }
 
 func UpdateUserToken(name, token string) error {
-	u , err := GetUserByName(name)
+	u, err := GetUserByName(name)
 	if err != nil {
 		return err
 	}
 
 	update := bson.D{
-	{Key: "$set", Value: bson.D{
-		{Key: "token", Value: token},
-	}},}
+		{Key: "$set", Value: bson.D{
+			{Key: "token", Value: token},
+		}}}
 
 	_, err = UsersCollection.UpdateByID(ctx, u.ID, update)
 	if err != nil {

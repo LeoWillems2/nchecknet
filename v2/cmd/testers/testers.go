@@ -5,8 +5,8 @@ package main
 */
 
 import (
-	"github.com/LeoWillems2/nchecknet/pkg/sharedlib"
 	"flag"
+	"github.com/LeoWillems2/nchecknet/pkg/sharedlib"
 	//"log"
 )
 
@@ -18,22 +18,22 @@ var host *string = flag.String("h", "", "Servername")
 var sessionid *string = flag.String("s", "", "SessionID")
 
 func main() {
-        flag.Parse()
+	flag.Parse()
 
 	sharedlib.DBConnect()
 
-
-
-	if  *Firewall {
+	if *Firewall {
 		sharedlib.TestFirewall()
 	}
-	if  *Listeners {
+	if *Listeners {
 		sharedlib.TestListeners()
 	}
 	if *Interfaces {
 		sharedlib.TestInterfaces()
 	}
+
 	if *CmpUfw {
-		sharedlib.CompareFromUFWViewpoint(*host, *sessionid, "")
+
+		//haredlib.CompareFromUFWViewpoint(*host, *sessionid, "", u)
 	}
 }

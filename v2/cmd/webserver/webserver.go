@@ -22,14 +22,14 @@ var YConfig sharedlib.YamlConfig
 var jwtSecret = []byte(YConfig.Server.JWTSecret)
 
 type CustomClaims struct {
-        Username string `json:"username"`
-        jwt.RegisteredClaims
+	Username string `json:"username"`
+	jwt.RegisteredClaims
 }
 
 // UserLogin maps to the input's in index.html
 type UserLogin struct {
-        Username string `json:"username"`
-        Password string `json:"password"`
+	Username string `json:"username"`
+	Password string `json:"password"`
 }
 
 // LogOffHandler() invalidates the cookie at the client and removes the token from the dbUser data.
@@ -39,14 +39,14 @@ func LogOffHandler(w http.ResponseWriter, r *http.Request) {
 		Name:     "nchecknettoken", // Name of the cookie
 		Value:    "",
 		Expires:  expirationTime,
-		HttpOnly: true, // ⬅️ CRITICAL: Prevents client-side JavaScript access (XSS defense)
-		Secure:   true, // ⬅️ CRITICAL: Only send over HTTPS (SHOULD be enabled in production)
+		HttpOnly: true,                    // ⬅️ CRITICAL: Prevents client-side JavaScript access (XSS defense)
+		Secure:   true,                    // ⬅️ CRITICAL: Only send over HTTPS (SHOULD be enabled in production)
 		SameSite: http.SameSiteStrictMode, // Good defense against CSRF
 		Path:     "/",
 	})
 
 	_x := r.Context().Value("claims")
-        x, ok := _x.(*CustomClaims)
+	x, ok := _x.(*CustomClaims)
 	if !ok {
 		log.Println("Should not happen: claim has wrong type?")
 		return
@@ -57,9 +57,11 @@ func LogOffHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "Logoff successful.")
 }
 
-/* LoginHandler() is the JWT login handler and creates the cookie with a token and a life span of 24 hours.
-   The token is stored in de dbUser document in the UsersCollection.
-   The jwtSecret is read from the Yaml config at server start.
+/*
+LoginHandler() is the JWT login handler and creates the cookie with a token and a life span of 24 hours.
+
+	The token is stored in de dbUser document in the UsersCollection.
+	The jwtSecret is read from the Yaml config at server start.
 */
 func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	var creds UserLogin
@@ -102,8 +104,8 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 		Name:     "nchecknettoken", // Name of the cookie
 		Value:    tokenString,
 		Expires:  expirationTime,
-		HttpOnly: true, // ⬅️ CRITICAL: Prevents client-side JavaScript access (XSS defense)
-		Secure:   true, // ⬅️ CRITICAL: Only send over HTTPS (SHOULD be enabled in production)
+		HttpOnly: true,                    // ⬅️ CRITICAL: Prevents client-side JavaScript access (XSS defense)
+		Secure:   true,                    // ⬅️ CRITICAL: Only send over HTTPS (SHOULD be enabled in production)
 		SameSite: http.SameSiteStrictMode, // Good defense against CSRF
 		Path:     "/",
 	})
@@ -128,7 +130,7 @@ func AuthMiddleware(next http.HandlerFunc) http.HandlerFunc {
 				// Handle Bearer token logic here (if you need both methods)
 				// For this example, we'll focus on the cookie, so we skip detailed Bearer logic.
 			}
-			
+
 			if errors.Is(err, http.ErrNoCookie) {
 				http.Error(w, "Unauthorized: JWT cookie not found", http.StatusUnauthorized)
 				return
@@ -136,7 +138,7 @@ func AuthMiddleware(next http.HandlerFunc) http.HandlerFunc {
 			http.Error(w, "Unauthorized: Failed to read cookie", http.StatusUnauthorized)
 			return
 		}
-		
+
 		tokenString := cookie.Value // The JWT is the cookie's value
 
 		// Parse and validate the token
@@ -171,176 +173,216 @@ func AuthMiddleware(next http.HandlerFunc) http.HandlerFunc {
 	}
 }
 
-
 // Upgrader is used to upgrade HTTP connections to WebSocket connections.
 var upgrader = websocket.Upgrader{
-        CheckOrigin: func(r *http.Request) bool {
-                // Allow all connections by default
-                return true
-        },
+	CheckOrigin: func(r *http.Request) bool {
+		// Allow all connections by default
+		return true
+	},
 }
 
 // handleWebSocket() is protected by the middleware and handles WebSocket requests from clients.
 func handleWebSocket(w http.ResponseWriter, r *http.Request) {
 
 	// Get the user from the context
-    _x := r.Context().Value("claims")
-    x, ok := _x.(*CustomClaims)
-    if !ok {
-        log.Println("claim has wrong type?")
-        return
-    }
+	_x := r.Context().Value("claims")
+	x, ok := _x.(*CustomClaims)
+	if !ok {
+		log.Println("claim has wrong type?")
+		return
+	}
 
 	user, err := sharedlib.GetUserByName(x.Username)
 	if err != nil {
-		log.Println("NO User?");
+		log.Println("NO User?")
 		return
 	}
 
 	// structs for the websocket I/O
 	type MessageIn struct {
-		Function string
-		Hostname string
+		Function  string
+		Hostname  string
 		SessionID string
-		Data string
-		Hide string
-		Csum string
+		Data      string
+		Hide      string
+		Csum      string
 		ChartType string
 	}
 
 	type MessageOut struct {
 		Function string
 		Hostname string
-		ArrData []string
+		ArrData  []string
 	}
 
 	// Upgrade the HTTP connection to a WebSocket connection
-        conn, err := upgrader.Upgrade(w, r, nil)
-        if err != nil {
-                log.Println("Upgrade error:", err)
-                return
-        }
-        defer conn.Close()
+	conn, err := upgrader.Upgrade(w, r, nil)
+	if err != nil {
+		log.Println("Upgrade error:", err)
+		return
+	}
+	defer conn.Close()
 
-        // Read messages from the WebSocket connection
-        for {
-            messageType, message, err := conn.ReadMessage()
-             if err != nil {
-                  log.Println("Read error:", err)
-                  break
+	// Read messages from the WebSocket connection
+	for {
+		messageType, message, err := conn.ReadMessage()
+		if err != nil {
+			log.Println("Read error:", err)
+			break
 		}
 
+		mi := MessageIn{}
+		err = json.Unmarshal(message, &mi)
+		if err != nil {
+			panic(err)
+		}
 
-            mi := MessageIn{}
-            err = json.Unmarshal(message, &mi)
-            if err != nil {
-                 panic(err)
-            }
+		//log.Println(mi.Function)
 
-			//log.Println(mi.Function)
-
-			mo := MessageOut{}
-			switch (mi.Function){
-			case "GetServers":
-				mo.Function = "FillServers"
-				alls, _ := sharedlib.GetServers(user) 
-				for _, s := range alls {
-					log.Println("server:", s.Hostname)
-					mo.ArrData = append(mo.ArrData, s.Hostname)
-				}
-			case "GetSessionIDs":
-				if sharedlib.NoAccess2DB(user, mi.Hostname) { return }
-				mo.Function = "FillSessionIDs"
-				mo.Hostname = mi.Hostname;
-				alls, _, _ := sharedlib.GetSessionIDs(mi.Hostname) 
-				mo.ArrData = alls
-			case "GetNmapCollector":
-				if sharedlib.NoAccess2DB(user, mi.Hostname) { return }
-				mo.Function = "FillNmapCollector"
-				t, _ := sharedlib.CreateNmapCollectorPy(mi.Hostname, mi.SessionID, mi.Data[4:], YConfig.Collector.CollectorURL)
-				mo.ArrData = append(mo.ArrData,t)
-			case "GetNmapSuggestion":
-				if sharedlib.NoAccess2DB(user, mi.Hostname) { return }
-				mo.Function = "FillNmapSuggestion"
-				sn, err := sharedlib.GetServerByHostname(mi.Hostname)
-				
-				if err != nil {
-					log.Println("GetNmapSuggestion", err, mi.Hostname, sn)
-					continue
-				}
-				mo.Hostname = mi.Hostname
-				txt := sharedlib.GenPic(sn.Key,mi.SessionID)
-				mo.ArrData = append(mo.ArrData,txt)
-			case "GetData":
-				if sharedlib.NoAccess2DB(user, mi.Hostname) { return }
-				mo.Function = "FillData"
-				mo.Hostname = mi.Hostname
-				t, err := sharedlib.PrettyPrintServerData("All:"+ mi.Hostname+ ":"+mi.SessionID )
-				if err != nil {
-					log.Println("GetData", err, mi.Hostname)
-					continue
-				}
-				mo.ArrData = append(mo.ArrData,t)
-			case "GetUfwListenChart":
-				if sharedlib.NoAccess2DB(user, mi.Hostname) { return }
-				t := ""
-				switch mi.ChartType {
-				case "ufwlisten":
-					t, err = sharedlib.CompareFromUFWViewpoint(mi.Hostname, mi.SessionID, mi.Hide)
-						if err != nil {
-							continue
-						}	
-				}
-				mo.Function = "FillChartReport"
-				mo.ArrData = append(mo.ArrData,t)
-				
-			case "HideFwrule":
-				if sharedlib.NoAccess2DB(user, mi.Hostname) { return }
-				if user.AccessRight != "w" && user.AccessRight != "a" {
-					mo.Function = "Error"
-					mo.ArrData = append(mo.ArrData,"No access rights")
-				
-				} else {
-					sharedlib.HideFwrule(mi.Hostname, mi.SessionID, mi.Csum)
-				
-				
-					t, err := sharedlib.CompareFromUFWViewpoint(mi.Hostname, mi.SessionID,mi.Hide)
-					if err != nil {
-							continue
-					}
-					mo.Function = "FillChartReport"
-					mo.ArrData = append(mo.ArrData,t)
-				}
-			
-			case "ChangeFwComment":
-				if sharedlib.NoAccess2DB(user, mi.Hostname) { return }
-				if user.AccessRight != "w" && user.AccessRight != "a" {
-					mo.Function = "Error"
-					mo.ArrData = append(mo.ArrData,"No access rights")
-				
-				} else {
-					sharedlib.ChangeFwComment(mi.Hostname, mi.SessionID, mi.Csum, mi.Data)
-				}
+		mo := MessageOut{}
+		switch mi.Function {
+		case "GetServers":
+			mo.Function = "FillServers"
+			alls, _ := sharedlib.GetServers(user)
+			for _, s := range alls {
+				mo.ArrData = append(mo.ArrData, s.Hostname)
 			}
-
-			moj, err := json.Marshal(mo)
+		case "GetSessionIDs":
+			if sharedlib.NoAccess2DB(user, mi.Hostname) {
+				return
+			}
+			mo.Function = "FillSessionIDs"
+			mo.Hostname = mi.Hostname
+			alls, _, _ := sharedlib.GetSessionIDs(mi.Hostname)
+			mo.ArrData = alls
+		case "GetNmapCollector":
+			if sharedlib.NoAccess2DB(user, mi.Hostname) {
+				return
+			}
+			mo.Function = "FillNmapCollector"
+			t, _ := sharedlib.CreateNmapCollectorPy(mi.Hostname, mi.SessionID, mi.Data[4:], YConfig.Collector.CollectorURL)
+			mo.ArrData = append(mo.ArrData, t)
+		case "GetNmapSuggestion":
+			if sharedlib.NoAccess2DB(user, mi.Hostname) {
+				return
+			}
+			mo.Function = "FillNmapSuggestion"
+			sn, err := sharedlib.GetServerByHostname(mi.Hostname)
 
 			if err != nil {
-				log.Println("mo marshal failed", err)
+				log.Println("GetNmapSuggestion", err, mi.Hostname, sn)
 				continue
 			}
+			mo.Hostname = mi.Hostname
+			txt := sharedlib.GenPic(sn.Key, mi.SessionID)
+			mo.ArrData = append(mo.ArrData, txt)
+		case "GetData":
+			if sharedlib.NoAccess2DB(user, mi.Hostname) {
+				return
+			}
+			mo.Function = "FillData"
+			mo.Hostname = mi.Hostname
+			t, err := sharedlib.PrettyPrintServerData("All:" + mi.Hostname + ":" + mi.SessionID)
+			if err != nil {
+				log.Println("GetData", err, mi.Hostname)
+				continue
+			}
+			mo.ArrData = append(mo.ArrData, t)
+		case "GetUfwListenChart":
+			if sharedlib.NoAccess2DB(user, mi.Hostname) {
+				return
+			}
+			t := ""
+			switch mi.ChartType {
+			case "ufwlisten":
+				t, err = sharedlib.CompareFromUFWViewpoint(mi.Hostname, mi.SessionID, mi.Hide, user)
+				if err != nil {
+					continue
+				}
+			}
+			mo.Function = "FillChartReport"
+			mo.ArrData = append(mo.ArrData, t)
 
-            // Answer
-            if err := conn.WriteMessage(messageType, moj); err != nil {
-                log.Println("Write error:", err)
-            }
-        }
-        //log.Println("Client disconnected")
+		case "HideFwrule":
+			if sharedlib.NoAccess2DB(user, mi.Hostname) {
+				return
+			}
+			if user.AccessRight != "w" && user.AccessRight != "a" {
+				mo.Function = "Error"
+				mo.ArrData = append(mo.ArrData, "No access rights")
+
+			} else {
+				sharedlib.HideFwrule(mi.Hostname, mi.SessionID, mi.Csum)
+
+				t, err := sharedlib.CompareFromUFWViewpoint(mi.Hostname, mi.SessionID, mi.Hide, user)
+				if err != nil {
+					continue
+				}
+				mo.Function = "FillChartReport"
+				mo.ArrData = append(mo.ArrData, t)
+			}
+		case "HideListener":
+			if sharedlib.NoAccess2DB(user, mi.Hostname) {
+				return
+			}
+			if user.AccessRight != "w" && user.AccessRight != "a" {
+				mo.Function = "Error"
+				mo.ArrData = append(mo.ArrData, "No access rights")
+
+			} else {
+				sharedlib.HideListener(mi.Hostname, mi.SessionID, mi.Csum)
+
+				t, err := sharedlib.CompareFromUFWViewpoint(mi.Hostname, mi.SessionID, mi.Hide, user)
+				if err != nil {
+					continue
+				}
+				mo.Function = "FillChartReport"
+				mo.ArrData = append(mo.ArrData, t)
+			}
+
+		case "ChangeFwComment":
+			if sharedlib.NoAccess2DB(user, mi.Hostname) {
+				return
+			}
+			if user.AccessRight != "w" && user.AccessRight != "a" {
+				mo.Function = "Error"
+				mo.ArrData = append(mo.ArrData, "No access rights")
+
+			} else {
+				sharedlib.ChangeFwComment(mi.Hostname, mi.SessionID, mi.Csum, mi.Data)
+			}
+		case "ChangeLisComment":
+			if sharedlib.NoAccess2DB(user, mi.Hostname) {
+				return
+			}
+			if user.AccessRight != "w" && user.AccessRight != "a" {
+				mo.Function = "Error"
+				mo.ArrData = append(mo.ArrData, "No access rights")
+
+			} else {
+				sharedlib.ChangeLisComment(mi.Hostname, mi.SessionID, mi.Csum, mi.Data)
+			}
+
+		}
+
+		moj, err := json.Marshal(mo)
+
+		if err != nil {
+			log.Println("mo marshal failed", err)
+			continue
+		}
+
+		// Answer
+		if err := conn.WriteMessage(messageType, moj); err != nil {
+			log.Println("Write error:", err)
+		}
+	}
+	//log.Println("Client disconnected")
 }
 
 func main() {
 	var err error
-	
+
 	// Read the config file
 	YConfig, err = sharedlib.GetYamlConfig("etc/nchecknet.yml")
 	if err != nil {
@@ -354,7 +396,7 @@ func main() {
 	http.HandleFunc("/login", LoginHandler)
 	http.HandleFunc("/ws", AuthMiddleware(handleWebSocket))
 	http.HandleFunc("/logoff", AuthMiddleware(LogOffHandler))
-	
+
 	sharedlib.DBConnect()
 
 	// Start the server
