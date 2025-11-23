@@ -31,6 +31,7 @@ Use ./bin/utils for:
 Copy the server-collector script to the server that must be checked.
 Run the script once per day. (or more frequent, the last run wil overwrite prevous runs of this day.)
 
+Generate the nmap-collector scripts from the Systems-tab of the webserver.
 Copy the nmap-collector-scripts to locations behind the interfaces, e.g. eth0 is often linked to 0.0.0.0, so the eth0 script shoukld be run from somewheren at the internet.
 Run the script once per day. (or more frequent, the last run wil update prevous runs of this day.)
 
