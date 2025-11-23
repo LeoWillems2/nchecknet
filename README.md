@@ -1,7 +1,7 @@
 # nchecknet
 Nchecknet compares ufw against netstat -ntlp, netstat -rn, ifconfig and nmap
 
-![](docs/nchecknet1.png)
+![](v2/docs/nchecknet1.png)
 
 Required: mongodb@localhost, golang
 
