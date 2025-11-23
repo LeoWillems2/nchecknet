@@ -1,9 +1,9 @@
 # nchecknet
 Nchecknet compares ufw against netstat -ntlp, netstat -rn, ifconfig and nmap
 
-Required: mongodb@localhost
+Required: mongodb@localhost, golang
 
-Build: cd v2; make
+Build: cd v2; go mod tidy; make
 
 Usage:
 
