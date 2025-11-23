@@ -20,6 +20,7 @@ Use ./bin/utils for:
 		--> Add a new User (also set -P(assword), -O(wner), -R(ights). ``
    
 * Rights:
+
   |a|admin, see all systems|
   |w|edit comments and hide systems|
   |r|read-only|
