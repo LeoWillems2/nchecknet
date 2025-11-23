@@ -15,9 +15,9 @@ Use ./bin/utils for:
 *  -cs string
     	--> Create collector script for FQDN (server)
 *  -ns string
-    	--> Add a new Server
+    	--> Add a new Server -- also set -O(wner)
 *  -nu string
-		--> Add a new User (also set -P(assword), -O(wner), -R(ights). ``
+		--> Add a new User -- also set -P(assword), -O(wner), -R(ights)
    
 * Rights:
 
