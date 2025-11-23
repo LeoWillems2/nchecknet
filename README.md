@@ -2,18 +2,23 @@
 Nchecknet compares ufw against netstat -ntlp, netstat -rn, ifconfig and nmap
 
 Required: mongodb@localhost
+
+Build: cd v2; make
+
 Usage:
 
-Run execute/webserver.
+* Run ./bin/webserver for view and edit reports and to generate nmap-scripts for the remote locations.
+* Run ./bin/collector to receive data.
 
-Use utils for:
+Use ./bin/utils for:
 
 *  -cs string
     	--> Create collector script for FQDN (server)
 *  -ns string
-    	--> New Server
+    	--> Add a new Server
 *  -nu string
-	--> New User (also set -P, -O, -R)
+		--> Add a new User (also set -P(assword), -O(wner), -R(ights).
+   ** Rights: 'a' admin, see all systems, 'w' edit comments and hide systems, 'r' read-only
 
 Copy the server-collector script to the server that must be checked.
 Run the script once per day. (or more frequent, the last run wil overwrite prevous runs of this day.)
@@ -24,5 +29,10 @@ Run the script once per day. (or more frequent, the last run wil update prevous 
 * nchecknet.yml in etc:
 
 server:
-  collectorurl: "https://FQDN"
   jwtsecret: "a long secret"
+  port: 8086
+collector:
+  collectorurl: "https://FQDN"
+  port: 8087
+
+
