@@ -58,8 +58,7 @@ var NmapDataCollection *mongo.Collection
 var UsersCollection *mongo.Collection
 var ctx = context.Background()
 
-func DBConnect() (*mongo.Client, error) {
-	uri := "mongodb://192.168.100.12:27017"
+func DBConnect(uri string) (*mongo.Client, error) {
 	clientCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 

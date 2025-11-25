@@ -35,7 +35,7 @@ func main() {
                 return
         }
 
-	sharedlib.DBConnect()
+	sharedlib.DBConnect(YConfig.Server.MongoDBURL)
 
 	if *NewUser != "" {
 

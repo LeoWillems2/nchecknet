@@ -254,6 +254,10 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request) {
 			mo.Function = "FillSessionIDs"
 			mo.Hostname = mi.Hostname
 			alls, _, _ := sharedlib.GetSessionIDs(mi.Hostname)
+			if len(alls) > YConfig.Server.MaxSessionIDSelect {
+				alls = alls[len(alls)-YConfig.Server.MaxSessionIDSelect:]
+
+			}
 			mo.ArrData = alls
 		case "GetNmapCollector":
 			if sharedlib.NoAccess2DB(user, mi.Hostname) {
@@ -397,7 +401,7 @@ func main() {
 	http.HandleFunc("/ws", AuthMiddleware(handleWebSocket))
 	http.HandleFunc("/logoff", AuthMiddleware(LogOffHandler))
 
-	sharedlib.DBConnect()
+	sharedlib.DBConnect(YConfig.Server.MongoDBURL)
 
 	// Start the server
 	port := ":8086"

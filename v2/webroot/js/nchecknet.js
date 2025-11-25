@@ -100,6 +100,12 @@ function Ready() {
             RedrawChart();
             return;
         }
+        if (target == "#tab-3") {
+	    mo.Function = "GetData";
+	    SendMessage(mo);
+            return;
+        }
+	
     });
 }
 
@@ -154,15 +160,15 @@ function FillSessionIDs(m) {
     if (s0.length > 0) {
         mo = {};
         mo.Function = "GetNmapSuggestion";
-        mo.Hostname = m.Hostname;
-        mo.SessionID = s0;
+        //mo.Hostname = m.Hostname;
+        //mo.SessionID = s0;
         SendMessage(mo);
 
-        mo = {};
-        mo.Function = "GetData";
-        mo.Hostname = m.Hostname;
-        mo.SessionID = s0;
-        SendMessage(mo);
+        //mo = {};
+        //mo.Function = "GetData";
+        //mo.Hostname = m.Hostname;
+        //mo.SessionID = s0;
+        //SendMessage(mo);
     }
 }
 

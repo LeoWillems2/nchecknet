@@ -7,7 +7,7 @@ package main
 import (
 	"flag"
 	"github.com/LeoWillems2/nchecknet/pkg/sharedlib"
-	//"log"
+	"log"
 )
 
 var Listeners *bool = flag.Bool("l", false, "Dump Listeners")
@@ -20,7 +20,15 @@ var sessionid *string = flag.String("s", "", "SessionID")
 func main() {
 	flag.Parse()
 
-	sharedlib.DBConnect()
+
+        YConfig, err := sharedlib.GetYamlConfig("etc/nchecknet.yml")
+        if err != nil {
+                log.Fatalln(err)
+                return
+        }
+
+        sharedlib.DBConnect(YConfig.Server.MongoDBURL)
+
 
 	if *Firewall {
 		sharedlib.TestFirewall()

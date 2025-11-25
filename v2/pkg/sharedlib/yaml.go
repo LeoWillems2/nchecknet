@@ -10,7 +10,7 @@ import (
 
 // Config holds the entire configuration structure.
 type YamlConfig struct {
-	Server   ServerConfig   `yaml:"server"`
+	Server   ServerConfig   `yaml:"webserver"`
 	Collector   CollectorConfig   `yaml:"collector"`
 }
 
@@ -18,6 +18,8 @@ type YamlConfig struct {
 type ServerConfig struct {
 	JWTSecret string    `yaml:"jwtsecret"`
 	Port string    `yaml:"port"`
+	MongoDBURL string    `yaml:"mongodburl"`
+	MaxSessionIDSelect int   `yaml:"maxsessionidselect"`
 }
 
 // CollectorConfig holds the server-specific settings.

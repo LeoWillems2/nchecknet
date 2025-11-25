@@ -40,9 +40,12 @@ Run the script once per day. (or more frequent, the last run wil update prevous 
 * nchecknet.yml in etc:
 
 ```
- server:
+ webserver:
    jwtsecret: "a long secret"
    port: 8086
+   mongodburl: "mongodb://....."
+   maxsessionidselect: 3
+
  collector:
    collectorurl: "https://FQDN"
    port: 8087

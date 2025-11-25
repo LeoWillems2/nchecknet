@@ -6,7 +6,5 @@
 * more reports
 
 
-ipv6 in fw rules chart opnemen
-
-Data tab regenereren bij openen, niet al eerder.
-
+nmap integratie
+ max sessionid opnemen in yaml.

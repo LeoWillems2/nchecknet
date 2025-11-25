@@ -71,7 +71,7 @@ func main() {
 	http.HandleFunc("/api_nmap", jsonPostHandlerNmapRawData)
 	http.HandleFunc("/api_server", jsonPostHandlerServerRawData)
 
-	sharedlib.DBConnect()
+	sharedlib.DBConnect(YConfig.Server.MongoDBURL)
 
 	// Start the server
 	port := YConfig.Collector.Port
