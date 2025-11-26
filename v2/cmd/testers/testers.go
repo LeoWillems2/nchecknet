@@ -8,6 +8,7 @@ import (
 	"flag"
 	"github.com/LeoWillems2/nchecknet/pkg/sharedlib"
 	"log"
+	"fmt"
 )
 
 var Listeners *bool = flag.Bool("l", false, "Dump Listeners")
@@ -42,6 +43,11 @@ func main() {
 
 	if *CmpUfw {
 
-		//haredlib.CompareFromUFWViewpoint(*host, *sessionid, "", u)
+		m, err := sharedlib.CompareFromUFWViewpoint(*host, *sessionid, "", "w")
+		if err == nil {
+			fmt.Println(m)
+		} else {
+			log.Println(err)
+		}
 	}
 }

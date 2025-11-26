@@ -1,0 +1,46 @@
+<html>
+<body>
+<pre class=mermaid>
+flowchart TD
+
+
+subgraph Somewhere["Somewhere out there"]
+
+subgraph NMAP-1["Nmap-1"]
+subgraph NMAP-1-R22["Nmap 22"]
+end
+subgraph NMAP-1-R443["Nmap 443"]
+end
+subgraph eth0["eth0"]
+end
+end
+NMAP-1-R443 ---> eth0
+NMAP-1-R22 ---> eth0
+
+subgraph NMAP-2["Nmap-2"]
+subgraph NMAP-2-R22["Nmap 22"]
+end
+subgraph NMAP-2-R443["Nmap 443"]
+end
+end
+
+subgraph NMAP-3["Nmap-3"]
+subgraph NMAP-3-R22["Nmap 22"]
+end
+subgraph NMAP-3-R443["Nmap 443"]
+end
+end
+
+end
+
+
+
+
+
+
+</pre>
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+  mermaid.initialize({ startOnLoad: true });
+</script>
+

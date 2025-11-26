@@ -15,6 +15,7 @@ type RawDataNmap struct {
 	Nmap []string
 	Hostname string
 	Scanname string
+	Interfacename string
 	IPv string
 	Date string
 	Key string
@@ -40,6 +41,7 @@ type NmapLine struct {
 type NmapHost struct {
 	IPversion string
 	IPScanned string
+	Interfacename string
 	FromHostname string
 	ScannedHostname string
 	NmapLines []NmapLine
@@ -205,6 +207,7 @@ func ProcessRawNmapDataJSON(rdata RawDataNmap) NcheckNetNmap {
 	nmaphost.ScannedHostname = rdata.Scanname
 	nmaphost.IPScanned = IPScanned
 	nmaphost.IPversion = IPversion
+	nmaphost.Interfacename = rdata.Interfacename
 	nmap.NmapHosts = append(nmap.NmapHosts, nmaphost)
 
 	return nmap

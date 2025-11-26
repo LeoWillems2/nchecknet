@@ -95,7 +95,7 @@ func compareFromListeners_(FwrulesByPort map[string][]Fwrule,
 }
 
 // CompareFromUFWViewpoint() and compareFromUFWViewpoint_() create the Mermaid map that depicts the fw and listeners in the Charts tab.
-func CompareFromUFWViewpoint(hostname, sessionid, hide string, user dbUser) (string, error) {
+func CompareFromUFWViewpoint(hostname, sessionid, hide, acright string) (string, error) {
 
 	sd, err := GetServerDataByHostnameAndSessionID(hostname, sessionid)
 	if err != nil {
@@ -122,11 +122,11 @@ func CompareFromUFWViewpoint(hostname, sessionid, hide string, user dbUser) (str
 	LbP := createLbP(sd.Sdata.Listeners)
 	FbP := createFbP(sd.Sdata.Fwrules)
 
-	return compareFromUFWViewpoint_(hostname, FbP, LbP, adrs, hide, user)
+	return compareFromUFWViewpoint_(hostname, FbP, LbP, adrs, hide, acright)
 }
 
 func compareFromUFWViewpoint_(hostname string, FwrulesByPort map[string][]Fwrule,
-	ListenersByPort map[string][]Listener, ifaces, hide string, user dbUser) (string, error) {
+	ListenersByPort map[string][]Listener, ifaces, hide, acright string) (string, error) {
 
 	UfwIDX := make(map[string]string)
 	LisIDX := make(map[string]string)
@@ -134,7 +134,7 @@ func compareFromUFWViewpoint_(hostname string, FwrulesByPort map[string][]Fwrule
 	// clI and clB control the interactivity of the inputs and the buttons
 	clI := ""
 	clB := ""
-	if user.AccessRight == "r" {
+	if acright == "r" {
 		clI = "readonly"
 		clB = "disabled"
 	}

@@ -712,6 +712,7 @@ data = {
 	"Nmap": [],
 	"Hostname": "",
 	"Scanname": "",
+	"Interfacename": "",
 	"Date": "",
 	"Key": "ABCDEF0123456789"
 }
@@ -739,6 +740,7 @@ def scan(scanip):
 	data["Nmap"] = runp(["nmap", "-"+ipv, scanip ])
 	data["Hostname"] = platform.node()
 	data["Scanname"] = "SCANNAME"
+	data["Interfacename"] = "IFACE"
 	data["IPv"] = ipv
 	now = datetime.datetime.now()
 	data["Date"] = now.strftime("%Y-%m-%d %H:%M:%S")
@@ -788,7 +790,7 @@ main()
 	script = strings.Replace(script, "NCHECKNETSERVER", nchecknetserver, 1)
 	script = strings.Replace(script, "SCANIPS", addresses, 1)
 	script = strings.Replace(script, "SCANNAME", servername, 1)
-	script = strings.Replace(script, "IFACE", ifa.Name, 1)
+	script = strings.Replace(script, "IFACE", ifa.Name, 2)
 
 	return script, nil
 }

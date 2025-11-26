@@ -299,7 +299,7 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request) {
 			t := ""
 			switch mi.ChartType {
 			case "ufwlisten":
-				t, err = sharedlib.CompareFromUFWViewpoint(mi.Hostname, mi.SessionID, mi.Hide, user)
+				t, err = sharedlib.CompareFromUFWViewpoint(mi.Hostname, mi.SessionID, mi.Hide, user.AccessRight)
 				if err != nil {
 					continue
 				}
@@ -318,7 +318,7 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request) {
 			} else {
 				sharedlib.HideFwrule(mi.Hostname, mi.SessionID, mi.Csum)
 
-				t, err := sharedlib.CompareFromUFWViewpoint(mi.Hostname, mi.SessionID, mi.Hide, user)
+				t, err := sharedlib.CompareFromUFWViewpoint(mi.Hostname, mi.SessionID, mi.Hide, user.AccessRight)
 				if err != nil {
 					continue
 				}
@@ -336,7 +336,7 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request) {
 			} else {
 				sharedlib.HideListener(mi.Hostname, mi.SessionID, mi.Csum)
 
-				t, err := sharedlib.CompareFromUFWViewpoint(mi.Hostname, mi.SessionID, mi.Hide, user)
+				t, err := sharedlib.CompareFromUFWViewpoint(mi.Hostname, mi.SessionID, mi.Hide, user.AccessRight)
 				if err != nil {
 					continue
 				}
