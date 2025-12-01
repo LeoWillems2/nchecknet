@@ -63,37 +63,6 @@ func createFbP(fis []Fwrule) map[string][]Fwrule {
 	return fbp
 }
 
-// old
-func CompareFromListeners(key, sessionid string) {
-	sd, err := GetServerDataByKeyAndSessionID(key, sessionid)
-	if err != nil {
-		log.Fatalln("GetServerDataByKeyAndSessionID: no doc:", key, sessionid)
-		return
-	}
-
-	LbP := createLbP(sd.Sdata.Listeners)
-	FbP := createFbP(sd.Sdata.Fwrules)
-
-	compareFromListeners_(FbP, LbP)
-}
-
-// old
-func compareFromListeners_(FwrulesByPort map[string][]Fwrule,
-	ListenersByPort map[string][]Listener) {
-
-	for liport, listeners := range ListenersByPort {
-		for _, listener := range listeners {
-			_, ok := FwrulesByPort[liport]
-			if !ok {
-				if (len(listener.IP) > 4) && (listener.IP[0:4] != "127." && listener.IP != "[::1]") {
-					log.Println("No FW rule for LISTEN:", listener)
-				}
-			}
-		}
-	}
-
-}
-
 // CompareFromUFWViewpoint() and compareFromUFWViewpoint_() create the Mermaid map that depicts the fw and listeners in the Charts tab.
 func CompareFromUFWViewpoint(hostname, sessionid, hide, acright string) (string, error) {
 
@@ -139,9 +108,7 @@ func compareFromUFWViewpoint_(hostname string, FwrulesByPort map[string][]Fwrule
 		clB = "disabled"
 	}
 
-	t := fmt.Sprintf(`<html>
-<body>
-<pre class=mermaid>
+	t := fmt.Sprintf(`<pre class=mermaid>
 flowchart TD
 subgraph SERVER["%s %s "]
 `, hostname, ifaces)
@@ -234,11 +201,15 @@ subgraph SERVER["%s %s "]
 
 	t += `
 </pre>
+`
+
+/*
 <script type="module">
   import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
   mermaid.initialize({ startOnLoad: true });
 </script>
 `
+*/
 	return t, nil
 }
 
@@ -274,4 +245,41 @@ func createListenerCsum(lis Listener) string {
 
 	return hex.EncodeToString(h.Sum(nil))
 
+}
+
+func CompareFromNMAPViewpoint(hostname, sessionid string) (string, error) {
+	
+	sd, err := GetServerDataByHostnameAndSessionID(hostname, sessionid)
+	if err != nil {
+		return "", err
+	}
+	FbP := createFbP(sd.Sdata.Fwrules)
+
+	nm, err := GetNmapDataByHostnameAndSessionID(hostname, sessionid)
+	if err != nil {
+		return "", err
+	}	
+
+	txt := "<pre class=mermaid>\nflowchart TD\n"
+	for i, nmh := range nm.Ndata.NmapHosts {
+		txt += fmt.Sprintf(`subgraph nmapO-%d["nmap"]%c`,i,'\n')
+		txt += fmt.Sprintf(`subgraph nmap-%d["%s &rarr; %s (%s)"]%cend%c`, i,nmh.FromHostname, nmh.ScannedHostname, nmh.IPScanned, '\n', '\n' )
+		txt += fmt.Sprintf(`subgraph %s["%s"]%cend%c`, nmh.Interfacename,nmh.Interfacename, '\n', '\n' )
+		for j, nr := range nmh.NmapLines {
+
+			noport := ""
+			_, ok := FbP[nr.Port]
+			if !ok {
+				noport = "<br/><span style='color:red'>No FW Port Configured!</span>"
+			}
+
+			txt += fmt.Sprintf(`subgraph nmap-%d-%d["%s/%s %s"]%cend%c`, i,j,nr.Port,nr.Proto,noport, '\n', '\n' )
+			txt += fmt.Sprintf(`nmap-%d-%d ---> %s%c`,i,j,nmh.Interfacename, '\n')
+		}
+
+		txt += "end\n"
+	}
+	txt += "</pre>\n"
+
+	return txt, nil
 }

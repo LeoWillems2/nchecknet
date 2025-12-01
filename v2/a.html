@@ -3,38 +3,27 @@
 <pre class=mermaid>
 flowchart TD
 
-
-subgraph Somewhere["Somewhere out there"]
-
-subgraph NMAP-1["Nmap-1"]
-subgraph NMAP-1-R22["Nmap 22"]
-end
-subgraph NMAP-1-R443["Nmap 443"]
+subgraph nmapO-0["nmap"]
+subgraph nmap-0["nmap lewi &rarr; monitor.managedlinux.nl (91.98.147.178)"]
 end
 subgraph eth0["eth0"]
 end
+subgraph nmap-0-0["22/tcp open"]
 end
-NMAP-1-R443 ---> eth0
-NMAP-1-R22 ---> eth0
-
-subgraph NMAP-2["Nmap-2"]
-subgraph NMAP-2-R22["Nmap 22"]
+nmap-0-0 ---> eth0
+subgraph nmap-0-1["443/tcp open"]
 end
-subgraph NMAP-2-R443["Nmap 443"]
+nmap-0-1 ---> eth0
+subgraph nmap-0-2["8080/tcp open"]
 end
+nmap-0-2 ---> eth0
 end
-
-subgraph NMAP-3["Nmap-3"]
-subgraph NMAP-3-R22["Nmap 22"]
+subgraph nmapO-1["nmap"]
+subgraph nmap-1["nmap system.managedlinux.nl &rarr; monitor.managedlinux.nl ()"]
 end
-subgraph NMAP-3-R443["Nmap 443"]
+subgraph tun2["tun2"]
 end
 end
-
-end
-
-
-
 
 
 

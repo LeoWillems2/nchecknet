@@ -298,12 +298,19 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request) {
 			}
 			t := ""
 			switch mi.ChartType {
-			case "ufwlisten":
+			case "ufwlistenchart":
 				t, err = sharedlib.CompareFromUFWViewpoint(mi.Hostname, mi.SessionID, mi.Hide, user.AccessRight)
 				if err != nil {
 					continue
 				}
+			
+			case "nmapchart":
+				t, err = sharedlib.CompareFromNMAPViewpoint(mi.Hostname, mi.SessionID)
+				if err != nil {
+					continue
+				}
 			}
+
 			mo.Function = "FillChartReport"
 			mo.ArrData = append(mo.ArrData, t)
 

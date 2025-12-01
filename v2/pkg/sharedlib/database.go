@@ -737,7 +737,7 @@ def scan(scanip):
 		ipv = "6"
 		scanip = scanip + "%"+iface
 
-	data["Nmap"] = runp(["nmap", "-"+ipv, scanip ])
+	data["Nmap"] = runp(["nmap", "-Pn",  "-"+ipv, scanip ])
 	data["Hostname"] = platform.node()
 	data["Scanname"] = "SCANNAME"
 	data["Interfacename"] = "IFACE"
