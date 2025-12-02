@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
+	//"log"
 	"strings"
 )
 
@@ -118,8 +118,8 @@ subgraph SERVER["%s %s "]
 		for _, fwrule := range fwrules {
 			_, ok := ListenersByPort[fwport]
 			if !ok {
-				log.Println("compareFromUFWViewpoint_(): Skipping:", fwrule)
-				continue
+				//log.Println("compareFromUFWViewpoint_(): Skipping:", fwrule)
+				//continue
 			}
 
 			T := "danger"
