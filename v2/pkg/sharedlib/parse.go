@@ -214,7 +214,7 @@ func ProcessRawNmapDataJSON(rdata RawDataNmap) NcheckNetNmap {
 }
 
 
-func TestFirewall2() {
+func TestFirewall() {
 
 	ls := TestInterfaces()
 	lines, err := readLines("testdata/nfr.txt")
@@ -224,28 +224,12 @@ func TestFirewall2() {
 	}
 
 	
-	l := ProcessFW2(lines,ls)
-
- 	b, _ := json.MarshalIndent(l, "", "  ")
-	t := string(b)
-	fmt.Println(t)
-}
-
-func TestFirewall() {
-
-	ls := TestInterfaces()
-	lines, err := readLines("testdata/ufw2.txt")
-	if err != nil {
-		log.Fatalln("TestFirewall()", err)
-		return
-	}
-
 	l := ProcessFW(lines,ls)
+
  	b, _ := json.MarshalIndent(l, "", "  ")
 	t := string(b)
 	fmt.Println(t)
 }
-
 
 func TestListeners() {
 	lines, err := readLines("testdata/listeners.txt")
@@ -338,26 +322,21 @@ var reDaddr = regexp.MustCompile(`daddr ([0-9a-f:.]+)`)
 
 func ProcessFW(fwdata []string, ifaces []Interface) []Fwrule {
 	Fwrules := make([]Fwrule, 0)
-	 AllIntMap := make(map[string]bool)
 
+	all_ifaces := []string{}
+        for _, inf := range ifaces {
+		all_ifaces = append(all_ifaces, inf.Name)
+	}
 
 	for _, line := range fwdata {
 		ufw := Fwrule{}
 		ufw.Intfaces = make([]string, 0)
 
-		// step: read any line to get all interfaces, pre-fill ufw as well
-		m := reInterFace.FindStringSubmatch(line)
-		if len(m) == 2 {
-			ufw.Intfaces = append(ufw.Intfaces, m[1])
-			AllIntMap[m[1]] = true
-		} else {
-			ufw.Intfaces = append(ufw.Intfaces, "all")
-		}
 	
 		// step: find proto and port with dport
-	    m = reDport.FindStringSubmatch(line)
+		m := reDport.FindStringSubmatch(line)
 		if len(m) != 3 {
-			continue								// not a dport line
+			continue	// not a dport line
 		}
 		ufw.Port = m[2]
 		ufw.Proto = m[1]
@@ -365,6 +344,15 @@ func ProcessFW(fwdata []string, ifaces []Interface) []Fwrule {
 
 		line = trimLeftSpace(line)
 		fields := strings.Fields(line)
+
+		// step: interfaces
+		m = reInterFace.FindStringSubmatch(line)
+		if len(m) == 2 {
+			ufw.Intfaces = append(ufw.Intfaces, m[1])
+		} else {
+			ufw.Intfaces = all_ifaces
+			ufw.AllIntfaces = true
+		}
 
 		// step: ipv6?
 		if fields[0] == "ip6" {
@@ -391,21 +379,6 @@ func ProcessFW(fwdata []string, ifaces []Interface) []Fwrule {
 
 		Fwrules = append(Fwrules, ufw)
 	}
-
-	AllIntArr := make([]string,0)
-	for k := range AllIntMap {
-		AllIntArr = append(AllIntArr, k)
-	}
-
-	for i := range Fwrules {
-		if Fwrules[i].Intfaces[0] == "all" {
-			Fwrules[i].Intfaces = AllIntArr
-			Fwrules[i].AllIntfaces = true
-		}
-	}
-	
-	log.Println("ProcessFW, 2 x interfaces", ifaces, AllIntArr)
-
 
 	return Fwrules
 }
