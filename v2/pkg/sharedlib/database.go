@@ -672,7 +672,7 @@ def main():
 	data["Interfaces"] = runp(["ifconfig"])
 	data["Listeners"] = runp(["sudo", "netstat", "-tulpn"])
 	data["Routes"] = runp(["netstat", "-rn"])
-	data["Fwrules"] = runp(["sudo", "ufw", "status"])
+	data["Fwrules"] = runp(["sudo", "/usr/sbin/nft", "list", "ruleset"])     // sudo /usr/sbin/nft list ruleset
 
 	now = datetime.datetime.now()
 	data["Date"] = now.strftime("%Y-%m-%d %H:%M:%S")

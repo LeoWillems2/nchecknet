@@ -33,7 +33,7 @@ func main() {
 
 
 	if *Firewall {
-		sharedlib.TestFirewall()
+		sharedlib.TestFirewall2()
 	}
 	if *Listeners {
 		sharedlib.TestListeners()
