@@ -80,6 +80,7 @@ type Fwrule struct {
 	IP_to        string
 	IP_from      string
 	Ruletype     string
+	Chain	     string
 	Comment      string
 	Supressed	bool
 }
@@ -318,10 +319,12 @@ var reDport = regexp.MustCompile(`(tcp|udp) dport ([0-9]+).*accept$`)
 var reInterFace = regexp.MustCompile(`iifname "([^"]+)`)
 var reSaddr = regexp.MustCompile(`saddr ([0-9a-f:.]+)`)
 var reDaddr = regexp.MustCompile(`daddr ([0-9a-f:.]+)`)
+var reChain = regexp.MustCompile(`^\s+chain ([A-Za-z0-9-]+)`)
 
 
 func ProcessFW(fwdata []string, ifaces []Interface) []Fwrule {
 	Fwrules := make([]Fwrule, 0)
+	Chain := ""
 
 	all_ifaces := []string{}
         for _, inf := range ifaces {
@@ -332,15 +335,23 @@ func ProcessFW(fwdata []string, ifaces []Interface) []Fwrule {
 		ufw := Fwrule{}
 		ufw.Intfaces = make([]string, 0)
 
+		// step: remember the chain
+		m := reChain.FindStringSubmatch(line)
+		if len(m) == 2 {
+			Chain = m[1]
+			continue
+		}
+
 	
 		// step: find proto and port with dport
-		m := reDport.FindStringSubmatch(line)
+		m = reDport.FindStringSubmatch(line)
 		if len(m) != 3 {
 			continue	// not a dport line
 		}
 		ufw.Port = m[2]
 		ufw.Proto = m[1]
 		ufw.Ruletype = "ACCEPT"
+		ufw.Chain = Chain
 
 		line = trimLeftSpace(line)
 		fields := strings.Fields(line)
