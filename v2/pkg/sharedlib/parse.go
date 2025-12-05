@@ -218,7 +218,7 @@ func ProcessRawNmapDataJSON(rdata RawDataNmap) NcheckNetNmap {
 func TestFirewall() {
 
 	ls := TestInterfaces()
-	lines, err := readLines("testdata/nfr.txt")
+	lines, err := readLines("testdata/nft.txt")
 	if err != nil {
 		log.Fatalln("TestFirewall1()", err)
 		return
@@ -322,7 +322,13 @@ var reDaddr = regexp.MustCompile(`daddr ([0-9a-f:.]+)`)
 var reChain = regexp.MustCompile(`^\s+chain ([A-Za-z0-9-]+)`)
 
 
+// ProcessFW() parses the output from nft list ruleset
 func ProcessFW(fwdata []string, ifaces []Interface) []Fwrule {
+
+
+
+
+
 	Fwrules := make([]Fwrule, 0)
 	Chain := ""
 
@@ -332,8 +338,8 @@ func ProcessFW(fwdata []string, ifaces []Interface) []Fwrule {
 	}
 
 	for _, line := range fwdata {
-		ufw := Fwrule{}
-		ufw.Intfaces = make([]string, 0)
+		fw := Fwrule{}
+		fw.Intfaces = make([]string, 0)
 
 		// step: remember the chain
 		m := reChain.FindStringSubmatch(line)
@@ -348,10 +354,10 @@ func ProcessFW(fwdata []string, ifaces []Interface) []Fwrule {
 		if len(m) != 3 {
 			continue	// not a dport line
 		}
-		ufw.Port = m[2]
-		ufw.Proto = m[1]
-		ufw.Ruletype = "ACCEPT"
-		ufw.Chain = Chain
+		fw.Port = m[2]
+		fw.Proto = m[1]
+		fw.Ruletype = "ACCEPT"
+		fw.Chain = Chain
 
 		line = trimLeftSpace(line)
 		fields := strings.Fields(line)
@@ -359,168 +365,36 @@ func ProcessFW(fwdata []string, ifaces []Interface) []Fwrule {
 		// step: interfaces
 		m = reInterFace.FindStringSubmatch(line)
 		if len(m) == 2 {
-			ufw.Intfaces = append(ufw.Intfaces, m[1])
+			fw.Intfaces = append(fw.Intfaces, m[1])
 		} else {
-			ufw.Intfaces = all_ifaces
-			ufw.AllIntfaces = true
+			fw.Intfaces = all_ifaces
+			fw.AllIntfaces = true
 		}
 
 		// step: ipv6?
 		if fields[0] == "ip6" {
-			ufw.IPversion = "v6"
+			fw.IPversion = "v6"
 		} else {
-			ufw.IPversion = "v4"
+			fw.IPversion = "v4"
 		}
 
 		// step: get source address
 		m = reSaddr.FindStringSubmatch(line)
 		if len(m) == 2 {
-			ufw.IP_from = m[1]
+			fw.IP_from = m[1]
 		} else {
-			ufw.IP_from = "Any"
+			fw.IP_from = "Any"
 		}
 
 		// step: get destination address
 		m = reDaddr.FindStringSubmatch(line)
 		if len(m) == 2 {
-			ufw.IP_to = m[1]
+			fw.IP_to = m[1]
 		} else {
-			ufw.IP_to = "Any"
+			fw.IP_to = "Any"
 		}
 
-		Fwrules = append(Fwrules, ufw)
-	}
-
-	return Fwrules
-}
-
-func ProcessFW2(fwdata []string, ifaces []Interface) []Fwrule {
-
-	Fwrules := make([]Fwrule, 0)
-
-	for _, line := range fwdata {
-		ufw := Fwrule{}
-		ufw.Intfaces = make([]string, 0)
-
-
-		switch {
-		case strings.Contains(line, "ALLOW"):
-			ufw.Ruletype = "ALLOW"
-		case strings.Contains(line, "BLOCK"):
-			ufw.Ruletype = "BLOCK"
-		case strings.Contains(line, "DROP"):
-			ufw.Ruletype = "DROP"
-		case strings.Contains(line, "REJECT"):
-			ufw.Ruletype = "REJECT"
-		default:
-			continue
-		}
-
-		// store and remove Comment
-		ufw.Comment = ""
-		cmtindex := strings.Index(line, "#")
-		if cmtindex != -1 {
-			ufw.Comment = line[cmtindex:]
-			line = line[0:cmtindex]
-		}
-
-		//exception......
-		switch {
-		case strings.Contains(line, " in "):
-			fallthrough
-		case strings.Contains(line, " out "):
-			log.Println("Cowardly skipping lines with in/out:", line)
-
-		}
-
-		// sanitize
-		firstsplit := strings.Split(line, ufw.Ruletype)
-		topart := trimLeftSpace(firstsplit[0])
-		frompart := trimLeftSpace(firstsplit[1])
-		topart = trimRightSpace(topart)
-		frompart = trimRightSpace(frompart)
-
-		// test IPv6
-		ufw.IPversion = "v4"
-		switch {
-		case strings.Contains(topart, " (v6)"):
-			topart = strings.Replace(topart, " (v6)", "", 1)
-			ufw.IPversion = "v6"
-			fallthrough
-		case strings.Contains(frompart, " (v6)"):
-			frompart = strings.Replace(frompart, " (v6)", "", 1)
-			ufw.IPversion = "v6"
-			fallthrough
-		case strings.Contains(topart, ":"):
-			fallthrough
-		case strings.Contains(frompart, ":"):
-			ufw.IPversion = "v6"
-		}
-
-		// process topart
-		topart = strings.Replace(topart, "on ", "ON", 1) // unique
-		topartsplit := strings.SplitN(topart, " ", 3)
-		
-		all_ifaces := []string{}
-		for _, inf := range ifaces {
-			all_ifaces = append(all_ifaces, inf.Name)
-		}
-
-		switch len(topartsplit) {
-		case 1: // 80/tcp
-			ufw.Port = topartsplit[0]
-			ufw.IP_to = "To_AnyIP"
-			ufw.Intfaces = append(ufw.Intfaces, all_ifaces...)
-			ufw.AllIntfaces = true
-		case 2: // 127.0.0.1 3025/tcp  ||  3020/tcp on lo
-			if strings.Contains(topartsplit[1], "ON") {
-				ufw.Port = topartsplit[0]
-				ufw.IP_to = "To_AnyIP"
-				ufw.Intfaces = append(ufw.Intfaces, topartsplit[1])
-			} else {
-				ufw.Port = topartsplit[1]
-				ufw.IP_to = topartsplit[0]
-				ufw.Intfaces = append(ufw.Intfaces, all_ifaces...)
-				ufw.AllIntfaces = true
-			}
-		case 3: // 192.168.7.7 3023/tcp on lo
-			ufw.Port = topartsplit[1]
-			ufw.IP_to = topartsplit[0]
-			ufw.Intfaces = append(ufw.Intfaces, topartsplit[2])
-		default:
-			log.Fatalln("Bad split on topart term of FW output")
-		}
-
-		// process port and proto
-		switch {
-		case strings.Contains(ufw.Port, "/tcp"):
-			ufw.Proto = "tcp"
-			ufw.Port = strings.Replace(ufw.Port, "/tcp", "", 1)
-		case strings.Contains(ufw.Port, "/udp"):
-			ufw.Proto = "udp"
-			ufw.Port = strings.Replace(ufw.Port, "/udp", "", 1)
-		case !strings.Contains(ufw.Port, "/"):
-			ufw.Proto = "tcp+udp"
-		default:
-			log.Println("Bad proto on line: ", line)
-		}
-
-		// sanitize
-		for i := range ufw.Intfaces {
-			ufw.Intfaces[i] = strings.Replace(ufw.Intfaces[i], "ON", "", 1)
-		}
-
-		// Process ufw "From"
-		ufw.IP_from = frompart
-
-		// clone if both tcp and udp   (port without /proto)
-		if ufw.Proto == "tcp+udp"{
-			ufw.Proto = "tcp"
-			Fwrules = append(Fwrules, ufw)
-			ufw.Proto = "udp"
-		}
-
-		Fwrules = append(Fwrules, ufw)
+		Fwrules = append(Fwrules, fw)
 	}
 
 	return Fwrules

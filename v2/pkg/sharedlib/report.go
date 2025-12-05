@@ -140,7 +140,7 @@ subgraph SERVER["%s %s "]
 			hb := fmt.Sprintf(`<button style='width:5x;height:5px' class='btn btn-%s hidefwrule %s' id='%s%s'></button>`, T, clB, Tx, csum)
 
 			x := fmt.Sprintf(" %s-%s-%s-%s", fwrule.IP_from, fwrule.IP_to, fwrule.Port, fwrule.Proto)
-			x += fmt.Sprintf(`["%s (%s)<br/>%s/%s<br/>%s<br/><input class='Fwcomment formcontrol' %s style='font-size: 7pt;' id='I%s' value='%s'/> %s"]%c`, fwrule.IP_from, fwrule.IP_to, fwrule.Port, fwrule.Proto, ifas, clI, csum, fwrule.Comment, hb, '\n')
+			x += fmt.Sprintf(`["%s (%s)<br/>%s/%s<br/>%s<br/><input class='Fwcomment formcontrol' %s style='font-size: 7pt;' id='I%s' value='%s'/> %s<br/>chain: %s"]%c`, fwrule.IP_from, fwrule.IP_to, fwrule.Port, fwrule.Proto, ifas, clI, csum, fwrule.Comment, hb, fwrule.Chain,'\n')
 			idx := fwrule.IP_from + "-" + fwrule.IP_from + "%" + fwrule.Port + "/" + fwrule.Proto
 
 			_, ok = UfwIDX[idx]

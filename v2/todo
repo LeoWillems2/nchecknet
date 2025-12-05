@@ -5,11 +5,6 @@
 
 * more reports
 
-ufw ->nftfw  aanpassen
-
-
-docker testen
-
-
 nmap integratie
- max sessionid opnemen in yaml.
+ max sessionid for web opnemen in yaml.
+ max sessionid for pruning opnemen in yaml.
