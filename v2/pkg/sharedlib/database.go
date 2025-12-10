@@ -669,10 +669,10 @@ def runp(command):
 
 def main():
 	data["Hostname"] = platform.node()
-	data["Interfaces"] = runp(["ifconfig"])
-	data["Listeners"] = runp(["sudo", "netstat", "-tulpn"])
-	data["Routes"] = runp(["netstat", "-rn"])
-	data["Fwrules"] = runp(["sudo", "/usr/sbin/nft", "list", "ruleset"])     // sudo /usr/sbin/nft list ruleset
+	data["Interfaces"] = runp(["/usr/sbin/ifconfig"])
+	data["Listeners"] = runp(["/usr/bin/netstat", "-tulpn"])
+	data["Routes"] = runp(["/usr/bin/netstat", "-rn"])
+	data["Fwrules"] = runp(["/usr/sbin/nft", "list", "ruleset"])
 
 	now = datetime.datetime.now()
 	data["Date"] = now.strftime("%Y-%m-%d %H:%M:%S")
@@ -682,7 +682,7 @@ def main():
 	f.close()
 
 	runp(["curl","-k","--data-binary","@/var/tmp/nchecknetraw-server.json","-X","POST","NCHECKNETSERVER/api_server"])
-	#os.remove("/var/tmp/nchecknetraw-server.json")
+	os.remove("/var/tmp/nchecknetraw-server.json")
 
 main()
 `
@@ -737,7 +737,7 @@ def scan(scanip):
 		ipv = "6"
 		scanip = scanip + "%"+iface
 
-	data["Nmap"] = runp(["nmap", "-Pn",  "-"+ipv, scanip ])
+	data["Nmap"] = runp(["/usr/bin/nmap", "-Pn",  "-"+ipv, scanip ])
 	data["Hostname"] = platform.node()
 	data["Scanname"] = "SCANNAME"
 	data["Interfacename"] = "IFACE"
@@ -750,7 +750,7 @@ def scan(scanip):
 	f.close()
 
 	runp(["curl","-k","--data-binary","@/var/tmp/nchecknetraw-nmap.json","-X","POST","NCHECKNETSERVER/api_nmap"])
-	#os.remove("/var/tmp/nchecknetraw-nmap.json")
+	os.remove("/var/tmp/nchecknetraw-nmap.json")
 
 def main():
 	scanips = SCANIPS
