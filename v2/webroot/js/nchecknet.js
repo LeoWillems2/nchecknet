@@ -115,7 +115,7 @@ function Ready() {
 function RedrawChart() {
     unhide = $("#charthide").prop('checked');
     m = {};
-    m.Function = "GetUfwListenChart";
+    m.Function = "GetFwListenChart";
     if (unhide) {
         m.Hide = "unhide";
     } else {

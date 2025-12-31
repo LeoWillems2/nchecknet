@@ -63,8 +63,8 @@ func createFbP(fis []Fwrule) map[string][]Fwrule {
 	return fbp
 }
 
-// CompareFromUFWViewpoint() and compareFromUFWViewpoint_() create the Mermaid map that depicts the fw and listeners in the Charts tab.
-func CompareFromUFWViewpoint(hostname, sessionid, hide, acright string) (string, error) {
+// CompareFromFWViewpoint() and compareFromFWViewpoint_() create the Mermaid map that depicts the fw and listeners in the Charts tab.
+func CompareFromFWViewpoint(hostname, sessionid, hide, acright string) (string, error) {
 
 	sd, err := GetServerDataByHostnameAndSessionID(hostname, sessionid)
 	if err != nil {
@@ -91,13 +91,13 @@ func CompareFromUFWViewpoint(hostname, sessionid, hide, acright string) (string,
 	LbP := createLbP(sd.Sdata.Listeners)
 	FbP := createFbP(sd.Sdata.Fwrules)
 
-	return compareFromUFWViewpoint_(hostname, FbP, LbP, adrs, hide, acright)
+	return compareFromFWViewpoint_(hostname, FbP, LbP, adrs, hide, acright)
 }
 
-func compareFromUFWViewpoint_(hostname string, FwrulesByPort map[string][]Fwrule,
+func compareFromFWViewpoint_(hostname string, FwrulesByPort map[string][]Fwrule,
 	ListenersByPort map[string][]Listener, ifaces, hide, acright string) (string, error) {
 
-	UfwIDX := make(map[string]string)
+	FwIDX := make(map[string]string)
 	LisIDX := make(map[string]string)
 
 	// clI and clB control the interactivity of the inputs and the buttons
@@ -118,7 +118,7 @@ subgraph SERVER["%s %s "]
 		for _, fwrule := range fwrules {
 			_, ok := ListenersByPort[fwport]
 			if !ok {
-				//log.Println("compareFromUFWViewpoint_(): Skipping:", fwrule)
+				//log.Println("compareFromFWViewpoint_(): Skipping:", fwrule)
 				//continue
 			}
 
@@ -143,10 +143,10 @@ subgraph SERVER["%s %s "]
 			x += fmt.Sprintf(`["%s (%s)<br/>%s/%s<br/>%s<br/><input class='Fwcomment formcontrol' %s style='font-size: 7pt;' id='I%s' value='%s'/> %s<br/>chain: %s"]%c`, fwrule.IP_from, fwrule.IP_to, fwrule.Port, fwrule.Proto, ifas, clI, csum, fwrule.Comment, hb, fwrule.Chain,'\n')
 			idx := fwrule.IP_from + "-" + fwrule.IP_from + "%" + fwrule.Port + "/" + fwrule.Proto
 
-			_, ok = UfwIDX[idx]
+			_, ok = FwIDX[idx]
 			if !ok {
 				t += x
-				UfwIDX[idx] = x
+				FwIDX[idx] = x
 			}
 		}
 	}
@@ -186,7 +186,7 @@ subgraph SERVER["%s %s "]
 	t += "end\n"
 	t += "end\n"
 
-	for fp, ftxt := range UfwIDX {
+	for fp, ftxt := range FwIDX {
 		fpp := strings.Split(fp, "%")
 		ltxt, ok := LisIDX[fpp[1]]
 		if ok {

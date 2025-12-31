@@ -292,14 +292,14 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request) {
 				continue
 			}
 			mo.ArrData = append(mo.ArrData, t)
-		case "GetUfwListenChart":
+		case "GetFwListenChart":
 			if sharedlib.NoAccess2DB(user, mi.Hostname) {
 				return
 			}
 			t := ""
 			switch mi.ChartType {
 			case "fwlistenchart":
-				t, err = sharedlib.CompareFromUFWViewpoint(mi.Hostname, mi.SessionID, mi.Hide, user.AccessRight)
+				t, err = sharedlib.CompareFromFWViewpoint(mi.Hostname, mi.SessionID, mi.Hide, user.AccessRight)
 				if err != nil {
 					continue
 				}
@@ -325,7 +325,7 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request) {
 			} else {
 				sharedlib.HideFwrule(mi.Hostname, mi.SessionID, mi.Csum)
 
-				t, err := sharedlib.CompareFromUFWViewpoint(mi.Hostname, mi.SessionID, mi.Hide, user.AccessRight)
+				t, err := sharedlib.CompareFromFWViewpoint(mi.Hostname, mi.SessionID, mi.Hide, user.AccessRight)
 				if err != nil {
 					continue
 				}
@@ -343,7 +343,7 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request) {
 			} else {
 				sharedlib.HideListener(mi.Hostname, mi.SessionID, mi.Csum)
 
-				t, err := sharedlib.CompareFromUFWViewpoint(mi.Hostname, mi.SessionID, mi.Hide, user.AccessRight)
+				t, err := sharedlib.CompareFromFWViewpoint(mi.Hostname, mi.SessionID, mi.Hide, user.AccessRight)
 				if err != nil {
 					continue
 				}
