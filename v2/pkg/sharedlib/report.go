@@ -270,6 +270,7 @@ func CompareFromNMAPViewpoint(hostname, sessionid string) (string, error) {
 			noport := ""
 			_, ok := FbP[nr.Port]
 			if !ok {
+				// LOG ---> reportlogging 
 				noport = "<br/><span style='color:red'>No FW Port Configured!</span>"
 			}
 
