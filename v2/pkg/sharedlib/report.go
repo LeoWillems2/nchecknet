@@ -113,7 +113,7 @@ flowchart TD
 subgraph SERVER["%s %s "]
 `, hostname, ifaces)
 
-	t += `subgraph FROM["UFW From (To) Port/Proto"]` + "\n"
+	t += `subgraph FROM["FW From (To) Port/Proto"]` + "\n"
 	for fwport, fwrules := range FwrulesByPort {
 		for _, fwrule := range fwrules {
 			_, ok := ListenersByPort[fwport]

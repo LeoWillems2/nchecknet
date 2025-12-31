@@ -96,17 +96,20 @@ function Ready() {
         var target = $(e.target).attr("href");
         $("#chartreport").html("<pre class='mermaid' id=mermaidchartreport></pre>");
         $("#charthide").prop('checked', false);
-        if (target == "#tab-2") {
+        //if (target == "#tab-2") {
             RedrawChart();
-            return;
-        }
-        if (target == "#tab-3") {
-	    mo.Function = "GetData";
-	    SendMessage(mo);
-            return;
-        }
-	
+            //return;
+        //}
     });
+
+    $("#datatabitem").on('shown.bs.tab', function (e) {
+        var target = $(e.target).attr("href");
+        mo.Function = "GetData";
+        SendMessage(mo);
+    });
+
+
+
 }
 
 function RedrawChart() {
@@ -260,6 +263,7 @@ function FillNmapSuggestion(m) {
 }
 
 function FillData(m) {
+
     $("#DataTabCol1").html("<pre>" + m.ArrData[0] + "</pre>");
 }
 function FillNmapCollector(m) {

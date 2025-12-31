@@ -298,7 +298,7 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request) {
 			}
 			t := ""
 			switch mi.ChartType {
-			case "ufwlistenchart":
+			case "fwlistenchart":
 				t, err = sharedlib.CompareFromUFWViewpoint(mi.Hostname, mi.SessionID, mi.Hide, user.AccessRight)
 				if err != nil {
 					continue

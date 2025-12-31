@@ -646,6 +646,7 @@ import os
 import platform
 import subprocess
 import datetime
+import os
 
 data = {
 	"Listeners": [],
@@ -707,6 +708,7 @@ import json
 import platform
 import subprocess
 import datetime
+import os
 
 data = {
 	"Nmap": [],
