@@ -1,5 +1,5 @@
 # nchecknet
-Nchecknet compares ufw against netstat -ntlp, netstat -rn, ifconfig and nmap
+Nchecknet compares nftables  against netstat -ntlp, netstat -rn, ifconfig and nmap
 
 ![](v2/docs/nchecknet1.png)
 
