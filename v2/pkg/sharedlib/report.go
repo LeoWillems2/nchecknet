@@ -284,3 +284,55 @@ func CompareFromNMAPViewpoint(hostname, sessionid string) (string, error) {
 
 	return txt, nil
 }
+
+func RunReport(hostname, sessionid string) (string, error) {
+
+	type R struct {
+		Hostname string
+		Sessionid string
+		NmapWarnings []string
+		FwAllowComments []string
+		ListenComments []string
+	}
+
+	result := R{}
+
+	result.Hostname = hostname
+	result.Sessionid =  sessionid
+
+	sd, err := GetServerDataByHostnameAndSessionID(hostname, sessionid)
+	if err != nil {
+		return "", err
+	}
+	FbP := createFbP(sd.Sdata.Fwrules)
+
+	nm, err := GetNmapDataByHostnameAndSessionID(hostname, sessionid)
+	if err != nil {
+		return "", err
+	}	
+
+	for _, nmh := range nm.Ndata.NmapHosts {
+		for _, nr := range nmh.NmapLines {
+			_, ok := FbP[nr.Port]
+			ok=false
+			if !ok {
+				result.NmapWarnings = append(result.NmapWarnings, fmt.Sprintf("Nmap detected unmanaged port: %s", nr.Port));
+			}
+		}
+	}
+
+	for _, fwr := range sd.Sdata.Fwrules {
+		if fwr.Comment != "" {
+			result.FwAllowComments = append(result.FwAllowComments, fmt.Sprintf("Allow port comment %s: %s (supressed: %v)", fwr.Port,fwr.Comment, fwr.Supressed))
+		}
+	}
+	for _, li:= range sd.Sdata.Listeners {
+		if li.Comment != "" {
+			result.ListenComments = append(result.ListenComments, fmt.Sprintf("Listen port comment %s: %s (supressed: %v)", li.Port,li.Comment, li.Supressed))
+		}
+	}
+
+	tb, _ := json.MarshalIndent(result, "", "  ")
+
+	return string(tb), nil
+}

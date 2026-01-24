@@ -19,6 +19,9 @@ var Password *string = flag.String("P", "", "Password")
 var Owner *string = flag.String("O", "", "Owner")
 var Rights *string = flag.String("R", "", "Rights")
 
+var Report *bool = flag.Bool("r", false, "Report")
+var Server *string = flag.String("s", "", "Server FQDN")
+var Ident *string = flag.String("i", "", "Ident")
 
 var NewServer *string = flag.String("ns", "", "New Server, add: -O")
 var ServerCollectorPy *string = flag.String("cs", "", "Create collector script for FQDN (server)")
@@ -28,7 +31,9 @@ func main() {
 
         flag.Parse()
 
+
 	var err error
+
         YConfig, err = sharedlib.GetYamlConfig("etc/nchecknet.yml")
         if err != nil {
                 log.Fatalln(err)
@@ -36,6 +41,21 @@ func main() {
         }
 
 	sharedlib.DBConnect(YConfig.Server.MongoDBURL)
+
+	if (*Report) {
+		if (*Server == "" || *Ident == "" ) {
+			log.Fatalln("-r (Report): missing -s and/or -i");
+			return;
+		}
+		t, err := sharedlib.RunReport(*Server, *Ident);
+		if err != nil {
+			log.Fatalln("-r (Report): failed", err);
+			return;
+		}
+		fmt.Println(t)
+		return;
+	}
+
 
 	if *NewUser != "" {
 

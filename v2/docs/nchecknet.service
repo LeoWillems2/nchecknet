@@ -1,0 +1,23 @@
+[Unit]
+Description=nchecknet
+After=network.target
+
+[Service]
+# User and Group the service runs under
+User=nobody
+Group=nogroup
+
+# Path to the executable and working directory
+WorkingDirectory=/var/tmp
+ExecStart=/usr/local/bin/nchecknetcollector
+
+# Restart policy: automatically restart if the service crashes
+Restart=always
+RestartSec=5
+
+# Optional: environment variables
+#Environment=NODE_ENV=production
+
+[Install]
+# This defines how the service is enabled (multi-user.target is standard)
+WantedBy=multi-user.target
