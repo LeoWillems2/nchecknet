@@ -53,6 +53,10 @@ func main() {
 			return;
 		}
 		fmt.Println(t)
+
+
+		// for syslog nmap errors
+		sharedlib.CompareFromNMAPViewpoint(*Server, *Ident)
 		return;
 	}
 
