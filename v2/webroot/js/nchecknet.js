@@ -11,7 +11,9 @@ function Ready() {
 
     mermaid.initialize({
         securityLevel: 'antiscript',
+  maxTextSize: 2400000
     });
+
 
     wsstring = "wss://";
     if (window.location.host == "127.0.0.1:8086") {

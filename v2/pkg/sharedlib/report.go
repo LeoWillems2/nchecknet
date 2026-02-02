@@ -6,8 +6,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	//"log"
 	"strings"
+	"log"
+        "log/syslog"
 )
 
 // PrettyPrintServerDate() creates the text for the Data tab
@@ -248,6 +249,13 @@ func createListenerCsum(lis Listener) string {
 }
 
 func CompareFromNMAPViewpoint(hostname, sessionid string) (string, error) {
+
+	//writer, err := syslog.Dial("tcp", "127.0.0.1:514", syslog.LOG_CRIT, "nchecknet")
+	writer, err := syslog.New(syslog.LOG_CRIT|syslog.LOG_DAEMON, "nchecknet")
+	if err != nil {
+		log.Fatal("Could not connect to syslog:", err)
+	}
+	defer writer.Close()
 	
 	sd, err := GetServerDataByHostnameAndSessionID(hostname, sessionid)
 	if err != nil {
@@ -269,8 +277,11 @@ func CompareFromNMAPViewpoint(hostname, sessionid string) (string, error) {
 
 			noport := ""
 			_, ok := FbP[nr.Port]
-			if !ok {
+			if ok {
 				// LOG ---> reportlogging 
+				sl := fmt.Sprintf("Nmap found open port (%s) but no FW port is configred", nr.Port)
+				writer.Crit(sl)
+                                fmt.Println(sl)
 				noport = "<br/><span style='color:red'>No FW Port Configured!</span>"
 			}
 
