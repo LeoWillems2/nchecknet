@@ -207,12 +207,18 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request) {
 		Hide      string
 		Csum      string
 		ChartType string
+                BaselineServer bool
+                BaselineNmap bool
 	}
 
 	type MessageOut struct {
 		Function string
 		Hostname string
 		ArrData  []string
+                BaselineServer bool
+                BaselineNmap bool
+                BaselineServerID string
+                BaselineNmapID string
 	}
 
 	// Upgrade the HTTP connection to a WebSocket connection
@@ -280,6 +286,14 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request) {
 			mo.Hostname = mi.Hostname
 			txt := sharedlib.GenPic(sn.Key, mi.SessionID)
 			mo.ArrData = append(mo.ArrData, txt)
+   		case "SetBaselineServer":
+			if sharedlib.NoAccess2DB(user, mi.Hostname) {
+				return
+			}
+			sharedlib.DeleteBaseline(mi.Hostname)
+			if mi.BaselineServer {
+				sharedlib.SetBaseline(mi.Hostname, mi.SessionID)
+			}
 		case "GetData":
 			if sharedlib.NoAccess2DB(user, mi.Hostname) {
 				return
@@ -313,6 +327,19 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request) {
 
 			mo.Function = "FillChartReport"
 			mo.ArrData = append(mo.ArrData, t)
+
+
+			bm := "None"
+                        mo.BaselineServer = false
+ 			b, err := sharedlib.GetBaseline(mi.Hostname)
+                        if err == nil {
+ 				log.Println(mi.SessionID, b.SessionID)
+				bm = b.SessionID
+				if mi.SessionID == b.SessionID {
+                        		mo.BaselineServer = true
+				}
+			}
+			mo.BaselineServerID = bm
 
 		case "HideFwrule":
 			if sharedlib.NoAccess2DB(user, mi.Hostname) {

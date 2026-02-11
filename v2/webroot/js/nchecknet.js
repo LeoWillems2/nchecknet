@@ -8,6 +8,13 @@ function Ready() {
 
     $('.nav-tabs > li:first-child > a')[0].click();
 
+    $("#baseline-server").hide();
+    $("#baseline-nmap").hide();
+    $("#hide-hide").hide();
+
+    
+
+
 
     mermaid.initialize({
         securityLevel: 'antiscript',
@@ -29,6 +36,7 @@ function Ready() {
     ws.onmessage = (event) => {
         //console.log(event.data);
         m = JSON.parse(event.data);
+        console.log(m.Function);
         if (m.Function == "Error") {
             alert(m.ArrData[0]);
             return;
@@ -74,6 +82,9 @@ function Ready() {
         mo.Function = "GetSessionIDs";
         mo.Hostname = hn;
         SendMessage(mo);
+        $("#charttype").val("select");
+       $("#baseline-server").hide();
+       $("#baseline-nmap").hide();
     });
 
     $("#SessionIDs").on("change", function () {
@@ -86,9 +97,14 @@ function Ready() {
 
         mo.Function = "GetData";
         SendMessage(mo);
+        $("#charttype").val("select");
+       $("#baseline-server").hide();
+       $("#baseline-nmap").hide();
     });
 
 
+    $("#baseline-server-val").on("click", doBaseLineServer);
+    $("#baseline-nmap-val").on("click", doBaseLineNmap);
 
     $("#charthide").on("click", RedrawChart);
 
@@ -98,10 +114,6 @@ function Ready() {
         var target = $(e.target).attr("href");
         $("#chartreport").html("<pre class='mermaid' id=mermaidchartreport></pre>");
         $("#charthide").prop('checked', false);
-        //if (target == "#tab-2") {
-            RedrawChart();
-            //return;
-        //}
     });
 
     $("#datatabitem").on('shown.bs.tab', function (e) {
@@ -109,12 +121,25 @@ function Ready() {
         mo.Function = "GetData";
         SendMessage(mo);
     });
+}
 
+function doBaseLineServer(){
+    m = {};
+    m.Function = "SetBaselineServer";
+    m.BaselineServer = $("#baseline-server-val").prop('checked');
+    SendMessage(m);
+    setTimeout(RedrawChart, 500);
+}
 
-
+function doBaseLineNmap(){
+    m = {};
+    m.Function = "SetBaselineNmap";
+    m.BaselineNmap = $("#baseline-nmap-val").prop('checked');
+    SendMessage(m);
 }
 
 function RedrawChart() {
+
     unhide = $("#charthide").prop('checked');
     m = {};
     m.Function = "GetFwListenChart";
@@ -200,7 +225,33 @@ function FillServers(m) {
 }
 
 function FillChartReport(m) {
+
+
+    if ($("#charttype").val() == "select") {
+       $("#hide-hide").hide();
+       $("#baseline-server").hide();
+       $("#baseline-nmap").hide();
+       $("#chartreport").html("");
+       return;
+    }
+
+    $("#baseline-server-val").prop('checked', m.BaselineServer);
+    $("#baseline-nmap-val").prop('checked', m.BaselineNmap);
+    $("#baseline-server-id").html(m.BaselineServerID);
+    $("#baseline-nmap-id").html(m.BaselineNmapID);
+
+    if ($("#charttype").val() == "nmapchart") {
+       $("#hide-hide").hide();
+       $("#baseline-server").hide();
+       $("#baseline-nmap").show();
+    } else { 
+       $("#hide-hide").show();
+       $("#baseline-server").show();
+       $("#baseline-nmap").hide();
+    }
+
     FillChart("#chartreport", m.ArrData[0]);
+
     setTimeout(function () {
         $(".hidefwrule").on("click", function () {
             csum = $(this).attr("id");
@@ -214,7 +265,6 @@ function FillChartReport(m) {
             mo = {};
             mo.Function = "HideListener";
             mo.Csum = csum;
-            console.log(csum);
             SendMessage(mo);
         });
         $(".Fwcomment").on("change", function () {

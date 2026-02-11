@@ -14,7 +14,8 @@ import (
 
 var YConfig sharedlib.YamlConfig
 
-var NewUser *string = flag.String("nu", "", "New User, add: -P -O -R")
+var Baseline *string = flag.String("sb", "", "Set baseline: -sb hostname -i sessionid")
+var NewUser *string = flag.String("nu", "", "New User: -nu username -P password -O owner -R [awr]")
 var Password *string = flag.String("P", "", "Password")
 var Owner *string = flag.String("O", "", "Owner")
 var Rights *string = flag.String("R", "", "Rights")
@@ -41,6 +42,18 @@ func main() {
         }
 
 	sharedlib.DBConnect(YConfig.Server.MongoDBURL)
+
+        if (*Baseline != "") {
+		if (*Ident == "" ) {
+			log.Fatalln("-r (Report): missing -s and/or -i");
+			return;
+		}
+		err := sharedlib.SetBaseline(*Baseline, *Ident)
+		if err != nil {
+			log.Fatalln(err)
+		}
+		return
+	}
 
 	if (*Report) {
 		if (*Server == "" || *Ident == "" ) {

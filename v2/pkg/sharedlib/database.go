@@ -17,6 +17,12 @@ import (
 	"time"
 )
 
+type dbBaseline struct {
+	ID           primitive.ObjectID `bson:"_id,omitempty"`
+	Hostname     string             `bson:"hostname,omitempty"`
+	SessionID string             `bson:"sessionid,omitempty"`
+}
+
 type dbUser struct {
 	ID           primitive.ObjectID `bson:"_id,omitempty"`
 	Name         string             `bson:"name,omitempty"`
@@ -56,6 +62,7 @@ var ServersCollection *mongo.Collection
 var ServerDataCollection *mongo.Collection
 var NmapDataCollection *mongo.Collection
 var UsersCollection *mongo.Collection
+var BaselineCollection *mongo.Collection
 var ctx = context.Background()
 
 func DBConnect(uri string) (*mongo.Client, error) {
@@ -75,9 +82,9 @@ func DBConnect(uri string) (*mongo.Client, error) {
 	ServerDataCollection = client.Database("nchecknet").Collection("serverdata")
 	NmapDataCollection = client.Database("nchecknet").Collection("nmapdata")
 	UsersCollection = client.Database("nchecknet").Collection("users")
+	BaselineCollection = client.Database("nchecknet").Collection("baseline")
 
 	return client, nil
-
 }
 
 func GetNmapDataByHostnameAndSessionID(hostname, sessionid string) (dbNmapData, error) {
@@ -336,7 +343,7 @@ func DeleteExistingServerDataIfExists(hostname, key, sessionid string) {
 
 	if err == nil {
 		ServerDataCollection.DeleteOne(ctx, filter)
-		log.Println("Serverdata deleted")
+		//log.Println("Serverdata deleted")
 	}
 }
 
@@ -432,8 +439,6 @@ func InsertServerData(rawjson RawDataServer) {
 
 	last2, err := GetLast2ServerData(s.Hostname)
 
-	log.Println("=0>", last2[0].Sdata.Date) // 17
-	log.Println("=1>", last2[1].Sdata.Date) // 18
 	if err != nil {
 		log.Println("GetLast2ServerData fail in InsertServerData", err)
 	} else {
@@ -479,10 +484,11 @@ func InsertServerData(rawjson RawDataServer) {
 		}
 	}
 
-	log.Println("Serverdata updated for old comments and Supressed's")
+	//log.Println("Serverdata updated for old comments and Supressed's")
 
 	if check4ServerAndNmapDocs(sd.Sdata.Key, sd.SessionID) {
-		log.Println("Serverdata Can report on", sd.Sdata.Key, sd.SessionID)
+		//log.Println("Serverdata Can report on", sd.Sdata.Key, sd.SessionID)
+	        CompareFromNMAPViewpoint(sd.Sdata.Hostname, sd.SessionID)
 	}
 
 }
@@ -494,7 +500,7 @@ func InsertNmapData(rawjson RawDataNmap) {
 
 	SessionID := CreateSessionID(nd.Ndata.Date)
 
-	_, err := GetServerByKey(nd.Ndata.Key)
+	sx, err := GetServerByKey(nd.Ndata.Key)
 	if err != nil {
 		log.Println("Unknown Key in received NmapData JSON")
 		return
@@ -503,7 +509,7 @@ func InsertNmapData(rawjson RawDataNmap) {
 	// first get an existing one
 	dbnd, err := GetNmapDataByKeyAndSessionID(nd.Ndata.Key, SessionID)
 	if err != nil { //new
-		log.Println("New Nmap Session inserted")
+		//log.Println("New Nmap Session inserted")
 		nd.SessionID = SessionID
 		nd.Key = nd.Ndata.Key
 		_, err := NmapDataCollection.InsertOne(ctx, nd)
@@ -512,6 +518,7 @@ func InsertNmapData(rawjson RawDataNmap) {
 		}
 		if check4ServerAndNmapDocs(nd.Key, nd.SessionID) {
 			log.Println("New Nmap Can report on", nd.Key, nd.SessionID)
+	        	CompareFromNMAPViewpoint(sx.Hostname, nd.SessionID)
 		}
 		return
 	}
@@ -524,14 +531,14 @@ func InsertNmapData(rawjson RawDataNmap) {
 			host.FromHostname == nd.Ndata.NmapHosts[0].FromHostname &&
 			host.ScannedHostname == nd.Ndata.NmapHosts[0].ScannedHostname {
 			dbnd.Ndata.NmapHosts[i] = nd.Ndata.NmapHosts[0]
-			log.Println("Nmap Session existing updated")
+			//log.Println("Nmap Session existing updated")
 			found = true
 			break
 		}
 	}
 	if !found {
 		dbnd.Ndata.NmapHosts = append(dbnd.Ndata.NmapHosts, nd.Ndata.NmapHosts[0])
-		log.Println("Nmap Session existing extended")
+		//log.Println("Nmap Session existing extended")
 	}
 
 	// Update
@@ -546,7 +553,8 @@ func InsertNmapData(rawjson RawDataNmap) {
 		log.Println("Error updating document in NmapDataCollection:", err)
 	}
 	if check4ServerAndNmapDocs(dbnd.Key, dbnd.SessionID) {
-		log.Println("Updated Nmap Can report on", dbnd.Key, dbnd.SessionID)
+		//log.Println("Updated Nmap Can report on", dbnd.Key, dbnd.SessionID)
+		CompareFromNMAPViewpoint(sx.Hostname, dbnd.SessionID)
 	}
 }
 
@@ -842,6 +850,36 @@ func GetUserByName(name string) (dbUser, error) {
 	u := dbUser{}
 	err := UsersCollection.FindOne(ctx, filter).Decode(&u)
 	return u, err
+}
+
+func GetBaseline(hostname string) (dbBaseline, error) {
+	filter := bson.M{"hostname": hostname}
+	b := dbBaseline{}
+	err := BaselineCollection.FindOne(ctx, filter).Decode(&b)
+	return b, err
+}
+
+func DeleteBaseline(hostname string) {
+	filter := bson.M{"hostname": hostname}
+	BaselineCollection.DeleteOne(ctx, filter)
+}
+
+func SetBaseline(hostname, sessionid string) error {
+
+	_, err := GetServerByHostname(hostname)
+        if err != nil {
+		return err
+	}
+
+	filter := bson.M{"hostname": hostname}
+	BaselineCollection.DeleteOne(ctx, filter)
+
+	b := dbBaseline{}
+        b.Hostname = hostname
+        b.SessionID = sessionid
+
+	_, err = BaselineCollection.InsertOne(ctx, b)
+	return err
 }
 
 func CreateUser(name, password, owner, rights string) (dbUser, error) {

@@ -12,8 +12,8 @@
     <div>
         <ul class="nav nav-tabs" role="tablist">
             <li class="nav-item" role="presentation"><a class="nav-link" role="tab" data-bs-toggle="tab" href="#tab-1">Systems</a></li>
-            <li class="nav-item" role="presentation"><a class="nav-link" role="tab" data-bs-toggle="tab" id="charttabitem" href="#tab-2">Charts</a></li>
-            <li class="nav-item" role="presentation"><a class="nav-link active" role="tab" data-bs-toggle="tab" id="datatabitem" href="#tab-3">Data</a></li>
+            <li class="nav-item" role="presentation"><a class="nav-link active" role="tab" data-bs-toggle="tab" id="charttabitem" href="#tab-2">Charts</a></li>
+            <li class="nav-item" role="presentation"><a class="nav-link" role="tab" data-bs-toggle="tab" id="datatabitem" href="#tab-3">Data</a></li>
         </ul>
         <div class="tab-content">
             <div class="tab-pane" role="tabpanel" id="tab-1">
@@ -41,20 +41,36 @@
                         <p id="nmaprawcollector" style="margin-left: 5px;"></p>
                     </div>
                 </div>
+                <div class="container">
+                    <div class="row">
+                        <div class="col"><button class="btn btn-primary" id="logoff" type="button">Log off</button></div>
+                    </div>
+                </div>
             </div>
-            <div class="tab-pane" role="tabpanel" id="tab-2">
+            <div class="tab-pane active" role="tabpanel" id="tab-2">
                 <div class="container" style="height: 20px;"></div>
                 <div class="container">
                     <div class="row">
-                        <div class="col col-lg-5"><select id="charttype">
+                        <div class="col col-lg-5"><select id="charttype" name="Chart">
                                 <optgroup label="Charts">
-                                    <option value="fwlistenchart" selected="">FwAllow</option>
+                                    <option value="select" selected="">Select</option>
+                                    <option value="fwlistenchart">FwAllow</option>
                                     <option value="nmapchart">Nmap</option>
                                 </optgroup>
                             </select></div>
                         <div class="col"></div>
                         <div class="col">
-                            <div class="form-check"><input class="form-check-input" type="checkbox" id="charthide"><label class="form-check-label" for="formCheck-1">Show hidden&nbsp; objects</label></div>
+                            <div class="row">
+                                <div class="col">
+                                    <div class="form-check" id="hide-hide"><input class="form-check-input" type="checkbox" id="charthide"><label class="form-check-label" for="formCheck-1">Show hidden&nbsp; objects</label></div>
+                                </div>
+                            </div>
+                            <div class="row" id="baseline-server">
+                                <div class="col">
+                                    <div class="form-check"><input class="form-check-input" type="checkbox" id="baseline-server-val"><label class="form-check-label" for="formCheck-2">Set Server baseline</label></div>
+                                </div>
+                                <div class="col"><span>Current:</span><span id="baseline-server-id" style="margin-left: 5px;">TextS</span></div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -64,18 +80,13 @@
                     </div>
                 </div>
             </div>
-            <div class="tab-pane active" role="tabpanel" id="tab-3">
+            <div class="tab-pane" role="tabpanel" id="tab-3">
                 <div class="container">
                     <div class="row">
                         <div class="col" id="DataTabCol1"></div>
                     </div>
                 </div>
             </div>
-        </div>
-    </div>
-    <div class="container">
-        <div class="row">
-            <div class="col"><button class="btn btn-primary" id="logoff" type="button">Log off</button></div>
         </div>
     </div>
     <script src="assets/js/jquery.min.js"></script>
