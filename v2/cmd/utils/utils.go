@@ -23,6 +23,7 @@ var Rights *string = flag.String("R", "", "Rights")
 var Report *bool = flag.Bool("r", false, "Report")
 var Server *string = flag.String("s", "", "Server FQDN")
 var Ident *string = flag.String("i", "", "Ident")
+var Ident2 *string = flag.String("i2", "", "Compare 2 Sessions: -i s1 -i2 s2 -s fqdn")
 
 var NewServer *string = flag.String("ns", "", "New Server, add: -O")
 var ServerCollectorPy *string = flag.String("cs", "", "Create collector script for FQDN (server)")
@@ -52,6 +53,11 @@ func main() {
 		if err != nil {
 			log.Fatalln(err)
 		}
+		return
+	}
+
+	if (*Ident2 != "") {
+		sharedlib.Compare2SessionIDs(*Server, *Ident,*Ident2)
 		return
 	}
 

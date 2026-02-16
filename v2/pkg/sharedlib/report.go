@@ -10,6 +10,155 @@ import (
 	"log"
 )
 
+func compareStructs(s1, s2 interface{}) bool {
+	sd1, _ := json.Marshal(s1)
+	sd2, _ := json.Marshal(s2)
+
+	return string(sd1) == string(sd2)
+}
+
+func CompareBaseline(hostname, sid string) error {
+	b, err := GetBaseline(hostname)
+	if err != nil {
+		// no baseline, ignore
+		log.Printf("No baseline for %s\n", hostname)
+		return nil
+	}
+
+	return Compare2SessionIDs(hostname, b.SessionID, sid)
+}
+
+
+func Compare2SessionIDs(hostname, sid1,sid2 string ) error {
+
+	sd1, err := GetServerDataByHostnameAndSessionID(hostname, sid1)
+	if err != nil {
+		log.Println("Compare2SessionIDs, no sid1 found")
+		return err
+	}
+
+	sd2, err := GetServerDataByHostnameAndSessionID(hostname, sid2)
+	if err != nil {
+		log.Println("Compare2SessionIDs, no sid2 found")
+		return err
+	}
+
+	// Routes
+	for _, l1 := range sd1.Sdata.Routes{
+		match := false
+		for _, l2 := range sd2.Sdata.Routes{
+			if l1 == l2 {
+				match = true
+				break
+			}
+		}
+		if !match {
+			log.Printf("Route disappeared: %v\n ",l1)
+		}
+	}
+	for _, l2 := range sd2.Sdata.Routes{
+		match := false
+		for _, l1 := range sd1.Sdata.Routes{
+			if l1 == l2 {
+				match = true
+				break
+			}
+		}
+		if !match {
+			log.Printf("Route appeared: %v\n ",l2)
+		}
+	}
+
+	// Interfaces
+	for _, l1 := range sd1.Sdata.Interfaces{
+		match := false
+		for _, l2 := range sd2.Sdata.Interfaces{
+			if compareStructs(l1,l2) {
+				match = true
+				break
+			}
+		}
+		if !match {
+			log.Printf("Interface disappeared: %v\n ",l1)
+		}
+	}
+	for _, l2 := range sd2.Sdata.Interfaces{
+		match := false
+		for _, l1 := range sd1.Sdata.Interfaces{
+			if compareStructs(l1,l2) {
+				match = true
+				break
+			}
+		}
+		if !match {
+			log.Printf("Interface appeared: %v\n ",l2)
+		}
+	}
+
+	// Fwrules
+	for _, l1 := range sd1.Sdata.Fwrules{
+		match := false
+		for _, l2 := range sd2.Sdata.Fwrules{
+			if compareStructs(l1,l2){
+				match = true
+				break
+			}
+		}
+		if !match {
+			log.Printf("Fwrule disappeared: %v\n ",l1)
+		}
+	}
+	for _, l2 := range sd2.Sdata.Fwrules{
+		match := false
+		for _, l1 := range sd2.Sdata.Fwrules{
+			if compareStructs(l1,l2){
+				match = true
+				break
+			}
+		}
+		if !match {
+			log.Printf("Fwrule appeared: %v\n ",l2)
+		}
+	}
+
+
+	// Listeners
+	for _, l1 := range sd1.Sdata.Listeners{
+		match := false
+		for _, l2 := range sd2.Sdata.Listeners{
+			l1.Command = ""
+			l2.Command = ""
+			if l1 == l2 {
+				match = true
+				break
+			}
+		}
+		if !match {
+			log.Printf("Listener disappeared: %v\n ",l1)
+		}
+	}
+	for _, l2 := range sd2.Sdata.Listeners{
+		match := false
+		for _, l1 := range sd1.Sdata.Listeners{
+			l1.Command = ""
+			l2.Command = ""
+			if l1 == l2 {
+				match = true
+				break
+			}
+		}
+		if !match {
+			log.Printf("Listener appeared: %v\n ",l2)
+		}
+	}
+
+
+	return nil
+}
+
+
+
+
 // PrettyPrintServerDate() creates the text for the Data tab
 func PrettyPrintServerData(arg string) (string, error) {
 

@@ -486,6 +486,7 @@ func InsertServerData(rawjson RawDataServer) {
 
 	//log.Println("Serverdata updated for old comments and Supressed's")
 
+	CompareBaseline(sd.Sdata.Hostname, sd.SessionID)
 	if check4ServerAndNmapDocs(sd.Sdata.Key, sd.SessionID) {
 		//log.Println("Serverdata Can report on", sd.Sdata.Key, sd.SessionID)
 	        CompareFromNMAPViewpoint(sd.Sdata.Hostname, sd.SessionID)
