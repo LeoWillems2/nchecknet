@@ -1,9 +1,9 @@
 webserver:
   jwtsecret: "some long secret"
-  port: ":8086"
+  port: "8086"
   mongodburl: "mongodb://......"
   maxsessionidselect: 3
 
 collector:
   collectorurl: "https://FQDN"
-  port: ":8087"
+  port: "8087"

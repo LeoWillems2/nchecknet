@@ -29,10 +29,16 @@ type CollectorConfig struct {
 }
 
 func GetYamlConfig(configPath string) (YamlConfig, error) {
-	data, err := os.ReadFile(configPath)
-	if err != nil {
-		return YamlConfig{}, fmt.Errorf("failed to read config file %s: %w", configPath, err)
-	}
+
+        data, err := os.ReadFile(configPath)
+        if err != nil {
+                configPath = "/usr/local/"+configPath
+                data, err = os.ReadFile(configPath)
+                if err != nil {
+                        return YamlConfig{}, fmt.Errorf("failed to read config file %s: %w", configPath, err)
+                }
+        }
+
 
 	var cfg YamlConfig
 	err = yaml.Unmarshal(data, &cfg)
