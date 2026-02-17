@@ -293,7 +293,6 @@ func ProcessListeners(ssdata []string) []Listener {
 		} else {
 			listener.IPversion = "v4"
 		}
-		log.Println(len(fi), fi)
 		if len(fi) > 0 {
 			listener.Bound2interface = fi[0]
 		}

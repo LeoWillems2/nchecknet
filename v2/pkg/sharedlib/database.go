@@ -518,7 +518,7 @@ func InsertNmapData(rawjson RawDataNmap) {
 			log.Println("Failed to insert document:", err)
 		}
 		if check4ServerAndNmapDocs(nd.Key, nd.SessionID) {
-			log.Println("New Nmap Can report on", nd.Key, nd.SessionID)
+			//log.Println("New Nmap Can report on", nd.Key, nd.SessionID)
 	        	CompareFromNMAPViewpoint(sx.Hostname, nd.SessionID)
 		}
 		return
