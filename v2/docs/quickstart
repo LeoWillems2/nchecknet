@@ -1,0 +1,10 @@
+
+
+## on the service side:
+## add new server to monitor:    -O for: owner
+./utils -ns  newserver.domain  -O iWoz
+
+## Generate the rawcollectorscript for server that must be monitored:
+./utils -cs newserver.domain >rawcollector.py
+## cp rawcollector.py to newserver.domain, chmod +x and run daily (cron) as root
+## on the service side: open firewall on dport 8187 for src-IP from newserver.domain

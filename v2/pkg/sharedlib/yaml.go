@@ -5,7 +5,7 @@ package sharedlib
 import (
 	"fmt"
 	"os"
-    "gopkg.in/yaml.v2"
+    	"gopkg.in/yaml.v2"
 )
 
 // Config holds the entire configuration structure.
@@ -20,6 +20,7 @@ type ServerConfig struct {
 	Port string    `yaml:"port"`
 	MongoDBURL string    `yaml:"mongodburl"`
 	MaxSessionIDSelect int   `yaml:"maxsessionidselect"`
+	Webroot string    `yaml:"webroot"`
 }
 
 // CollectorConfig holds the server-specific settings.

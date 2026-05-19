@@ -428,7 +428,7 @@ func main() {
 		return
 	}
 
-	fileserver := http.FileServer(http.Dir("./webroot"))
+	fileserver := http.FileServer(http.Dir(YConfig.Server.Webroot))
 	http.Handle("/", fileserver)
 
 	http.HandleFunc("/login", LoginHandler)

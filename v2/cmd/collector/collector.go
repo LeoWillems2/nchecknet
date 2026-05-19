@@ -74,7 +74,7 @@ func main() {
 	sharedlib.DBConnect(YConfig.Server.MongoDBURL)
 
 	// Start the server
-	port := YConfig.Collector.Port
+	port := ":" + YConfig.Collector.Port
 	fmt.Printf("Collector starting on port %s\n", port)
 
 	if err := http.ListenAndServe(port, nil); err != nil {
