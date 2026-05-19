@@ -4,6 +4,8 @@ package main
 	cli utils
 */
 
+
+
 import (
 	"github.com/LeoWillems2/nchecknet/pkg/sharedlib"
 	"flag"
@@ -23,11 +25,14 @@ var Rights *string = flag.String("R", "", "Rights")
 var Report *bool = flag.Bool("r", false, "Report")
 var Server *string = flag.String("s", "", "Server FQDN")
 var Ident *string = flag.String("i", "", "Ident")
+var Iface *string = flag.String("if", "", "Interface")
 var Ident2 *string = flag.String("i2", "", "Compare 2 Sessions: -i s1 -i2 s2 -s fqdn")
 
 var NewServer *string = flag.String("ns", "", "New Server, add: -O")
 var ServerCollectorPy *string = flag.String("cs", "", "Create collector script for FQDN (server)")
 var PrettyPrint *string = flag.String("pp", "", "PrettyPrint [Struct:HN:SID]")
+
+var NmapCollectorPy *bool = flag.Bool("nm", false, "Create nmapcollector script for FQDN (server), use: -i ident  -int iface -s nchecknetserver")
 
 func main() {
 
@@ -43,6 +48,15 @@ func main() {
         }
 
 	sharedlib.DBConnect(YConfig.Server.MongoDBURL)
+
+        if (*NmapCollectorPy) {
+		s, err := sharedlib.CreateNmapCollectorPy(*Server, *Ident, *Iface, YConfig.Collector.CollectorURL)
+		if err != nil {
+			log.Fatalln(err)
+		}
+		fmt.Println(s)
+		return
+	}
 
         if (*Baseline != "") {
 		if (*Ident == "" ) {
