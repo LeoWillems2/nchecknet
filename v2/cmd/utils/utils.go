@@ -26,13 +26,14 @@ var Report *bool = flag.Bool("r", false, "Report")
 var Server *string = flag.String("s", "", "Server FQDN")
 var Ident *string = flag.String("i", "", "Ident")
 var Iface *string = flag.String("if", "", "Interface")
+var Coll *string = flag.String("cl", "", "Collector url")
 var Ident2 *string = flag.String("i2", "", "Compare 2 Sessions: -i s1 -i2 s2 -s fqdn")
 
 var NewServer *string = flag.String("ns", "", "New Server, add: -O")
 var ServerCollectorPy *string = flag.String("cs", "", "Create collector script for FQDN (server)")
 var PrettyPrint *string = flag.String("pp", "", "PrettyPrint [Struct:HN:SID]")
 
-var NmapCollectorPy *bool = flag.Bool("nm", false, "Create nmapcollector script for FQDN (server), use: -i ident  -int iface -s nchecknetserver")
+var NmapCollectorPy *bool = flag.Bool("nm", false, "Create nmapcollector script for FQDN (server), use: -i ident  -int iface -s server -cl nchecknetserver")
 
 func main() {
 
