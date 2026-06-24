@@ -53,7 +53,7 @@ func Compare2SessionIDs(hostname, sid1,sid2 string ) error {
 			}
 		}
 		if !match {
-			log.Printf("Route disappeared: %v\n ",l1)
+			log.Printf("Route disappeared: %s %v\n ",hostname, l1)
 		}
 	}
 	for _, l2 := range sd2.Sdata.Routes{
@@ -65,7 +65,7 @@ func Compare2SessionIDs(hostname, sid1,sid2 string ) error {
 			}
 		}
 		if !match {
-			log.Printf("Route appeared: %v\n ",l2)
+			log.Printf("Route appeared: %s %v\n ",hostname , l2)
 		}
 	}
 
@@ -79,7 +79,7 @@ func Compare2SessionIDs(hostname, sid1,sid2 string ) error {
 			}
 		}
 		if !match {
-			log.Printf("Interface disappeared: %v\n ",l1)
+			log.Printf("Interface disappeared: %s %v\n ",hostname, l1)
 		}
 	}
 	for _, l2 := range sd2.Sdata.Interfaces{
@@ -91,7 +91,7 @@ func Compare2SessionIDs(hostname, sid1,sid2 string ) error {
 			}
 		}
 		if !match {
-			log.Printf("Interface appeared: %v\n ",l2)
+			log.Printf("Interface appeared: %s %v\n ",hostname, l2)
 		}
 	}
 
@@ -105,7 +105,7 @@ func Compare2SessionIDs(hostname, sid1,sid2 string ) error {
 			}
 		}
 		if !match {
-			log.Printf("Fwrule disappeared: %v\n ",l1)
+			log.Printf("Fwrule disappeared: %s %v\n ",hostname, l1)
 		}
 	}
 	for _, l2 := range sd2.Sdata.Fwrules{
@@ -117,7 +117,7 @@ func Compare2SessionIDs(hostname, sid1,sid2 string ) error {
 			}
 		}
 		if !match {
-			log.Printf("Fwrule appeared: %v\n ",l2)
+			log.Printf("Fwrule appeared: %s %v\n ",hostname, l2)
 		}
 	}
 
@@ -134,7 +134,7 @@ func Compare2SessionIDs(hostname, sid1,sid2 string ) error {
 			}
 		}
 		if !match {
-			log.Printf("Listener disappeared: %v\n ",l1)
+			log.Printf("Listener disappeared: %s %v\n ",hostname, l1)
 		}
 	}
 	for _, l2 := range sd2.Sdata.Listeners{
@@ -148,7 +148,7 @@ func Compare2SessionIDs(hostname, sid1,sid2 string ) error {
 			}
 		}
 		if !match {
-			log.Printf("Listener appeared: %v\n ",l2)
+			log.Printf("Listener appeared: %s %v\n ",hostname, l2)
 		}
 	}
 
