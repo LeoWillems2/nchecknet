@@ -2,9 +2,9 @@
 Nchecknet compares nftables  against netstat -ntlp, netstat -rn, ifconfig and nmap
 
 ![](v2/docs/nchecknet1.png)
-![](v2/docs/view1.png)
-![](v2/docs/view2.png)
 ![](v2/docs/view3.png)
+![](v2/docs/view2.png)
+![](v2/docs/view1.png)
 
 
 Required: mongodb, golang
