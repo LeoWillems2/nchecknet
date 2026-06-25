@@ -1,0 +1,48 @@
+#!/usr/bin/python3
+
+import json
+import os
+import platform
+import subprocess
+import datetime
+import os
+
+data = {
+	"Listeners": [],
+	"Fwrules": [],
+	"Interfaces": [],
+	"Routes": [],
+	"Hostname": "",
+	"Date": "",
+	"Key": "efc47d5cff7ebd855d6a635025499bdc5a4d14f3eb5c49d4bba6e90b56c51062"
+}
+
+def runp(command):
+	result = subprocess.run(
+		command,
+		capture_output=True,
+		text=True,
+		check=True
+	)
+	lines = result.stdout.strip().split("\n")
+	return lines
+
+def main():
+	data["Hostname"] = platform.node()
+	data["Interfaces"] = runp(["/usr/sbin/ifconfig"])
+	data["Listeners"] = runp(["/usr/bin/netstat", "-tulpn"])
+	data["Routes"] = runp(["/usr/bin/netstat", "-rn"])
+	data["Fwrules"] = runp(["/usr/sbin/nft", "list", "ruleset"])
+
+	now = datetime.datetime.now()
+	data["Date"] = now.strftime("%Y-%m-%d %H:%M:%S")
+
+	f = open("/var/tmp/nchecknetraw-server.json", "w")
+	f.write(json.dumps(data))
+	f.close()
+
+	runp(["curl","-k","--data-binary","@/var/tmp/nchecknetraw-server.json","-X","POST","https://nchecknet.lewi.nl/api_server"])
+	os.remove("/var/tmp/nchecknetraw-server.json")
+
+main()
+

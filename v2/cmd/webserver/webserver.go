@@ -428,6 +428,7 @@ func main() {
 		return
 	}
 
+	log.Println(YConfig.Server.Webroot)
 	fileserver := http.FileServer(http.Dir(YConfig.Server.Webroot))
 	http.Handle("/", fileserver)
 
