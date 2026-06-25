@@ -17,14 +17,37 @@ Usage:
 * Run ./bin/collector to receive data.
 
 Use ./bin/utils for:
+  -O string
+    	Owner
+  -P string
+    	Password
+  -R string
+    	Rights
+  -cl string
+    	Collector url
+  -i string
+    	Ident
+  -cs string
+    	Create collector script for FQDN (server)
+  -i2 string
+    	Compare 2 Sessions: -i s1 -i2 s2 -s fqdn
+  -if string
+    	Interface
+  -nm
+    	Create nmapcollector script for FQDN (server), use: -i ident  -if iface -s server -cl nchecknetserver
+  -ns string
+    	New Server, add: -O
+  -nu string
+    	New User: -nu username -P password -O owner -R [awr]
+  -pp string
+    	PrettyPrint [Struct:HN:SID]
+  -r	Report
+  -s string
+    	Server FQDN
+  -sb string
+    	Set baseline: -sb hostname -i sessionid
 
-*  -cs string
-    	--> Create collector script for FQDN (server)
-*  -ns string
-    	--> Add a new Server -- also set -O(wner)
-*  -nu string
-		--> Add a new User -- also set -P(assword), -O(wner), -R(ights)
-   
+
 * Rights:
 
 |symbol|description|

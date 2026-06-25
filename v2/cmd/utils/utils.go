@@ -33,7 +33,7 @@ var NewServer *string = flag.String("ns", "", "New Server, add: -O")
 var ServerCollectorPy *string = flag.String("cs", "", "Create collector script for FQDN (server)")
 var PrettyPrint *string = flag.String("pp", "", "PrettyPrint [Struct:HN:SID]")
 
-var NmapCollectorPy *bool = flag.Bool("nm", false, "Create nmapcollector script for FQDN (server), use: -i ident  -int iface -s server -cl nchecknetserver")
+var NmapCollectorPy *bool = flag.Bool("nm", false, "Create nmapcollector script for FQDN (server), use: -i ident  -if iface -s server -cl nchecknetserver")
 
 func main() {
 
