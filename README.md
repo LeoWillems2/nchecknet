@@ -80,3 +80,22 @@ Run the script (as root) once per day. (or more frequent, the last run wil updat
    port: 8087
 ```
 
+== Quick start ==
+
+Setup a user and a server to monitor:
+```
+bin/utils -nu john -O JohnOrg -P johnpass -R a
+bin/utils -ns server.john.org -O JohnOrg
+
+```
+Start the collector and webserver.
+Setup the collector and nmap scripts:
+```
+bin/utils -cs server.john.org >collector-script
+chmod 755 collector-script &&  scp collector-script server.john.org: && ssh server.john.org sudo ./collector-script
+bin/utils -nm -i 20260612 -if eth0 -s server.john.org >nmap-script   ## replace 20260612 by todays date.
+chmod 755 nmap-script &&  scp nmap-script somewhere: && ssh somewhere sudo ./nmap-script
+```
+Move nmap-script and collector-script to /etc/cron.daily
+
+
