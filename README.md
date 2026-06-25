@@ -17,6 +17,7 @@ Usage:
 * Run ./bin/collector to receive data.
 
 Use ./bin/utils for:
+```
   -O string
     	Owner
   -P string
@@ -46,7 +47,7 @@ Use ./bin/utils for:
     	Server FQDN
   -sb string
     	Set baseline: -sb hostname -i sessionid
-
+```
 
 * Rights:
 
