@@ -329,6 +329,10 @@ subgraph SERVER["%s %s "]
 
 			csum := createListenerCsum(l)
 
+			if l.Command == "" || l.Command == "-" {
+				l.Command = "unknown";
+                        }
+
 			hb := fmt.Sprintf(`<button style='width:5x;height:5px' class='btn btn-%s hidelistener %s' id='%s%s'></button>`, T, clB, Tx, csum)
 
 			x := fmt.Sprintf(` %s-%s/%s-%s`, l.Bound2interface, lport, l.Proto, l.Command)
