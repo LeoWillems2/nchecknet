@@ -10,6 +10,7 @@ import (
 	"log"
 )
 
+// compareStructs reports whether s1 and s2 are equal by comparing their JSON representations.
 func compareStructs(s1, s2 interface{}) bool {
 	sd1, _ := json.Marshal(s1)
 	sd2, _ := json.Marshal(s2)
@@ -17,6 +18,8 @@ func compareStructs(s1, s2 interface{}) bool {
 	return string(sd1) == string(sd2)
 }
 
+// CompareBaseline compares session sid against the stored baseline for hostname, logging any
+// appeared or disappeared items. Returns nil (no error) when no baseline exists yet.
 func CompareBaseline(hostname, sid string) error {
 	b, err := GetBaseline(hostname)
 	if err != nil {
@@ -29,7 +32,9 @@ func CompareBaseline(hostname, sid string) error {
 }
 
 
-func Compare2SessionIDs(hostname, sid1,sid2 string ) error {
+// Compare2SessionIDs diffs two sessions for hostname, logging items that appeared or disappeared
+// across routes, interfaces, firewall rules, and listeners.
+func Compare2SessionIDs(hostname, sid1, sid2 string) error {
 
 	sd1, err := GetServerDataByHostnameAndSessionID(hostname, sid1)
 	if err != nil {
@@ -159,7 +164,8 @@ func Compare2SessionIDs(hostname, sid1,sid2 string ) error {
 
 
 
-// PrettyPrintServerDate() creates the text for the Data tab
+// PrettyPrintServerData returns an indented JSON dump of server data for the Data tab in the UI.
+// arg format is "Struct:hostname:sessionid".
 func PrettyPrintServerData(arg string) (string, error) {
 
 	t := ""
@@ -194,7 +200,7 @@ func PrettyPrintServerData(arg string) (string, error) {
 	return t, nil
 }
 
-// createLbP() builds a map form the Listener array
+// createLbP indexes listeners by port number.
 func createLbP(lis []Listener) map[string][]Listener {
 	lbp := make(map[string][]Listener)
 	for _, l := range lis {
@@ -203,7 +209,7 @@ func createLbP(lis []Listener) map[string][]Listener {
 	return lbp
 }
 
-// createFbP() builds a map form the Fwrule array
+// createFbP indexes firewall rules by port number.
 func createFbP(fis []Fwrule) map[string][]Fwrule {
 	fbp := make(map[string][]Fwrule)
 	for _, f := range fis {
@@ -212,7 +218,9 @@ func createFbP(fis []Fwrule) map[string][]Fwrule {
 	return fbp
 }
 
-// CompareFromFWViewpoint() and compareFromFWViewpoint_() create the Mermaid map that depicts the fw and listeners in the Charts tab.
+// CompareFromFWViewpoint generates a Mermaid flowchart comparing firewall rules and listeners
+// for the Charts tab. hide="unhide" makes suppressed items visible (shown in green).
+// acright="r" disables the interactive comment and hide buttons.
 func CompareFromFWViewpoint(hostname, sessionid, hide, acright string) (string, error) {
 
 	sd, err := GetServerDataByHostnameAndSessionID(hostname, sessionid)
@@ -243,6 +251,8 @@ func CompareFromFWViewpoint(hostname, sessionid, hide, acright string) (string, 
 	return compareFromFWViewpoint_(hostname, FbP, LbP, adrs, hide, acright)
 }
 
+// compareFromFWViewpoint_ renders the Mermaid flowchart source for the fw/listener chart.
+// FwIDX and LisIDX deduplicate nodes; arrows are drawn where a fw port matches a listener port.
 func compareFromFWViewpoint_(hostname string, FwrulesByPort map[string][]Fwrule,
 	ListenersByPort map[string][]Listener, ifaces, hide, acright string) (string, error) {
 
@@ -362,7 +372,8 @@ subgraph SERVER["%s %s "]
 	return t, nil
 }
 
-// createFwruleCsum() is used to find an fwrule by it's static fields
+// createFwruleCsum returns a SHA-256 hex digest of the rule's static fields (Comment and Supressed excluded).
+// Used as a stable identifier so annotations can be matched across daily re-ingestions.
 func createFwruleCsum(fwr Fwrule) string {
 
 	// todo: serialize it better
@@ -379,7 +390,8 @@ func createFwruleCsum(fwr Fwrule) string {
 
 }
 
-// createListenerCsum() is used to find a Listener by it's static fields
+// createListenerCsum returns a SHA-256 hex digest of the listener's static fields (Comment and Supressed excluded).
+// Used as a stable identifier so annotations can be matched across daily re-ingestions.
 func createListenerCsum(lis Listener) string {
 
 	// todo: serialize it better
@@ -396,6 +408,8 @@ func createListenerCsum(lis Listener) string {
 
 }
 
+// CompareFromNMAPViewpoint generates a Mermaid flowchart showing nmap findings grouped by vantage point.
+// Ports found open externally but absent from the firewall rules are flagged in red.
 func CompareFromNMAPViewpoint(hostname, sessionid string) (string, error) {
 
 	sd, err := GetServerDataByHostnameAndSessionID(hostname, sessionid)
@@ -435,6 +449,9 @@ func CompareFromNMAPViewpoint(hostname, sessionid string) (string, error) {
 	return txt, nil
 }
 
+// RunReport returns a JSON report summarising nmap warnings and annotated fw/listener comments
+// for the given hostname and session. Note: ok=false is forced, so every nmap port is currently
+// reported as an unmanaged port regardless of firewall state (known bug).
 func RunReport(hostname, sessionid string) (string, error) {
 
 	type R struct {

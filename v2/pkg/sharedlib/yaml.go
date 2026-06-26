@@ -8,7 +8,7 @@ import (
     	"gopkg.in/yaml.v2"
 )
 
-// Config holds the entire configuration structure.
+// YamlConfig holds the entire nchecknet.yml configuration.
 type YamlConfig struct {
 	Server   ServerConfig   `yaml:"webserver"`
 	Collector   CollectorConfig   `yaml:"collector"`
@@ -23,12 +23,14 @@ type ServerConfig struct {
 	Webroot string    `yaml:"webroot"`
 }
 
-// CollectorConfig holds the server-specific settings.
+// CollectorConfig holds the collector-specific settings.
 type CollectorConfig struct {
 	CollectorURL string `yaml:"collectorurl"`
 	Port string    `yaml:"port"`
 }
 
+// GetYamlConfig reads and parses the YAML config file at configPath.
+// If the file is not found there it retries under /usr/local/<configPath>.
 func GetYamlConfig(configPath string) (YamlConfig, error) {
 
         data, err := os.ReadFile(configPath)

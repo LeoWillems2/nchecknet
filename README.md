@@ -1,101 +1,177 @@
 # nchecknet
-Nchecknet compares nftables  against netstat -ntlp, netstat -rn, ifconfig and nmap
 
-![](v2/docs/nchecknet1.png)
-![](v2/docs/view3.png)
-![](v2/docs/view2.png)
-![](v2/docs/view1.png)
+Cross-reference your nftables firewall rules against active listeners, routing table, network interfaces, and external nmap scans — and surface the discrepancies.
 
+![Systems view](v2/docs/nchecknet1.png)
+![Chart view 1](v2/docs/view1.png)
+![Chart view 2](v2/docs/view2.png)
+![Chart view 3](v2/docs/view3.png)
 
-Required: mongodb, golang
+---
 
-Build: cd v2; go mod tidy; make
+## Features
 
-Usage:
+- Compares `nftables` rules against `netstat -ntlp`, `netstat -rn`, and `ifconfig`
+- Runs nmap from external vantage points and flags ports open to the world without a matching firewall rule
+- Daily cron-based collection; annotations and suppression flags carry over between sessions
+- Baseline comparison — alerts when listeners or firewall rules appear or disappear
+- Web UI with interactive Mermaid diagrams, inline comments, and per-rule suppression
 
-* Run ./bin/webserver for view and edit reports and to generate nmap-scripts for the remote locations.
-* Run ./bin/collector to receive data.
+---
 
-Use ./bin/utils for:
-```
-  -O string
-    	Owner
-  -P string
-    	Password
-  -R string
-    	Rights
-  -cl string
-    	Collector url
-  -i string
-    	Ident
-  -cs string
-    	Create collector script for FQDN (server)
-  -i2 string
-    	Compare 2 Sessions: -i s1 -i2 s2 -s fqdn
-  -if string
-    	Interface
-  -nm
-    	Create nmapcollector script for FQDN (server), use: -i ident  -if iface -s server -cl nchecknetserver
-  -ns string
-    	New Server, add: -O
-  -nu string
-    	New User: -nu username -P password -O owner -R [awr]
-  -pp string
-    	PrettyPrint [Struct:HN:SID]
-  -r	Report
-  -s string
-    	Server FQDN
-  -sb string
-    	Set baseline: -sb hostname -i sessionid
+## Requirements
+
+- Go (to build)
+- MongoDB
+- nmap (on the external scanning hosts)
+- Root access on monitored servers (for the collection scripts)
+
+---
+
+## Build
+
+```sh
+cd v2
+go mod tidy
+make
 ```
 
-* Rights:
+Produces `bin/webserver`, `bin/collector`, and `bin/utils`.
 
-|symbol|description|
-|--|--|
-|a|admin, see all systems|
-|w|edit comments and hide systems|
-|r|read-only|
-  
+---
 
-Copy the server-collector script to the server that must be checked.
-Run the script (as root) once per day. (or more frequent, the last run wil overwrite prevous runs of this day.)
+## Configuration
 
-Generate the nmap-collector scripts from the Systems-tab of the webserver.
-Copy the nmap-collector-scripts to locations behind the interfaces, e.g. eth0 is often linked to 0.0.0.0, so the eth0 script shoukld be run from somewheren at the internet.
-Run the script (as root) once per day. (or more frequent, the last run wil update prevous runs of this day.)
+Place `nchecknet.yml` in `etc/` or `/usr/local/etc/`:
 
-* nchecknet.yml in etc:
+```yaml
+webserver:
+  jwtsecret: "a long random secret"
+  port: "8086"
+  mongodburl: "mongodb://..."
+  maxsessionidselect: 3        # number of recent sessions shown in the UI
+  webroot: "/path/to/webroot"
 
-```
- webserver:
-   jwtsecret: "a long secret"
-   port: 8086
-   mongodburl: "mongodb://....."
-   maxsessionidselect: 3
-   webroot: [path to webroot]
-
- collector:
-   collectorurl: "https://FQDN"
-   port: 8087
+collector:
+  collectorurl: "https://your-collector-fqdn"
+  port: "8087"
 ```
 
-== Quick start ==
+---
 
-Setup a user and a server to monitor:
-```
+## Quick Start
+
+**1. Create a user and register a server:**
+
+```sh
 bin/utils -nu john -O JohnOrg -P johnpass -R a
 bin/utils -ns server.john.org -O JohnOrg
+```
+
+**2. Start the services:**
+
+```sh
+bin/collector &
+bin/webserver &
+```
+
+**3. Deploy the collector script to the monitored server:**
+
+```sh
+bin/utils -cs server.john.org > collector-script
+chmod 755 collector-script
+scp collector-script server.john.org:
+ssh server.john.org sudo ./collector-script
+```
+
+**4. Generate and deploy an nmap script from an external vantage point:**
+
+```sh
+# Replace 20260612 with today's date (YYYYMMDD)
+bin/utils -nm -i 20260612 -if eth0 -s server.john.org > nmap-script
+chmod 755 nmap-script
+scp nmap-script somehost:
+ssh somehost sudo ./nmap-script
+```
+
+**5. Schedule both scripts to run daily:**
+
+```sh
+cp collector-script /etc/cron.daily/
+cp nmap-script /etc/cron.daily/      # on the external host
+```
+
+Generate nmap scripts for additional interfaces from the **Systems** tab of the web UI.
+
+---
+
+## Usage
+
+### `bin/webserver`
+
+Serves the web UI at the configured port (default `8086`). Login, browse sessions, and view interactive charts comparing firewall rules, listeners, and nmap scan results.
+
+### `bin/collector`
+
+Receives telemetry POSTed by the collector and nmap scripts (default port `8087`). No user authentication — security is by the per-server key embedded in the generated scripts.
+
+### `bin/utils`
+
+CLI for administration and script generation. All flags:
+
+| Flag | Description |
+|---|---|
+| `-nu <username>` | Create a user; requires `-P`, `-O`, `-R` |
+| `-ns <fqdn>` | Register a new server; requires `-O` |
+| `-cs <fqdn>` | Print the collector script for a server to stdout |
+| `-nm` | Print the nmap script; requires `-i <date>`, `-if <iface>`, `-s <fqdn>`, `-cl <url>` |
+| `-sb <hostname>` | Set baseline session; requires `-i <sessionid>` |
+| `-r` | Print a JSON report for a host/session |
+| `-i2 <sid>` | Compare two sessions; use with `-i <sid1>` and `-s <fqdn>` |
+| `-pp <Struct:HN:SID>` | Pretty-print stored server data |
+| `-O <owner>` | Owner |
+| `-P <password>` | Password |
+| `-R <rights>` | Rights: `a`, `w`, or `r` |
+| `-s <fqdn>` | Server FQDN |
+| `-i <ident>` | Session ID (YYYYMMDD) |
+| `-if <iface>` | Interface name |
+| `-cl <url>` | Collector URL |
+
+---
+
+## Access Rights
+
+| Symbol | Description |
+|---|---|
+| `a` | Admin — sees all servers across all owners; full write access |
+| `w` | Write — sees own owner's servers; can suppress rules and edit comments |
+| `r` | Read-only — sees own owner's servers |
+
+---
+
+## Architecture
 
 ```
-Start the collector and webserver.
-Setup the collector and nmap scripts:
+Monitored servers (cron daily)
+┌───────────────────────────┐
+│  collector-script         │  POST /api_server
+│  ifconfig, netstat, nft   ├──────────────────────┐
+└───────────────────────────┘                       │
+                                                    ▼
+External vantage points (cron daily)       ┌────────────────┐
+┌───────────────────────────┐              │   collector    │
+│  nmap-script              │  POST /api_nmap  (port 8087)  │
+│  nmap -Pn <server IPs>    ├─────────────►│                │
+└───────────────────────────┘              └───────┬────────┘
+                                                   │
+                                           ┌───────▼────────┐
+                                           │    MongoDB     │
+                                           └───────┬────────┘
+                                                   │
+Browser ◄──── WebSocket (JWT) ───────────┌────────▼────────┐
+(Bootstrap + Mermaid.js)                 │   webserver    │
+                                         │  (port 8086)   │
+                                         └────────────────┘
 ```
-bin/utils -cs server.john.org >collector-script
-chmod 755 collector-script &&  scp collector-script server.john.org: && ssh server.john.org sudo ./collector-script
-bin/utils -nm -i 20260612 -if eth0 -s server.john.org >nmap-script   ## replace 20260612 by todays date.
-chmod 755 nmap-script &&  scp nmap-script somewhere: && ssh somewhere sudo ./nmap-script
-```
-Move nmap-script and collector-script to /etc/cron.daily
 
-
+See [architecture.md](architecture.md) for full detail on data model, data flow, and component internals.

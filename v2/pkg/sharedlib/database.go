@@ -17,12 +17,14 @@ import (
 	"time"
 )
 
+// dbBaseline is the MongoDB document stored in the baseline collection.
 type dbBaseline struct {
 	ID           primitive.ObjectID `bson:"_id,omitempty"`
 	Hostname     string             `bson:"hostname,omitempty"`
 	SessionID string             `bson:"sessionid,omitempty"`
 }
 
+// dbUser is the MongoDB document stored in the users collection.
 type dbUser struct {
 	ID           primitive.ObjectID `bson:"_id,omitempty"`
 	Name         string             `bson:"name,omitempty"`
@@ -34,6 +36,7 @@ type dbUser struct {
 	Token        string             `bson:"token,omitempty"`
 }
 
+// dbServer is the MongoDB document stored in the servers collection.
 type dbServer struct {
 	ID           primitive.ObjectID `bson:"_id,omitempty"`
 	Hostname     string             `bson:"hostname,omitempty"`
@@ -44,6 +47,7 @@ type dbServer struct {
 	Active       bool               `bson:"active,omitempty"`
 }
 
+// dbServerData is the MongoDB document stored in the serverdata collection (one per server per day).
 type dbServerData struct {
 	ID        primitive.ObjectID `bson:"_id,omitempty"`
 	SessionID string             `bson:"sessionid,omitempty"`
@@ -51,6 +55,8 @@ type dbServerData struct {
 	Sdata     NcheckNetServer    `bson:"sdata,omitempty"`
 }
 
+// dbNmapData is the MongoDB document stored in the nmapdata collection (one per server per day,
+// potentially holding results from multiple vantage points).
 type dbNmapData struct {
 	ID        primitive.ObjectID `bson:"_id,omitempty"`
 	SessionID string             `bson:"sessionid,omitempty"`
@@ -58,13 +64,18 @@ type dbNmapData struct {
 	Ndata     NcheckNetNmap      `bson:"ndata,omitempty"`
 }
 
+// MongoDB collection handles, initialised by DBConnect.
 var ServersCollection *mongo.Collection
 var ServerDataCollection *mongo.Collection
 var NmapDataCollection *mongo.Collection
 var UsersCollection *mongo.Collection
 var BaselineCollection *mongo.Collection
+
+// ctx is the package-level background context used for all MongoDB operations.
 var ctx = context.Background()
 
+// DBConnect opens a MongoDB connection and initialises the package-level collection handles.
+// Calls log.Fatalf on connection or ping failure.
 func DBConnect(uri string) (*mongo.Client, error) {
 	clientCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
@@ -87,6 +98,7 @@ func DBConnect(uri string) (*mongo.Client, error) {
 	return client, nil
 }
 
+// GetNmapDataByHostnameAndSessionID fetches nmap data for a hostname and session, resolving the hostname to a key first.
 func GetNmapDataByHostnameAndSessionID(hostname, sessionid string) (dbNmapData, error) {
 	s, err := GetServerByHostname(hostname)
 	if err != nil {
@@ -96,6 +108,7 @@ func GetNmapDataByHostnameAndSessionID(hostname, sessionid string) (dbNmapData, 
 
 }
 
+// GetNmapDataByKeyAndSessionID fetches the nmapdata document for the given server key and session ID.
 func GetNmapDataByKeyAndSessionID(key, sessionid string) (dbNmapData, error) {
 	filter := bson.M{"key": key, "sessionid": sessionid}
 	nmap := dbNmapData{}
@@ -103,6 +116,7 @@ func GetNmapDataByKeyAndSessionID(key, sessionid string) (dbNmapData, error) {
 	return nmap, err
 }
 
+// GetServerDataByHostnameAndSessionID fetches server data for a hostname and session, resolving the hostname to a key first.
 func GetServerDataByHostnameAndSessionID(hostname, sessionid string) (dbServerData, error) {
 	s, err := GetServerByHostname(hostname)
 	if err != nil {
@@ -113,6 +127,7 @@ func GetServerDataByHostnameAndSessionID(hostname, sessionid string) (dbServerDa
 	return GetServerDataByKeyAndSessionID(s.Key, sessionid)
 }
 
+// GetServerDataByKeyAndSessionID fetches the serverdata document for the given server key and session ID.
 func GetServerDataByKeyAndSessionID(key, sessionid string) (dbServerData, error) {
 	filter := bson.M{"key": key, "sessionid": sessionid}
 	server := dbServerData{}
@@ -120,6 +135,7 @@ func GetServerDataByKeyAndSessionID(key, sessionid string) (dbServerData, error)
 	return server, err
 }
 
+// GetServers returns all servers visible to user: all servers for admins, owner-scoped for others.
 func GetServers(user dbUser) ([]dbServer, error) {
 	sd := []dbServer{}
 
@@ -139,6 +155,7 @@ func GetServers(user dbUser) ([]dbServer, error) {
 	return sd, err
 }
 
+// GetSessionIDs returns all stored session IDs for hostname, plus the server's auth key.
 func GetSessionIDs(hostname string) ([]string, string, error) {
 	ss := []string{}
 
@@ -167,6 +184,8 @@ func GetSessionIDs(hostname string) ([]string, string, error) {
 	return ss, s.Key, err
 }
 
+// GetLast2ServerData returns the two most recent server data documents for hostname (index 0=older, 1=newer).
+// Used to carry over Comment and Supressed flags when a new session is inserted.
 func GetLast2ServerData(hostname string) ([]dbServerData, error) {
 
 	sds := make([]dbServerData, 2)
@@ -201,6 +220,7 @@ func GetLast2ServerData(hostname string) ([]dbServerData, error) {
 	return sds, err
 }
 
+// ChangeFwComment sets the Comment on the firewall rule identified by csum (SHA-256 checksum with leading type byte).
 func ChangeFwComment(hostname, sessionid, csum, comment string) error {
 	dbsd, err := GetServerDataByHostnameAndSessionID(hostname, sessionid)
 	if err != nil {
@@ -232,6 +252,7 @@ func ChangeFwComment(hostname, sessionid, csum, comment string) error {
 	return errors.New("Fwrule() not found " + hostname + " " + sessionid)
 }
 
+// ChangeLisComment sets the Comment on the listener identified by csum (SHA-256 checksum with leading type byte).
 func ChangeLisComment(hostname, sessionid, csum, comment string) error {
 	dbsd, err := GetServerDataByHostnameAndSessionID(hostname, sessionid)
 	if err != nil {
@@ -263,6 +284,8 @@ func ChangeLisComment(hostname, sessionid, csum, comment string) error {
 	return errors.New("Listener() not found " + hostname + " " + sessionid)
 }
 
+// HideFwrule toggles the Supressed flag on the firewall rule identified by csum.
+// csum[0]=='H' suppresses; any other prefix un-suppresses.
 func HideFwrule(hostname, sessionid, csum string) error {
 	dbsd, err := GetServerDataByHostnameAndSessionID(hostname, sessionid)
 	if err != nil {
@@ -298,6 +321,8 @@ func HideFwrule(hostname, sessionid, csum string) error {
 	return errors.New("HideFwrule() not found " + hostname + " " + sessionid)
 }
 
+// HideListener toggles the Supressed flag on the listener identified by csum.
+// csum[0]=='H' suppresses; any other prefix un-suppresses.
 func HideListener(hostname, sessionid, csum string) error {
 	dbsd, err := GetServerDataByHostnameAndSessionID(hostname, sessionid)
 	if err != nil {
@@ -334,6 +359,8 @@ func HideListener(hostname, sessionid, csum string) error {
 	return errors.New("HideListener() not found " + hostname + " " + sessionid)
 }
 
+// DeleteExistingServerDataIfExists removes the server data document matching hostname+key+sessionid.
+// Called before each insert so daily re-runs from cron are idempotent.
 func DeleteExistingServerDataIfExists(hostname, key, sessionid string) {
 	filter := bson.M{"sdata.hostname": hostname, "sdata.key": key, "sessionid": sessionid}
 	// feitelijk hoeft de lookup niet.
@@ -347,6 +374,7 @@ func DeleteExistingServerDataIfExists(hostname, key, sessionid string) {
 	}
 }
 
+// GetServerByHostname finds a server document by FQDN.
 func GetServerByHostname(hostname string) (dbServer, error) {
 	filter := bson.M{"hostname": hostname}
 	server := dbServer{}
@@ -359,6 +387,7 @@ func GetServerByHostname(hostname string) (dbServer, error) {
 	return server, err
 }
 
+// GetServerByKey finds a server document by its auth key.
 func GetServerByKey(key string) (dbServer, error) {
 	filter := bson.M{"key": key}
 	server := dbServer{}
@@ -371,7 +400,7 @@ func GetServerByKey(key string) (dbServer, error) {
 	return server, err
 }
 
-// insertServer inserts a new Server if it does not already exist. It also checks for double Keys.
+// insertServer inserts a new server document, rejecting duplicate FQDNs and duplicate keys.
 func insertServer(key, fqdn, owner string) (dbServer, error) {
 
 	s := dbServer{}
@@ -401,18 +430,16 @@ func insertServer(key, fqdn, owner string) (dbServer, error) {
 	return s, nil
 }
 
+// CreateSessionID derives a YYYYMMDD session ID from a "YYYY-MM-DD HH:MM:SS" date string.
 func CreateSessionID(date string) string {
 	// date: assume yyyy-mm-dd hh:mm:ss
 	return strings.Replace(date[0:10], "-", "", 2)
 }
 
-/*
-InsertServerData first inserts a Server document if the Server is unknown.
-After that, the ServerData is inserted but it replaces a earlier document if the
-SessionID has te same (day) range.
-After thasd.Sdata.Datet, the NmapData is inserted in a document that already has the same SessionID (if not exists, it is added) but records with matching source-host+ipversion are replaced,
-otherwise they are added.
-*/
+// InsertServerData processes raw server telemetry and stores it in MongoDB.
+// If a document for the same (hostname, sessionid) already exists it is replaced (idempotent daily runs).
+// Comment and Supressed flags are migrated from the previous session's matching rules by checksum.
+// Triggers baseline comparison and, when nmap data is also present for the session, nmap comparison.
 func InsertServerData(rawjson RawDataServer) {
 
 	sd := dbServerData{}
@@ -494,6 +521,9 @@ func InsertServerData(rawjson RawDataServer) {
 
 }
 
+// InsertNmapData processes raw nmap results and upserts them into the session's nmapdata document.
+// If a NmapHost with the same FromHostname+IPversion+ScannedHostname already exists it is replaced;
+// otherwise the new NmapHost is appended. Triggers nmap comparison when server data is also present.
 func InsertNmapData(rawjson RawDataNmap) {
 	nd := dbNmapData{}
 
@@ -559,6 +589,7 @@ func InsertNmapData(rawjson RawDataNmap) {
 	}
 }
 
+// check4ServerAndNmapDocs reports whether both a serverdata and an nmapdata document exist for key+sessionid.
 func check4ServerAndNmapDocs(key, sessionid string) bool {
 
 	_, err1 := GetServerDataByKeyAndSessionID(key, sessionid)
@@ -570,6 +601,8 @@ func check4ServerAndNmapDocs(key, sessionid string) bool {
 	return err1 == nil && err2 == nil
 }
 
+// GenPic generates a Mermaid flowchart of the server's interfaces and routes for the Systems tab.
+// Each interface gets a button (class IFN) that the UI uses to trigger nmap script generation.
 func GenPic(key, sessionid string) string {
 	s, err := GetServerDataByKeyAndSessionID(key, sessionid)
 	if err != nil {
@@ -622,7 +655,8 @@ func GenPic(key, sessionid string) string {
 	return txt
 }
 
-/* Create a new server document */
+// CreateNewServer registers a new server with a SHA-256 key derived from FQDN + current epoch.
+// Returns the generated key, or an error if the FQDN already exists or is not fully qualified.
 func CreateNewServer(newserver, owner string) (string, error) {
 
 	if strings.Count(newserver, ".") < 2 {
@@ -646,6 +680,8 @@ func CreateNewServer(newserver, owner string) (string, error) {
 	return key, err
 }
 
+// CreateServerCollectorPy generates the Python collector script for servername.
+// The script runs ifconfig, netstat, and nft, then POSTs the result to nchecknetserver/api_server.
 func CreateServerCollectorPy(servername, nchecknetserver string) (string, error) {
 
 	script := `#!/usr/bin/python3
@@ -707,6 +743,8 @@ main()
 	return script, nil
 }
 
+// CreateNmapCollectorPy generates the Python nmap script for a specific interface on servername.
+// iface is an index into Interfaces from the given sessionid. IPv6 scanning is stubbed out in the script.
 func CreateNmapCollectorPy(servername, sessionid, iface, nchecknetserver string) (string, error) {
 
 	script := `#!/usr/bin/python3
@@ -806,6 +844,8 @@ main()
 	return script, nil
 }
 
+// NoAccess2DB returns true if user does not have permission to access hostname.
+// Admins always have access; other users are restricted to servers under their owner.
 func NoAccess2DB(user dbUser, hostname string) bool {
 	if user.AccessRight == "a" {
 		return false
@@ -825,20 +865,21 @@ func NoAccess2DB(user dbUser, hostname string) bool {
 	return true
 }
 
+// CheckPasswordHash reports whether password matches the bcrypt hash.
 func CheckPasswordHash(password, hash string) bool {
 	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
 	return err == nil
 }
 
+// HashPassword returns a bcrypt hash of password using cost 14.
 func HashPassword(password string) (string, error) {
 	bytes, err := bcrypt.GenerateFromPassword([]byte(password), 14)
 	return string(bytes), err
 }
 
+// GetUserByToken finds a user by their stored JWT token.
+// JWT tokens are not globally unique but are unique per user, so this lookup is safe.
 func GetUserByToken(token string) (dbUser, error) {
-
-	// CAVEAT EMPTOR: JWT tokens are not per se unique but
-	// for different users they are!
 
 	filter := bson.M{"token": token}
 	u := dbUser{}
@@ -846,6 +887,7 @@ func GetUserByToken(token string) (dbUser, error) {
 	return u, err
 }
 
+// GetUserByName finds a user document by username.
 func GetUserByName(name string) (dbUser, error) {
 	filter := bson.M{"name": name}
 	u := dbUser{}
@@ -853,6 +895,7 @@ func GetUserByName(name string) (dbUser, error) {
 	return u, err
 }
 
+// GetBaseline retrieves the stored baseline session ID for hostname.
 func GetBaseline(hostname string) (dbBaseline, error) {
 	filter := bson.M{"hostname": hostname}
 	b := dbBaseline{}
@@ -860,11 +903,13 @@ func GetBaseline(hostname string) (dbBaseline, error) {
 	return b, err
 }
 
+// DeleteBaseline removes the baseline document for hostname.
 func DeleteBaseline(hostname string) {
 	filter := bson.M{"hostname": hostname}
 	BaselineCollection.DeleteOne(ctx, filter)
 }
 
+// SetBaseline upserts the baseline session for hostname (delete-then-insert to replace any existing record).
 func SetBaseline(hostname, sessionid string) error {
 
 	_, err := GetServerByHostname(hostname)
@@ -883,6 +928,7 @@ func SetBaseline(hostname, sessionid string) error {
 	return err
 }
 
+// CreateUser creates a new user with a bcrypt-hashed password, rejecting duplicate usernames.
 func CreateUser(name, password, owner, rights string) (dbUser, error) {
 
 	_, err := GetUserByName(name)
@@ -913,6 +959,8 @@ func CreateUser(name, password, owner, rights string) (dbUser, error) {
 	return u, nil
 }
 
+// UpdateUserToken stores a new JWT token on the user document after a successful login.
+// The token is also used by GetUserByToken to authenticate WebSocket requests.
 func UpdateUserToken(name, token string) error {
 	u, err := GetUserByName(name)
 	if err != nil {

@@ -11,94 +11,106 @@ import (
 	"bufio"
 )
 
+// RawDataNmap is the JSON payload posted by nmap collector scripts to /api_nmap.
 type RawDataNmap struct {
-	Nmap []string
-	Hostname string
-	Scanname string
-	Interfacename string
-	IPv string
-	Date string
-	Key string
+	Nmap []string  // raw lines from nmap stdout
+	Hostname string  // hostname of the scanning host
+	Scanname string  // FQDN of the server being scanned
+	Interfacename string  // interface on the server that was scanned from
+	IPv string  // IP version used for the scan ("4" or "6")
+	Date string  // scan timestamp (YYYY-MM-DD HH:MM:SS)
+	Key string   // server auth key, verified against the servers collection
 }
 
+// RawDataServer is the JSON payload posted by server collector scripts to /api_server.
 type RawDataServer struct {
-	Listeners []string
-	Fwrules []string
-	Interfaces []string
-	Routes []string
-	Hostname string
-	Date string
-	Key string
+	Listeners []string  // raw lines from netstat -tulpn
+	Fwrules []string    // raw lines from nft list ruleset
+	Interfaces []string // raw lines from ifconfig
+	Routes []string     // raw lines from netstat -rn
+	Hostname string     // FQDN of the monitored server
+	Date string         // collection timestamp (YYYY-MM-DD HH:MM:SS)
+	Key string          // server auth key, verified against the servers collection
 }
 
+// NmapLine is a single open-port entry from an nmap scan.
 type NmapLine struct {
 	Proto  string
 	Port   string
 	Status string
-	Supressed bool
+	Supressed bool // set by the user via the web UI to silence this finding
 }
 
+// NmapHost holds all open-port findings from one nmap run (one vantage point scanning one server interface).
 type NmapHost struct {
-	IPversion string
-	IPScanned string
-	Interfacename string
-	FromHostname string
-	ScannedHostname string
+	IPversion string       // "4" or "6"
+	IPScanned string       // IP address that was scanned
+	Interfacename string   // interface on the server that faces this vantage point
+	FromHostname string    // hostname of the machine that ran nmap
+	ScannedHostname string // FQDN of the server that was scanned
 	NmapLines []NmapLine
 }
 
+// NcheckNetNmap is the parsed nmap dataset for one session; stored in the nmapdata collection.
+// A single document may contain results from multiple vantage points (one NmapHost per scan run).
 type NcheckNetNmap struct {
 	NmapHosts []NmapHost
-	Key string
-	Date string
+	Key string   // server auth key linking this to a dbServer
+	Date string  // timestamp of the most-recently inserted NmapHost
 }
 
+// Listener is a single active network listener parsed from netstat -tulpn.
 type Listener struct {
-	IPversion       string
-	Proto           string
-	IP              string
+	IPversion       string // "v4" or "v6"
+	Proto           string // "tcp", "udp", etc.
+	IP              string // bound IP address; "0.0.0.0" when listening on all interfaces
 	Port            string
-	Bound2interface string
-	Command         string
-	Comment      string
-	Supressed	bool
+	Bound2interface string // interface name when bound to a specific interface via %iface
+	Command         string // process name from the PID/program column
+	Comment         string // user annotation, persisted across sessions
+	Supressed       bool   // when true, hidden from the chart unless "unhide" mode is active
 }
 
+// Interface is a network interface with its assigned addresses, parsed from ifconfig output.
 type Interface struct {
 	Name        string
 	V4addresses []string
 	V6addresses []string
-	Supressed	bool
+	Supressed   bool
 }
 
+// Fwrule is a single nftables ACCEPT rule parsed from nft list ruleset.
+// Only rules with a dport … accept pattern are captured.
 type Fwrule struct {
-	IPversion    string
-	Port         string
-	Proto        string
-	Intfaces     []string
-	AllIntfaces bool
-	IP_to        string
-	IP_from      string
-	Ruletype     string
-	Chain	     string
-	Comment      string
-	Supressed	bool
+	IPversion   string   // "v4" or "v6"
+	Port        string
+	Proto       string   // "tcp" or "udp"
+	Intfaces    []string // interfaces this rule applies to
+	AllIntfaces bool     // true when no iifname is specified (rule applies to all interfaces)
+	IP_to       string   // daddr value, or "Any"
+	IP_from     string   // saddr value, or "Any"
+	Ruletype    string   // always "ACCEPT" for captured rules
+	Chain       string   // nftables chain name (e.g. "input")
+	Comment     string   // user annotation, persisted across sessions
+	Supressed   bool     // when true, hidden from the chart unless "unhide" mode is active
 }
 
+// RouteEntry is a single row from the kernel routing table (netstat -rn).
 type RouteEntry struct {
-	Dest string
-	Gateway  string
-	Interface  string
-	Supressed	bool
+	Dest      string
+	Gateway   string
+	Interface string
+	Supressed bool
 }
 
+// NcheckNetServer is the parsed server telemetry for one session; stored in the serverdata collection.
 type NcheckNetServer struct {
-	Date string
-	Key string
-	Hostname string
-	Listeners []Listener
-	Routes []RouteEntry
-	Fwrules []Fwrule
+	Date       string
+	Key        string
+	Hostname   string
+	Listeners  []Listener
+	Routes     []RouteEntry
+	Fwrules    []Fwrule
 	Interfaces []Interface
 }
 
@@ -110,6 +122,7 @@ func trimRightSpace(s string) string {
 	return strings.TrimRightFunc(s, unicode.IsSpace)
 }
 
+// ProcessRawServerData reads a RawDataServer JSON file and returns parsed server telemetry.
 func ProcessRawServerData(filePath string) NcheckNetServer {
 	data, err := os.ReadFile(filePath)
 	if err != nil {
@@ -123,6 +136,7 @@ func ProcessRawServerData(filePath string) NcheckNetServer {
 	return ProcessRawServerDataJSON(rdata)
 }
 
+// ProcessRawServerDataJSON parses a RawDataServer into structured NcheckNetServer types.
 func ProcessRawServerDataJSON(rdata RawDataServer) NcheckNetServer {
 	nchecknet := NcheckNetServer{}
 	nchecknet.Hostname = rdata.Hostname
@@ -137,6 +151,7 @@ func ProcessRawServerDataJSON(rdata RawDataServer) NcheckNetServer {
 	return nchecknet
 }
 
+// ProcessRawNmapData reads a RawDataNmap JSON file and returns parsed nmap results.
 func ProcessRawNmapData(filePath string) NcheckNetNmap {
 	data, err := os.ReadFile(filePath)
 	if err != nil {
@@ -151,6 +166,8 @@ func ProcessRawNmapData(filePath string) NcheckNetNmap {
 }
 
 
+// ProcessRawNmapDataJSON parses a RawDataNmap payload into a structured NcheckNetNmap.
+// Only "open" port lines after the PORT header are captured; all other nmap output is skipped.
 func ProcessRawNmapDataJSON(rdata RawDataNmap) NcheckNetNmap {
 	nmap := NcheckNetNmap{}
 
@@ -215,6 +232,7 @@ func ProcessRawNmapDataJSON(rdata RawDataNmap) NcheckNetNmap {
 }
 
 
+// TestFirewall parses testdata/nft.txt and prints the result as JSON; used for manual testing.
 func TestFirewall() {
 
 	ls := TestInterfaces()
@@ -232,6 +250,7 @@ func TestFirewall() {
 	fmt.Println(t)
 }
 
+// TestListeners parses testdata/listeners.txt and prints the result as JSON; used for manual testing.
 func TestListeners() {
 	lines, err := readLines("testdata/listeners.txt")
 	if err != nil {
@@ -245,6 +264,7 @@ func TestListeners() {
 	fmt.Println(t)
 }
 
+// TestInterfaces parses testdata/ifconfig.txt and returns the interfaces; used for manual testing.
 func TestInterfaces() []Interface {
 	lines, err := readLines("testdata/ifconfig.txt")
 	if err != nil {
@@ -259,6 +279,8 @@ func TestInterfaces() []Interface {
 	return l
 }
 
+// ProcessListeners parses netstat -tulpn output into Listener structs.
+// UDP lines have one fewer column (no LISTEN state), handled by the col offset.
 func ProcessListeners(ssdata []string) []Listener {
 	Listeners := make([]Listener,0)
 	for _, line := range ssdata {
@@ -302,6 +324,7 @@ func ProcessListeners(ssdata []string) []Listener {
 	return Listeners
 }
 
+// JsonDump serializes v to an indented JSON file at fn. Panics on marshal or write failure.
 func JsonDump(i interface{}, fn string) {
 	jsonBytes, err := json.MarshalIndent(i, "", "  ")
 	if err != nil {
@@ -314,6 +337,7 @@ func JsonDump(i interface{}, fn string) {
 }
 
 
+// Compiled regexes for ProcessFW — pre-compiled to avoid per-line allocation.
 var reDport = regexp.MustCompile(`(tcp|udp) dport ([0-9]+).*accept$`)
 var reInterFace = regexp.MustCompile(`iifname "([^"]+)`)
 var reSaddr = regexp.MustCompile(`saddr ([0-9a-f:.]+)`)
@@ -321,7 +345,9 @@ var reDaddr = regexp.MustCompile(`daddr ([0-9a-f:.]+)`)
 var reChain = regexp.MustCompile(`^\s+chain ([A-Za-z0-9-]+)`)
 
 
-// ProcessFW() parses the output from nft list ruleset
+// ProcessFW parses nft list ruleset output into Fwrule structs.
+// Only rules matching "tcp|udp dport <N> … accept" are captured; all other lines are ignored.
+// When no iifname is present the rule is assumed to apply to all known interfaces.
 func ProcessFW(fwdata []string, ifaces []Interface) []Fwrule {
 
 
@@ -399,6 +425,8 @@ func ProcessFW(fwdata []string, ifaces []Interface) []Fwrule {
 	return Fwrules
 }
 
+// ProcessInterfaces parses ifconfig output into Interface structs.
+// A blank or very short line signals the end of an interface block.
 func ProcessInterfaces(interfaces []string) []Interface {
 	Interfaces := make([]Interface, 0)
 	Iface := Interface{}
@@ -436,6 +464,8 @@ func ProcessInterfaces(interfaces []string) []Interface {
 	return Interfaces
 }
 
+// ProcessRoutes parses netstat -rn output into RouteEntry structs.
+// Lines before the "Dest" header and lines that don't have exactly 8 fields are skipped.
 func ProcessRoutes(RouteData []string) []RouteEntry {
 	RouteTable := make([]RouteEntry,0)
 	entry := RouteEntry{}
@@ -462,6 +492,7 @@ func ProcessRoutes(RouteData []string) []RouteEntry {
 }
 
 
+// FWrules2MapByPort indexes Fwrules by port number for O(1) lookup during chart generation.
 func FWrules2MapByPort(fwr []Fwrule) map[string][]Fwrule {
 	fwrbymap := make(map[string][]Fwrule)
 	for _, r := range(fwr) {
@@ -470,7 +501,8 @@ func FWrules2MapByPort(fwr []Fwrule) map[string][]Fwrule {
 	return fwrbymap
 }
 
-func Listeners2MapByPort(fwr []Listener) map[string][]Listener{
+// Listeners2MapByPort indexes Listeners by port number for O(1) lookup during chart generation.
+func Listeners2MapByPort(fwr []Listener) map[string][]Listener {
 	lisbymap := make(map[string][]Listener)
 	for _, r := range(fwr) {
 		lisbymap[r.Port] = append(lisbymap[r.Port], r)
