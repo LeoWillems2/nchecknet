@@ -8,6 +8,8 @@
 *.so
 *.dylib
 
+CLAUDE.md
+
 bin/
 bin/*
 
