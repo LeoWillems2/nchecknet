@@ -1,8 +1,8 @@
 
 $(document).ready(Ready);
 
-var ws;
-
+// ws is the single WebSocket connection for the lifetime of the page.
+let ws;
 
 function Ready() {
 
@@ -12,59 +12,28 @@ function Ready() {
     $("#baseline-nmap").hide();
     $("#hide-hide").hide();
 
-    
-
-
-
     mermaid.initialize({
         securityLevel: 'antiscript',
-  maxTextSize: 2400000
+        maxTextSize: 2400000
     });
 
-
-    wsstring = "wss://";
-    if (window.location.host == "127.0.0.1:8086") {
-        wsstring = "ws://";
-    }
-    ws = new WebSocket(wsstring + window.location.host + "/ws");
+    const wsProto = window.location.host === "127.0.0.1:8086" ? "ws://" : "wss://";
+    ws = new WebSocket(wsProto + window.location.host + "/ws");
 
     ws.onopen = () => {
-        //console.log("WebSocket connection established");
-        GetMessage();
+        send({ Function: "GetServers" });
     };
 
     ws.onmessage = (event) => {
-        //console.log(event.data);
-        m = JSON.parse(event.data);
+        const m = JSON.parse(event.data);
         console.log(m.Function);
-        if (m.Function == "Error") {
-            alert(m.ArrData[0]);
-            return;
-        }
-        if (m.Function == "FillServers") {
-            FillServers(m);
-            return;
-        }
-        if (m.Function == "FillSessionIDs") {
-            FillSessionIDs(m);
-            return;
-        }
-        if (m.Function == "FillNmapSuggestion") {
-            FillNmapSuggestion(m);
-            return;
-        }
-        if (m.Function == "FillData") {
-            FillData(m);
-            return;
-        }
-        if (m.Function == "FillNmapCollector") {
-            FillNmapCollector(m);
-            return;
-        }
-        if (m.Function == "FillChartReport") {
-            FillChartReport(m);
-            return;
-        }
+        if (m.Function === "Error")              { alert(m.ArrData[0]); return; }
+        if (m.Function === "FillServers")        { FillServers(m);        return; }
+        if (m.Function === "FillSessionIDs")     { FillSessionIDs(m);     return; }
+        if (m.Function === "FillNmapSuggestion") { FillNmapSuggestion(m); return; }
+        if (m.Function === "FillData")           { FillData(m);           return; }
+        if (m.Function === "FillNmapCollector")  { FillNmapCollector(m);  return; }
+        if (m.Function === "FillChartReport")    { FillChartReport(m);    return; }
     };
 
     ws.onclose = () => {
@@ -77,100 +46,73 @@ function Ready() {
     });
 
     $("#Servers").on("change", function () {
-        hn = $(this).val();
-        mo = {};
-        mo.Function = "GetSessionIDs";
-        mo.Hostname = hn;
-        SendMessage(mo);
+        const hn = $(this).val();
+        sendWithContext({ Function: "GetSessionIDs", Hostname: hn });
         $("#charttype").val("select");
-       $("#baseline-server").hide();
-       $("#baseline-nmap").hide();
+        $("#baseline-server").hide();
+        $("#baseline-nmap").hide();
     });
 
     $("#SessionIDs").on("change", function () {
-        si = $(this).val();
-        mo = {};
-        mo.Function = "GetNmapSuggestion";
-        mo.Hostname = $("#Servers").val();
-        mo.SessionID = si;
-        SendMessage(mo);
-
-        mo.Function = "GetData";
-        SendMessage(mo);
+        sendWithContext({ Function: "GetNmapSuggestion" });
+        sendWithContext({ Function: "GetData" });
         $("#charttype").val("select");
-       $("#baseline-server").hide();
-       $("#baseline-nmap").hide();
+        $("#baseline-server").hide();
+        $("#baseline-nmap").hide();
     });
-
 
     $("#baseline-server-val").on("click", doBaseLineServer);
     $("#baseline-nmap-val").on("click", doBaseLineNmap);
 
     $("#charthide").on("click", RedrawChart);
-
     $("#charttype").on("change", RedrawChart);
 
-    $("#charttabitem").on('shown.bs.tab', function (e) {
-        var target = $(e.target).attr("href");
+    $("#charttabitem").on('shown.bs.tab', function () {
         $("#chartreport").html("<pre class='mermaid' id=mermaidchartreport></pre>");
         $("#charthide").prop('checked', false);
     });
 
-    $("#datatabitem").on('shown.bs.tab', function (e) {
-        var target = $(e.target).attr("href");
-        mo.Function = "GetData";
-        SendMessage(mo);
+    $("#datatabitem").on('shown.bs.tab', function () {
+        sendWithContext({ Function: "GetData" });
     });
 }
 
-function doBaseLineServer(){
-    m = {};
-    m.Function = "SetBaselineServer";
-    m.BaselineServer = $("#baseline-server-val").prop('checked');
-    SendMessage(m);
-    setTimeout(RedrawChart, 500);
-}
-
-function doBaseLineNmap(){
-    m = {};
-    m.Function = "SetBaselineNmap";
-    m.BaselineNmap = $("#baseline-nmap-val").prop('checked');
-    SendMessage(m);
-}
-
-function RedrawChart() {
-
-    unhide = $("#charthide").prop('checked');
-    m = {};
-    m.Function = "GetFwListenChart";
-    if (unhide) {
-        m.Hide = "unhide";
-    } else {
-        m.Hide = "hide";
-    }
-    SendMessage(m);
-}
-
-function SendMessage(m) {
-    unhide = $("#charthide").prop('checked');
-    if (unhide) {
-        m.Hide = "unhide";
-    } else {
-        m.Hide = "hide";
-    }
-    m.Hostname = $("#Servers").val();
-    m.SessionID = $("#SessionIDs").val();
-    m.ChartType = $("#charttype").val();
-
+// send transmits m over the WebSocket exactly as given.
+function send(m) {
     ws.send(JSON.stringify(m));
 }
 
-function GetMessage() {
-    m = {};
-    m.Function = "GetServers";
-    SendMessage(m);
+// sendWithContext enriches m with the current UI state (hostname, session, chart type,
+// hide flag) then transmits it. Values already set on m take precedence over context.
+function sendWithContext(m) {
+    const msg = {
+        Hostname:  $("#Servers").val(),
+        SessionID: $("#SessionIDs").val(),
+        ChartType: $("#charttype").val(),
+        Hide:      $("#charthide").prop('checked') ? "unhide" : "hide",
+    };
+    Object.assign(msg, m);
+    send(msg);
 }
 
+function doBaseLineServer() {
+    sendWithContext({
+        Function:       "SetBaselineServer",
+        BaselineServer: $("#baseline-server-val").prop('checked'),
+    });
+    setTimeout(RedrawChart, 500);
+}
+
+function doBaseLineNmap() {
+    sendWithContext({
+        Function:    "SetBaselineNmap",
+        BaselineNmap: $("#baseline-nmap-val").prop('checked'),
+    });
+}
+
+function RedrawChart() {
+    sendWithContext({ Function: "GetFwListenChart" });
+}
 
 function FillSessionIDs(m) {
 
@@ -178,61 +120,46 @@ function FillSessionIDs(m) {
 
     $("#SessionIDs").find('option').remove();
 
-    s0 = "";
-    for (i = m.ArrData.length - 1; i > -1; --i) {
-        s = m.ArrData[i];
+    let s0 = "";
+    for (let i = m.ArrData.length - 1; i > -1; --i) {
+        const s = m.ArrData[i];
         $("#SessionIDs").append('<option value="' + s + '">' + s + '</option>');
-        if (i == m.ArrData.length - 1) {
+        if (i === m.ArrData.length - 1) {
             s0 = s;
         }
     }
 
     if (s0.length > 0) {
-        mo = {};
-        mo.Function = "GetNmapSuggestion";
-        //mo.Hostname = m.Hostname;
-        //mo.SessionID = s0;
-        SendMessage(mo);
-
-        //mo = {};
-        //mo.Function = "GetData";
-        //mo.Hostname = m.Hostname;
-        //mo.SessionID = s0;
-        //SendMessage(mo);
+        sendWithContext({ Function: "GetNmapSuggestion" });
     }
 }
 
 function FillServers(m) {
 
-
     $('.nav-tabs > li:first-child > a')[0].click();
 
-    s0 = "";
-    for (i = 0; i < m.ArrData.length; ++i) {
-        s = m.ArrData[i];
-        if (i == 0) {
-            s0 = s;
-        }
+    $("#Servers").find('option').remove();
+
+    let s0 = "";
+    for (let i = 0; i < m.ArrData.length; ++i) {
+        const s = m.ArrData[i];
+        if (i === 0) { s0 = s; }
         $("#Servers").append('<option value="' + s + '">' + s + '</option>');
     }
 
     if (s0.length > 0) {
-        mo = {};
-        mo.Function = "GetSessionIDs";
-        mo.Hostname = s0;
-        SendMessage(mo);
+        sendWithContext({ Function: "GetSessionIDs", Hostname: s0 });
     }
 }
 
 function FillChartReport(m) {
 
-
-    if ($("#charttype").val() == "select") {
-       $("#hide-hide").hide();
-       $("#baseline-server").hide();
-       $("#baseline-nmap").hide();
-       $("#chartreport").html("");
-       return;
+    if ($("#charttype").val() === "select") {
+        $("#hide-hide").hide();
+        $("#baseline-server").hide();
+        $("#baseline-nmap").hide();
+        $("#chartreport").html("");
+        return;
     }
 
     $("#baseline-server-val").prop('checked', m.BaselineServer);
@@ -240,50 +167,31 @@ function FillChartReport(m) {
     $("#baseline-server-id").html(m.BaselineServerID);
     $("#baseline-nmap-id").html(m.BaselineNmapID);
 
-    if ($("#charttype").val() == "nmapchart") {
-       $("#hide-hide").hide();
-       $("#baseline-server").hide();
-       $("#baseline-nmap").show();
-    } else { 
-       $("#hide-hide").show();
-       $("#baseline-server").show();
-       $("#baseline-nmap").hide();
+    if ($("#charttype").val() === "nmapchart") {
+        $("#hide-hide").hide();
+        $("#baseline-server").hide();
+        $("#baseline-nmap").show();
+    } else {
+        $("#hide-hide").show();
+        $("#baseline-server").show();
+        $("#baseline-nmap").hide();
     }
 
     FillChart("#chartreport", m.ArrData[0]);
 
+    // Wire up interactive buttons after Mermaid has finished rendering.
     setTimeout(function () {
         $(".hidefwrule").on("click", function () {
-            csum = $(this).attr("id");
-            mo = {};
-            mo.Function = "HideFwrule";
-            mo.Csum = csum;
-            SendMessage(mo);
+            sendWithContext({ Function: "HideFwrule", Csum: $(this).attr("id") });
         });
         $(".hidelistener").on("click", function () {
-            csum = $(this).attr("id");
-            mo = {};
-            mo.Function = "HideListener";
-            mo.Csum = csum;
-            SendMessage(mo);
+            sendWithContext({ Function: "HideListener", Csum: $(this).attr("id") });
         });
         $(".Fwcomment").on("change", function () {
-            csum = $(this).attr("id");
-            cmt = $(this).val();
-            mo = {};
-            mo.Function = "ChangeFwComment";
-            mo.Csum = csum;
-            mo.Data = cmt;
-            SendMessage(mo);
+            sendWithContext({ Function: "ChangeFwComment", Csum: $(this).attr("id"), Data: $(this).val() });
         });
         $(".Liscomment").on("change", function () {
-            csum = $(this).attr("id");
-            cmt = $(this).val();
-            mo = {};
-            mo.Function = "ChangeLisComment";
-            mo.Csum = csum;
-            mo.Data = cmt;
-            SendMessage(mo);
+            sendWithContext({ Function: "ChangeLisComment", Csum: $(this).attr("id"), Data: $(this).val() });
         });
     }, 500);
 }
@@ -302,23 +210,19 @@ function FillNmapSuggestion(m) {
 
     mermaid.init();
 
+    // Wire up interface buttons after Mermaid has finished rendering.
     setTimeout(function () {
         $(".IFN").on("click", function () {
-            id = $(this).attr("id");
-            m.Function = "GetNmapCollector";
-            m.Data = id;
-            SendMessage(m);
+            // $(this).attr("id") is "IFN-<index>"; the server strips the "IFN-" prefix itself.
+            sendWithContext({ Function: "GetNmapCollector", Data: $(this).attr("id") });
         });
-
     }, 500);
-
 }
 
 function FillData(m) {
-
     $("#DataTabCol1").html("<pre>" + m.ArrData[0] + "</pre>");
 }
+
 function FillNmapCollector(m) {
     $("#nmaprawcollector").html("<br/><pre>" + m.ArrData[0] + "</pre>");
 }
-
