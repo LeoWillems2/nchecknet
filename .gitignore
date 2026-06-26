@@ -9,6 +9,7 @@
 *.dylib
 
 CLAUDE.md
+.env
 
 bin/
 bin/*
