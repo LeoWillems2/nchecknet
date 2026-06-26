@@ -3,6 +3,7 @@ webserver:
   port: "8086"
   mongodburl: "mongodb://......"
   maxsessionidselect: 3
+  webroot: "path to webroot"
 
 collector:
   collectorurl: "https://FQDN"
