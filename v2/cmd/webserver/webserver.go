@@ -1,3 +1,9 @@
+// Package main implements the nchecknet web server.
+//
+// It serves the single-page app from the configured webroot, handles JWT-based
+// login/logoff over HTTP, and exposes all UI operations through a single
+// authenticated WebSocket endpoint (/ws). All business logic is delegated to
+// the sharedlib package; the webserver only handles transport and auth.
 package main
 
 import (
@@ -15,24 +21,30 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-// YConfig holds the configuration stuff
+// YConfig holds the configuration loaded from etc/nchecknet.yml at startup.
 var YConfig sharedlib.YamlConfig
 
-// JWT stuff:
+// jwtSecret is the HMAC key used to sign and verify JWT tokens.
+// WARNING: this is evaluated at package-init time, before main() loads the config,
+// so it will always be []byte(""). The secret must be moved into main() after
+// GetYamlConfig returns for token signing to actually use the configured value.
 var jwtSecret = []byte(YConfig.Server.JWTSecret)
 
+// CustomClaims extends jwt.RegisteredClaims with the authenticated username,
+// which is carried in the request context after middleware validation.
 type CustomClaims struct {
 	Username string `json:"username"`
 	jwt.RegisteredClaims
 }
 
-// UserLogin maps to the input's in index.html
+// UserLogin is the JSON body expected by the /login endpoint.
 type UserLogin struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
 }
 
-// LogOffHandler() invalidates the cookie at the client and removes the token from the dbUser data.
+// LogOffHandler expires the JWT cookie in the browser and clears the stored token
+// from the user's MongoDB document, preventing further use of the old token.
 func LogOffHandler(w http.ResponseWriter, r *http.Request) {
 	expirationTime := time.Now()
 	http.SetCookie(w, &http.Cookie{
@@ -57,12 +69,8 @@ func LogOffHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "Logoff successful.")
 }
 
-/*
-LoginHandler() is the JWT login handler and creates the cookie with a token and a life span of 24 hours.
-
-	The token is stored in de dbUser document in the UsersCollection.
-	The jwtSecret is read from the Yaml config at server start.
-*/
+// LoginHandler authenticates the user and issues a 24-hour JWT in an HttpOnly Secure cookie.
+// The token is also written to the user's MongoDB document so it can be invalidated on logoff.
 func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	var creds UserLogin
 	if err := json.NewDecoder(r.Body).Decode(&creds); err != nil {
@@ -117,18 +125,18 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "Login successful. JWT set in HTTP-only cookie.")
 }
 
-// AuthMiddleware(): the authentication middleware (wrapper) that checks for a valid JWT (from a cookie)
+// AuthMiddleware validates the JWT from the "nchecknettoken" cookie and, on success,
+// injects the parsed CustomClaims into the request context under the key "claims".
+// A Bearer-token fallback is stubbed but not implemented.
 func AuthMiddleware(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		// Try to read the token from the "jwt_token" cookie
 		cookie, err := r.Cookie("nchecknettoken")
 		if err != nil {
-			// If no cookie, check for Authorization Header as a fallback (for non-browser clients)
+			// Bearer token fallback — not yet implemented.
 			authHeader := r.Header.Get("Authorization")
 			if authHeader != "" && strings.HasPrefix(authHeader, "Bearer ") {
-				// Handle Bearer token logic here (if you need both methods)
-				// For this example, we'll focus on the cookie, so we skip detailed Bearer logic.
+				// placeholder: Bearer logic would go here
 			}
 
 			if errors.Is(err, http.ErrNoCookie) {
@@ -173,18 +181,21 @@ func AuthMiddleware(next http.HandlerFunc) http.HandlerFunc {
 	}
 }
 
-// Upgrader is used to upgrade HTTP connections to WebSocket connections.
+// upgrader promotes HTTP connections to WebSocket.
+// CheckOrigin returns true unconditionally — restrict this in production if the
+// webserver is exposed on a public interface.
 var upgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool {
-		// Allow all connections by default
 		return true
 	},
 }
 
-// handleWebSocket() is protected by the middleware and handles WebSocket requests from clients.
+// handleWebSocket is the single WebSocket endpoint for all UI operations.
+// It reads JSON MessageIn frames in a loop and dispatches on MessageIn.Function,
+// writing a JSON MessageOut reply after each message.
+// The connection is closed when the client disconnects or a read error occurs.
 func handleWebSocket(w http.ResponseWriter, r *http.Request) {
 
-	// Get the user from the context
 	_x := r.Context().Value("claims")
 	x, ok := _x.(*CustomClaims)
 	if !ok {
@@ -198,27 +209,38 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// structs for the websocket I/O
+	// MessageIn is the client-to-server frame. Not all fields are used by every function:
+	// Function  — the operation to perform (e.g. "GetServers", "HideFwrule")
+	// Hostname  — target server FQDN
+	// SessionID — YYYYMMDD session to operate on
+	// Data      — function-specific payload (e.g. comment text, interface index with "IFN-" prefix)
+	// Hide      — "unhide" to show suppressed items; empty to hide them
+	// Csum      — SHA-256 checksum (with leading type byte) identifying a rule or listener
+	// ChartType — "fwlistenchart" or "nmapchart" for GetFwListenChart
 	type MessageIn struct {
-		Function  string
-		Hostname  string
-		SessionID string
-		Data      string
-		Hide      string
-		Csum      string
-		ChartType string
-                BaselineServer bool
-                BaselineNmap bool
+		Function       string
+		Hostname       string
+		SessionID      string
+		Data           string
+		Hide           string
+		Csum           string
+		ChartType      string
+		BaselineServer bool
+		BaselineNmap   bool // declared but not currently acted on
 	}
 
+	// MessageOut is the server-to-client reply frame.
+	// ArrData carries the payload (chart HTML, session IDs, hostnames, etc.).
+	// BaselineServer / BaselineServerID reflect whether the requested session is the current baseline.
+	// BaselineNmap / BaselineNmapID are reserved for a future nmap baseline feature.
 	type MessageOut struct {
-		Function string
-		Hostname string
-		ArrData  []string
-                BaselineServer bool
-                BaselineNmap bool
-                BaselineServerID string
-                BaselineNmapID string
+		Function         string
+		Hostname         string
+		ArrData          []string
+		BaselineServer   bool
+		BaselineNmap     bool
+		BaselineServerID string
+		BaselineNmapID   string
 	}
 
 	// Upgrade the HTTP connection to a WebSocket connection
@@ -260,9 +282,9 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request) {
 			mo.Function = "FillSessionIDs"
 			mo.Hostname = mi.Hostname
 			alls, _, _ := sharedlib.GetSessionIDs(mi.Hostname)
+			// Keep only the most recent MaxSessionIDSelect sessions (tail of the sorted slice).
 			if len(alls) > YConfig.Server.MaxSessionIDSelect {
 				alls = alls[len(alls)-YConfig.Server.MaxSessionIDSelect:]
-
 			}
 			mo.ArrData = alls
 		case "GetNmapCollector":
@@ -270,6 +292,7 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 			mo.Function = "FillNmapCollector"
+			// mi.Data carries the button id "IFN-<index>"; strip the 4-char "IFN-" prefix to get the index.
 			t, _ := sharedlib.CreateNmapCollectorPy(mi.Hostname, mi.SessionID, mi.Data[4:], YConfig.Collector.CollectorURL)
 			mo.ArrData = append(mo.ArrData, t)
 		case "GetNmapSuggestion":
@@ -286,10 +309,11 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request) {
 			mo.Hostname = mi.Hostname
 			txt := sharedlib.GenPic(sn.Key, mi.SessionID)
 			mo.ArrData = append(mo.ArrData, txt)
-   		case "SetBaselineServer":
+		case "SetBaselineServer":
 			if sharedlib.NoAccess2DB(user, mi.Hostname) {
 				return
 			}
+			// Always delete first; only re-insert when BaselineServer is true (toggle pattern).
 			sharedlib.DeleteBaseline(mi.Hostname)
 			if mi.BaselineServer {
 				sharedlib.SetBaseline(mi.Hostname, mi.SessionID)
@@ -329,14 +353,15 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request) {
 			mo.ArrData = append(mo.ArrData, t)
 
 
+			// Attach baseline metadata so the UI can highlight the baseline session.
 			bm := "None"
-                        mo.BaselineServer = false
- 			b, err := sharedlib.GetBaseline(mi.Hostname)
-                        if err == nil {
- 				log.Println(mi.SessionID, b.SessionID)
+			mo.BaselineServer = false
+			b, err := sharedlib.GetBaseline(mi.Hostname)
+			if err == nil {
+				log.Println(mi.SessionID, b.SessionID)
 				bm = b.SessionID
 				if mi.SessionID == b.SessionID {
-                        		mo.BaselineServer = true
+					mo.BaselineServer = true
 				}
 			}
 			mo.BaselineServerID = bm
@@ -418,10 +443,17 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request) {
 	//log.Println("Client disconnected")
 }
 
+// main loads config, connects to MongoDB, registers routes, and starts the HTTP server.
+//
+// Routes:
+//
+//	/        — static file server (webroot, unauthenticated)
+//	/login   — JWT login (unauthenticated)
+//	/logoff  — JWT logoff (requires valid cookie)
+//	/ws      — WebSocket API (requires valid cookie)
 func main() {
 	var err error
 
-	// Read the config file
 	YConfig, err = sharedlib.GetYamlConfig("etc/nchecknet.yml")
 	if err != nil {
 		log.Fatalln(err)
@@ -438,8 +470,7 @@ func main() {
 
 	sharedlib.DBConnect(YConfig.Server.MongoDBURL)
 
-	// Start the server
-	port := ":"+YConfig.Server.Port
+	port := ":" + YConfig.Server.Port
 	fmt.Printf("Server starting on port %s\n", port)
 
 	if err := http.ListenAndServe(port, nil); err != nil {

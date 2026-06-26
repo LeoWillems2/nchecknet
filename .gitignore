@@ -9,7 +9,7 @@
 *.dylib
 
 CLAUDE.md
-.env
+.git/config
 
 bin/
 bin/*
