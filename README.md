@@ -150,12 +150,12 @@ CLI for administration and script generation. All flags:
 
 ---
 
-### Baseline
+## Baseline
 
-If a baseline is set for a server, that baseline data is compared with the new data the collector receives for that server. If new information appears or information is disappears, this is logged by the collector unless the item is supressed.
+If a baseline is set for a server, that baseline data is compared with the new data the collector receives for that server. If new information appears or old information disappears, this is logged by the collector unless the item is supressed.
 
 ```
-2026-06-27T13:36:37.841641+02:00 monitor nchecknetcollector[2883648]: Listener disappeared: someserver {v4 tcp 0.0.0.0 33443 0.0.0.0  false}
+2026-06-27T13:36:37.841641+02:00 monitor nchecknetcollector[2884]: Listener disappeared: someserver {v4 tcp 0.0.0.0 33443 0.0.0.0  comment false}
 ```
 
 ---
