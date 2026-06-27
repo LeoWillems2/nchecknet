@@ -57,7 +57,7 @@ func Compare2SessionIDs(hostname, sid1, sid2 string) error {
 				break
 			}
 		}
-		if !match {
+		if !match && !l1.Supressed {
 			log.Printf("Route disappeared: %s %v\n ",hostname, l1)
 		}
 	}
@@ -69,7 +69,7 @@ func Compare2SessionIDs(hostname, sid1, sid2 string) error {
 				break
 			}
 		}
-		if !match {
+		if !match && !l2.Supressed {
 			log.Printf("Route appeared: %s %v\n ",hostname , l2)
 		}
 	}
@@ -83,7 +83,7 @@ func Compare2SessionIDs(hostname, sid1, sid2 string) error {
 				break
 			}
 		}
-		if !match {
+		if !match && !l1.Supressed {
 			log.Printf("Interface disappeared: %s %v\n ",hostname, l1)
 		}
 	}
@@ -95,7 +95,7 @@ func Compare2SessionIDs(hostname, sid1, sid2 string) error {
 				break
 			}
 		}
-		if !match {
+		if !match&& !l2.Supressed  {
 			log.Printf("Interface appeared: %s %v\n ",hostname, l2)
 		}
 	}
@@ -109,7 +109,7 @@ func Compare2SessionIDs(hostname, sid1, sid2 string) error {
 				break
 			}
 		}
-		if !match {
+		if !match && !l1.Supressed {
 			log.Printf("Fwrule disappeared: %s %v\n ",hostname, l1)
 		}
 	}
@@ -121,7 +121,7 @@ func Compare2SessionIDs(hostname, sid1, sid2 string) error {
 				break
 			}
 		}
-		if !match {
+		if !match  && !l2.Supressed{
 			log.Printf("Fwrule appeared: %s %v\n ",hostname, l2)
 		}
 	}
@@ -138,7 +138,7 @@ func Compare2SessionIDs(hostname, sid1, sid2 string) error {
 				break
 			}
 		}
-		if !match {
+		if !match && !l1.Supressed {
 			log.Printf("Listener disappeared: %s %v\n ",hostname, l1)
 		}
 	}
@@ -152,7 +152,7 @@ func Compare2SessionIDs(hostname, sid1, sid2 string) error {
 				break
 			}
 		}
-		if !match {
+		if !match && !l2.Supressed {
 			log.Printf("Listener appeared: %s %v\n ",hostname, l2)
 		}
 	}
@@ -219,7 +219,7 @@ func createFbP(fis []Fwrule) map[string][]Fwrule {
 }
 
 // CompareFromFWViewpoint generates a Mermaid flowchart comparing firewall rules and listeners
-// for the Charts tab. hide="unhide" makes suppressed items visible (shown in green).
+// for the Charts tab. hide="unhide" makes suppressed items visible (shown in red).
 // acright="r" disables the interactive comment and hide buttons.
 func CompareFromFWViewpoint(hostname, sessionid, hide, acright string) (string, error) {
 
@@ -281,14 +281,14 @@ subgraph SERVER["%s %s "]
 				//continue
 			}
 
-			T := "danger"
+			T := "success"
 			Tx := "H"
 			if fwrule.Supressed && hide != "unhide" {
 				continue
 			}
 
 			if fwrule.Supressed && hide == "unhide" {
-				T = "success"
+				T = "danger"
 				Tx = "U"
 			}
 
@@ -316,14 +316,14 @@ subgraph SERVER["%s %s "]
 
 		for _, l := range listeners {
 
-			T := "danger"
+			T := "success"
 			Tx := "H"
 			if l.Supressed && hide != "unhide" {
 				continue
 			}
 
 			if l.Supressed && hide == "unhide" {
-				T = "success"
+				T = "danger"
 				Tx = "U"
 			}
 
