@@ -643,11 +643,12 @@ func GenPic(key, sessionid string) string {
 	txt += fmt.Sprintf(`style Nmaps fill:#BBDEFB%c`, '\n')
 
 	for i, r := range s.Sdata.Routes {
+		ms := ""
 		m, err := NetmaskToCIDR(r.Mask)
-		if err != nil {
-			m = -1
+		if err == nil {
+			ms = "/" + strconv.Itoa(m)
 		}
-		txt += fmt.Sprintf(` subgraph N%d["%s/%d"]%c`, i, r.Dest, m, '\n')
+		txt += fmt.Sprintf(` subgraph N%d["%s%s"]%c`, i, r.Dest, ms, '\n')
 		txt += fmt.Sprintf(`  n%d["nmap"]%c`, i, '\n')
 		txt += " end\n"
 		txt += fmt.Sprintf(`n%d@{ shape: rounded}%c`, i, '\n')
