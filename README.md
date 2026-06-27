@@ -23,6 +23,7 @@ Cross-reference your nftables firewall rules against active listeners, routing t
 
 - Go (to build)
 - MongoDB
+- net-tools
 - nmap (on the external scanning hosts)
 - Root access on monitored servers (for the collection scripts)
 
@@ -146,6 +147,16 @@ CLI for administration and script generation. All flags:
 | `a` | Admin — sees all servers across all owners; full write access |
 | `w` | Write — sees own owner's servers; can suppress rules and edit comments |
 | `r` | Read-only — sees own owner's servers |
+
+---
+
+### Baseline
+
+If a baseline is set for a server, that baseline data is compared with the new data the collector receives for that server. If new information appears or information is disappears, this is logged by the collector unless the item is supressed.
+
+```
+2026-06-27T13:36:37.841641+02:00 monitor nchecknetcollector[2883648]: Listener disappeared: someserver {v4 tcp 0.0.0.0 33443 0.0.0.0  false}
+```
 
 ---
 
