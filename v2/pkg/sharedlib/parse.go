@@ -100,6 +100,7 @@ type RouteEntry struct {
 	Dest      string
 	Gateway   string
 	Interface string
+	Mask      string
 	Supressed bool
 }
 
@@ -484,6 +485,7 @@ func ProcessRoutes(RouteData []string) []RouteEntry {
 		}
 		entry.Dest = f[0]
 		entry.Gateway = f[1]
+		entry.Mask = f[2]
 		entry.Interface = f[7]
 
 		RouteTable = append(RouteTable, entry)

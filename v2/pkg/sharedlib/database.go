@@ -15,6 +15,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"net"
 )
 
 // dbBaseline is the MongoDB document stored in the baseline collection.
@@ -642,7 +643,11 @@ func GenPic(key, sessionid string) string {
 	txt += fmt.Sprintf(`style Nmaps fill:#BBDEFB%c`, '\n')
 
 	for i, r := range s.Sdata.Routes {
-		txt += fmt.Sprintf(` subgraph N%d["%s"]%c`, i, r.Dest, '\n')
+		m, err := NetmaskToCIDR(r.Mask)
+		if err != nil {
+			m = -1
+		}
+		txt += fmt.Sprintf(` subgraph N%d["%s/%d"]%c`, i, r.Dest, m, '\n')
 		txt += fmt.Sprintf(`  n%d["nmap"]%c`, i, '\n')
 		txt += " end\n"
 		txt += fmt.Sprintf(`n%d@{ shape: rounded}%c`, i, '\n')
@@ -977,4 +982,30 @@ func UpdateUserToken(name, token string) error {
 		log.Println("Error updating Token in document in UsersCollection:", err)
 	}
 	return err
+}
+
+// NetmaskToCIDR converts a 4-octet string netmask to its CIDR integer value.
+// Returns an error if the netmask is invalid or not a standard IPv4 mask.
+func NetmaskToCIDR(netmaskStr string) (int, error) {
+	// Parse the string into a net.IP type
+	ip := net.ParseIP(netmaskStr)
+	if ip == nil {
+		return 0, fmt.Errorf("invalid netmask format: %s", netmaskStr)
+	}
+
+	// Convert the 4-octet IP into a 4-byte IPv4 mask type
+	ipv4Mask := net.IPMask(ip.To4())
+	if ipv4Mask == nil {
+		return 0, fmt.Errorf("not a valid IPv4 netmask: %s", netmaskStr)
+	}
+
+	// Size returns the number of leading ones and total bits (32 for IPv4)
+	ones, bits := ipv4Mask.Size()
+
+	// If the mask is non-contiguous (e.g., 255.0.255.0), Size() returns 0, 0
+	if ones == 0 && bits == 0 {
+		return 0, fmt.Errorf("non-contiguous or invalid netmask: %s", netmaskStr)
+	}
+
+	return ones, nil
 }
