@@ -57,6 +57,9 @@ func Compare2SessionIDs(hostname, sid1, sid2 string) error {
 				break
 			}
 		}
+
+		if !match { InsertServerAlert(hostname, sid1, sid2, "Route", "disappeared", l1) }
+
 		if !match && !l1.Supressed {
 			log.Printf("Route disappeared: %s %v\n ",hostname, l1)
 		}
@@ -69,6 +72,7 @@ func Compare2SessionIDs(hostname, sid1, sid2 string) error {
 				break
 			}
 		}
+		if !match { InsertServerAlert(hostname, sid1, sid2, "Route", "appeared", l2) }
 		if !match && !l2.Supressed {
 			log.Printf("Route appeared: %s %v\n ",hostname , l2)
 		}
@@ -83,6 +87,7 @@ func Compare2SessionIDs(hostname, sid1, sid2 string) error {
 				break
 			}
 		}
+		if !match { InsertServerAlert(hostname, sid1, sid2, "Interface", "disappeared", l1) }
 		if !match && !l1.Supressed {
 			log.Printf("Interface disappeared: %s %v\n ",hostname, l1)
 		}
@@ -95,6 +100,7 @@ func Compare2SessionIDs(hostname, sid1, sid2 string) error {
 				break
 			}
 		}
+		if !match { InsertServerAlert(hostname, sid1, sid2, "Interface", "appeared", l2) }
 		if !match&& !l2.Supressed  {
 			log.Printf("Interface appeared: %s %v\n ",hostname, l2)
 		}
@@ -109,6 +115,7 @@ func Compare2SessionIDs(hostname, sid1, sid2 string) error {
 				break
 			}
 		}
+		if !match { InsertServerAlert(hostname, sid1, sid2, "Fwrule", "disappeared", l1) }
 		if !match && !l1.Supressed {
 			log.Printf("Fwrule disappeared: %s %v\n ",hostname, l1)
 		}
@@ -121,6 +128,7 @@ func Compare2SessionIDs(hostname, sid1, sid2 string) error {
 				break
 			}
 		}
+		if !match { InsertServerAlert(hostname, sid1, sid2, "Fwrule", "appeared", l2) }
 		if !match  && !l2.Supressed{
 			log.Printf("Fwrule appeared: %s %v\n ",hostname, l2)
 		}
@@ -138,6 +146,7 @@ func Compare2SessionIDs(hostname, sid1, sid2 string) error {
 				break
 			}
 		}
+		if !match { InsertServerAlert(hostname, sid1, sid2, "Listener", "disappeared", l1) }
 		if !match && !l1.Supressed {
 			log.Printf("Listener disappeared: %s %v\n ",hostname, l1)
 		}
@@ -152,6 +161,7 @@ func Compare2SessionIDs(hostname, sid1, sid2 string) error {
 				break
 			}
 		}
+		if !match { InsertServerAlert(hostname, sid1, sid2, "Listener", "appeared", l2) }
 		if !match && !l2.Supressed {
 			log.Printf("Listener appeared: %s %v\n ",hostname, l2)
 		}

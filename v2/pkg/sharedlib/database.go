@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"go.mongodb.org/mongo-driver/bson"
@@ -12,10 +13,10 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"golang.org/x/crypto/bcrypt"
 	"log"
+	"net"
 	"strconv"
 	"strings"
 	"time"
-	"net"
 )
 
 // dbBaseline is the MongoDB document stored in the baseline collection.
@@ -65,12 +66,25 @@ type dbNmapData struct {
 	Ndata     NcheckNetNmap      `bson:"ndata,omitempty"`
 }
 
+// dbServerAlert is the MongoDB document stored in the ServerAlerts collection.
+type dbServerAlert struct {
+	ID       primitive.ObjectID `bson:"_id,omitempty"`
+	InfoType string             `bson:"InfoType"`
+	Data     interface{}        `bson:"Data"`
+	What     string             `bson:"What"`
+	Hostname string             `bson:"Hostname"`
+	Sid1     string             `bson:"Sid1"`
+	Sid2     string             `bson:"Sid2"`
+	DataHash string             `bson:"DataHash"`
+}
+
 // MongoDB collection handles, initialised by DBConnect.
 var ServersCollection *mongo.Collection
 var ServerDataCollection *mongo.Collection
 var NmapDataCollection *mongo.Collection
 var UsersCollection *mongo.Collection
 var BaselineCollection *mongo.Collection
+var ServerAlertsCollection *mongo.Collection
 
 // ctx is the package-level background context used for all MongoDB operations.
 var ctx = context.Background()
@@ -95,8 +109,40 @@ func DBConnect(uri string) (*mongo.Client, error) {
 	NmapDataCollection = client.Database("nchecknet").Collection("nmapdata")
 	UsersCollection = client.Database("nchecknet").Collection("users")
 	BaselineCollection = client.Database("nchecknet").Collection("baseline")
+	ServerAlertsCollection = client.Database("nchecknet").Collection("ServerAlerts")
 
 	return client, nil
+}
+
+// InsertServerAlert stores an alert document in the ServerAlerts collection,
+// skipping the insert if an identical document already exists.
+func InsertServerAlert(hostname, sid1, sid2, infoType, what string, data interface{}) error {
+	b, _ := json.Marshal(data)
+	h := sha256.New()
+	h.Write([]byte(hostname + sid1 + sid2 + infoType + what))
+	h.Write(b)
+	dataHash := hex.EncodeToString(h.Sum(nil))
+
+	var existing dbServerAlert
+	err := ServerAlertsCollection.FindOne(ctx, bson.M{"DataHash": dataHash}).Decode(&existing)
+	if err == nil {
+		return nil
+	}
+	if err != mongo.ErrNoDocuments {
+		return err
+	}
+
+	doc := dbServerAlert{
+		InfoType: infoType,
+		Data:     data,
+		What:     what,
+		Hostname: hostname,
+		Sid1:     sid1,
+		Sid2:     sid2,
+		DataHash: dataHash,
+	}
+	_, err = ServerAlertsCollection.InsertOne(ctx, doc)
+	return err
 }
 
 // GetNmapDataByHostnameAndSessionID fetches nmap data for a hostname and session, resolving the hostname to a key first.
