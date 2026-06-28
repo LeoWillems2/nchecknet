@@ -294,12 +294,11 @@ function FillNmapAlerts(m) {
         return;
     }
     let html = '<table class="table table-sm table-striped table-bordered" style="margin-top:10px;">' +
-               '<thead><tr><th>SessionID</th><th>Date</th><th>Proto</th><th>Port</th><th>Status</th></tr></thead><tbody>';
+               '<thead><tr><th>SessionID</th><th>Proto</th><th>Port</th><th>Status</th></tr></thead><tbody>';
     for (const a of alerts) {
         const d = a.Data || {};
         html += '<tr>' +
             '<td>' + escHtml(a.SessionID) + '</td>' +
-            '<td>' + escHtml(a.Date) + '</td>' +
             '<td>' + escHtml(d.proto || '') + '</td>' +
             '<td>' + escHtml(d.port || '') + '</td>' +
             '<td>' + escHtml(d.status || '') + '</td>' +
