@@ -448,7 +448,8 @@ func CompareFromNMAPViewpoint(hostname, sessionid string) (string, error) {
 			_, ok := FbP[nr.Port]
 			if !ok {
 				sl := fmt.Sprintf("Nmap found open port (%s) on %s but no FW port is configured", nr.Port, nmh.ScannedHostname)
-				log.Println(sl);
+				log.Println(sl)
+				InsertNmapAlert(nmh.ScannedHostname, sessionid, nr)
 				noport = "<br/><span style='color:red'>No FW Port Configured!</span>"
 			}
 

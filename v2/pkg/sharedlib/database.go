@@ -78,6 +78,16 @@ type dbServerAlert struct {
 	DataHash string             `bson:"DataHash"`
 }
 
+// dbNmapAlert is the MongoDB document stored in the NmapAlerts collection.
+type dbNmapAlert struct {
+	ID              primitive.ObjectID `bson:"_id,omitempty"`
+	Data            interface{}        `bson:"Data"`
+	ScannedHostname string             `bson:"ScannedHostname"`
+	SessionID       string             `bson:"SessionID"`
+	Date            string             `bson:"Date"`
+	DataHash        string             `bson:"DataHash"`
+}
+
 // MongoDB collection handles, initialised by DBConnect.
 var ServersCollection *mongo.Collection
 var ServerDataCollection *mongo.Collection
@@ -85,6 +95,7 @@ var NmapDataCollection *mongo.Collection
 var UsersCollection *mongo.Collection
 var BaselineCollection *mongo.Collection
 var ServerAlertsCollection *mongo.Collection
+var NmapAlertsCollection *mongo.Collection
 
 // ctx is the package-level background context used for all MongoDB operations.
 var ctx = context.Background()
@@ -110,6 +121,7 @@ func DBConnect(uri string) (*mongo.Client, error) {
 	UsersCollection = client.Database("nchecknet").Collection("users")
 	BaselineCollection = client.Database("nchecknet").Collection("baseline")
 	ServerAlertsCollection = client.Database("nchecknet").Collection("ServerAlerts")
+	NmapAlertsCollection = client.Database("nchecknet").Collection("NmapAlerts")
 
 	return client, nil
 }
@@ -142,6 +154,35 @@ func InsertServerAlert(hostname, sid1, sid2, infoType, what string, data interfa
 		DataHash: dataHash,
 	}
 	_, err = ServerAlertsCollection.InsertOne(ctx, doc)
+	return err
+}
+
+// InsertNmapAlert stores an alert document in the NmapAlerts collection,
+// skipping the insert if an identical document already exists.
+func InsertNmapAlert(scannedHostname, sessionid string, data NmapLine) error {
+	b, _ := json.Marshal(data)
+	h := sha256.New()
+	h.Write([]byte(scannedHostname + sessionid))
+	h.Write(b)
+	dataHash := hex.EncodeToString(h.Sum(nil))
+
+	var existing dbNmapAlert
+	err := NmapAlertsCollection.FindOne(ctx, bson.M{"DataHash": dataHash}).Decode(&existing)
+	if err == nil {
+		return nil
+	}
+	if err != mongo.ErrNoDocuments {
+		return err
+	}
+
+	doc := dbNmapAlert{
+		Data:            data,
+		ScannedHostname: scannedHostname,
+		SessionID:       sessionid,
+		Date:            time.Now().Format("2006-01-02"),
+		DataHash:        dataHash,
+	}
+	_, err = NmapAlertsCollection.InsertOne(ctx, doc)
 	return err
 }
 
