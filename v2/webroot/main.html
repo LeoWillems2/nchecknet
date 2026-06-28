@@ -14,6 +14,8 @@
             <li class="nav-item" role="presentation"><a class="nav-link" role="tab" data-bs-toggle="tab" href="#tab-1">Systems</a></li>
             <li class="nav-item" role="presentation"><a class="nav-link active" role="tab" data-bs-toggle="tab" id="charttabitem" href="#tab-2">Charts</a></li>
             <li class="nav-item" role="presentation"><a class="nav-link" role="tab" data-bs-toggle="tab" id="datatabitem" href="#tab-3">Data</a></li>
+            <li class="nav-item" role="presentation"><a class="nav-link" role="tab" data-bs-toggle="tab" id="alertstabitem" href="#tab-4">Server Alerts</a></li>
+            <li class="nav-item" role="presentation"><a class="nav-link" role="tab" data-bs-toggle="tab" id="nmpalertstabitm" href="#tab-5">Nmap Alerts</a></li>
         </ul>
         <div class="tab-content">
             <div class="tab-pane" role="tabpanel" id="tab-1">
@@ -85,6 +87,30 @@
                     <div class="row">
                         <div class="col" id="DataTabCol1"></div>
                     </div>
+                </div>
+            </div>
+            <div class="tab-pane" role="tabpanel" id="tab-4">
+                <div class="container" style="height: 20px;"></div>
+                <div class="container">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="alerts-all-sessions">
+                        <label class="form-check-label" for="alerts-all-sessions">Show all sessions</label>
+                    </div>
+                </div>
+                <div class="container" style="margin-top: 10px;">
+                    <div id="ServerAlertsTable"></div>
+                </div>
+            </div>
+            <div class="tab-pane" role="tabpanel" id="tab-5">
+                <div class="container" style="height: 20px;"></div>
+                <div class="container">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="nmapalerts-all-sessions">
+                        <label class="form-check-label" for="nmapalerts-all-sessions">Show all sessions</label>
+                    </div>
+                </div>
+                <div class="container" style="margin-top: 10px;">
+                    <div id="NmapAlertsTable"></div>
                 </div>
             </div>
         </div>

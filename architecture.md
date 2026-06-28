@@ -85,6 +85,8 @@ WebSocket message functions:
 | `ChangeFwComment` | _(none)_ | Annotate a fw rule |
 | `ChangeLisComment` | _(none)_ | Annotate a listener |
 | `SetBaselineServer` | _(none)_ | Mark current session as baseline |
+| `GetServerAlerts` | `FillServerAlerts` | Baseline-comparison alerts for a server (session-scoped or all-time) |
+| `GetNmapAlerts` | `FillNmapAlerts` | Unmanaged open-port findings for a server (session-scoped or all-time) |
 
 ### `cmd/utils` — CLI Admin Tool
 
@@ -312,7 +314,8 @@ Single-page app (`webroot/main.html` + `webroot/js/nchecknet.js`).
 - **jQuery** for DOM manipulation and event handling
 - **Mermaid.js** (bundled local copy) for diagram rendering
 - Connects to `/ws` over WebSocket (WSS in production, WS for localhost)
-- Three tabs: **Systems** (server/session selectors, nmap script generator), **Charts** (fw/listener or nmap diagrams), **Data** (raw JSON dump)
+- Five tabs: **Systems** (server/session selectors, nmap script generator), **Charts** (fw/listener or nmap diagrams), **Data** (raw JSON dump), **Server Alerts** (baseline comparison alerts), **Nmap Alerts** (unmanaged open-port findings)
+- Server Alerts and Nmap Alerts tabs populate on server/session selection; a "Show all sessions" checkbox switches between session-scoped and all-time views
 
 Chart nodes rendered by Mermaid contain embedded HTML (`<input>`, `<button>`) wired up via `setTimeout` after Mermaid renders, using CSS class selectors (`hidefwrule`, `hidelistener`, `Fwcomment`, `Liscomment`).
 
@@ -332,8 +335,6 @@ Key dependencies: `go.mongodb.org/mongo-driver`, `github.com/golang-jwt/jwt/v5`,
 
 ## Known Gaps / Todo
 
-- Baseline alerts are persisted to `ServerAlerts` and logged to stderr, but not yet surfaced in the web UI
-- Nmap unmanaged-port alerts are persisted to `NmapAlerts` and logged to stderr, but not yet surfaced in the web UI
 - `RunReport` has a bug: `ok=false` is forced, so every nmap port is always flagged as unmanaged
 - Nmap script IPv6 scanning is stubbed out (returns early on `:` in IP)
 - No session pruning (old sessions accumulate indefinitely)

@@ -227,6 +227,7 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request) {
 		ChartType      string
 		BaselineServer bool
 		BaselineNmap   bool // declared but not currently acted on
+		AllSessions    bool
 	}
 
 	// MessageOut is the server-to-client reply frame.
@@ -241,6 +242,8 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request) {
 		BaselineNmap     bool
 		BaselineServerID string
 		BaselineNmapID   string
+		AlertsJSON       string
+		NmapAlertsJSON   string
 	}
 
 	// Upgrade the HTTP connection to a WebSocket connection
@@ -424,6 +427,52 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request) {
 
 			} else {
 				sharedlib.ChangeLisComment(mi.Hostname, mi.SessionID, mi.Csum, mi.Data)
+			}
+
+		case "GetNmapAlerts":
+			if sharedlib.NoAccess2DB(user, mi.Hostname) {
+				return
+			}
+			mo.Function = "FillNmapAlerts"
+			var nmapAlerts []sharedlib.NmapAlertOut
+			if mi.AllSessions {
+				nmapAlerts, err = sharedlib.GetNmapAlertsByHostname(mi.Hostname)
+			} else {
+				nmapAlerts, err = sharedlib.GetNmapAlertsBySession(mi.Hostname, mi.SessionID)
+			}
+			if err != nil {
+				log.Println("GetNmapAlerts", err)
+				mo.NmapAlertsJSON = "[]"
+				break
+			}
+			if nmapAlerts == nil {
+				mo.NmapAlertsJSON = "[]"
+			} else {
+				b, _ := json.Marshal(nmapAlerts)
+				mo.NmapAlertsJSON = string(b)
+			}
+
+		case "GetServerAlerts":
+			if sharedlib.NoAccess2DB(user, mi.Hostname) {
+				return
+			}
+			mo.Function = "FillServerAlerts"
+			var alerts []sharedlib.ServerAlertOut
+			if mi.AllSessions {
+				alerts, err = sharedlib.GetServerAlertsByHostname(mi.Hostname)
+			} else {
+				alerts, err = sharedlib.GetServerAlertsBySession(mi.Hostname, mi.SessionID)
+			}
+			if err != nil {
+				log.Println("GetServerAlerts", err)
+				mo.AlertsJSON = "[]"
+				break
+			}
+			if alerts == nil {
+				mo.AlertsJSON = "[]"
+			} else {
+				b, _ := json.Marshal(alerts)
+				mo.AlertsJSON = string(b)
 			}
 
 		}

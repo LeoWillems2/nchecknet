@@ -17,6 +17,8 @@ Cross-reference your nftables firewall rules against active listeners, routing t
 - Baseline comparison — alerts when listeners, firewall rules, routes, or interfaces appear or disappear
 - Nmap alerts — flags ports found open externally with no matching firewall rule, stored per session
 - Web UI with interactive Mermaid diagrams, inline comments, and per-rule suppression
+- **Server Alerts tab** — table of baseline-comparison alerts (appeared/disappeared items) per server/session
+- **Nmap Alerts tab** — table of unmanaged open-port findings per server/session
 
 ---
 

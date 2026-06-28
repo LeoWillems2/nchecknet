@@ -186,6 +186,146 @@ func InsertNmapAlert(scannedHostname, sessionid string, data NmapLine) error {
 	return err
 }
 
+// ServerAlertOut is the JSON-serialisable form of a ServerAlerts document returned to the web UI.
+type ServerAlertOut struct {
+	InfoType string          `json:"InfoType"`
+	Data     json.RawMessage `json:"Data"`
+	What     string          `json:"What"`
+	Hostname string          `json:"Hostname"`
+	Sid1     string          `json:"Sid1"`
+	Sid2     string          `json:"Sid2"`
+}
+
+// serverAlertBson is the intermediate decode target that captures the raw Data bytes.
+type serverAlertBson struct {
+	InfoType string   `bson:"InfoType"`
+	Data     bson.Raw `bson:"Data"`
+	What     string   `bson:"What"`
+	Hostname string   `bson:"Hostname"`
+	Sid1     string   `bson:"Sid1"`
+	Sid2     string   `bson:"Sid2"`
+}
+
+func decodeServerAlerts(cursor *mongo.Cursor) ([]ServerAlertOut, error) {
+	var results []ServerAlertOut
+	for cursor.Next(ctx) {
+		var raw serverAlertBson
+		if err := cursor.Decode(&raw); err != nil {
+			continue
+		}
+		var m map[string]interface{}
+		if err := bson.Unmarshal(raw.Data, &m); err != nil {
+			continue
+		}
+		jsonBytes, err := json.Marshal(m)
+		if err != nil {
+			continue
+		}
+		results = append(results, ServerAlertOut{
+			InfoType: raw.InfoType,
+			Data:     json.RawMessage(jsonBytes),
+			What:     raw.What,
+			Hostname: raw.Hostname,
+			Sid1:     raw.Sid1,
+			Sid2:     raw.Sid2,
+		})
+	}
+	return results, cursor.Err()
+}
+
+// GetServerAlertsByHostname returns all ServerAlerts for the given hostname, newest first.
+func GetServerAlertsByHostname(hostname string) ([]ServerAlertOut, error) {
+	opts := options.Find().SetSort(bson.D{{Key: "Sid2", Value: -1}, {Key: "Sid1", Value: -1}})
+	cursor, err := ServerAlertsCollection.Find(ctx, bson.M{"Hostname": hostname}, opts)
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(ctx)
+	return decodeServerAlerts(cursor)
+}
+
+// GetServerAlertsBySession returns ServerAlerts for the given hostname where either
+// Sid1 or Sid2 matches sessionID, newest first.
+func GetServerAlertsBySession(hostname, sessionID string) ([]ServerAlertOut, error) {
+	filter := bson.M{
+		"Hostname": hostname,
+		"$or": bson.A{
+			bson.M{"Sid1": sessionID},
+			bson.M{"Sid2": sessionID},
+		},
+	}
+	opts := options.Find().SetSort(bson.D{{Key: "Sid2", Value: -1}, {Key: "Sid1", Value: -1}})
+	cursor, err := ServerAlertsCollection.Find(ctx, filter, opts)
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(ctx)
+	return decodeServerAlerts(cursor)
+}
+
+// NmapAlertOut is the JSON-serialisable form of a NmapAlerts document returned to the web UI.
+type NmapAlertOut struct {
+	Data            json.RawMessage `json:"Data"`
+	ScannedHostname string          `json:"ScannedHostname"`
+	SessionID       string          `json:"SessionID"`
+	Date            string          `json:"Date"`
+}
+
+// nmapAlertBson is the intermediate decode target that captures the raw Data bytes.
+type nmapAlertBson struct {
+	Data            bson.Raw `bson:"Data"`
+	ScannedHostname string   `bson:"ScannedHostname"`
+	SessionID       string   `bson:"SessionID"`
+	Date            string   `bson:"Date"`
+}
+
+func decodeNmapAlerts(cursor *mongo.Cursor) ([]NmapAlertOut, error) {
+	var results []NmapAlertOut
+	for cursor.Next(ctx) {
+		var raw nmapAlertBson
+		if err := cursor.Decode(&raw); err != nil {
+			continue
+		}
+		var m map[string]interface{}
+		if err := bson.Unmarshal(raw.Data, &m); err != nil {
+			continue
+		}
+		jsonBytes, err := json.Marshal(m)
+		if err != nil {
+			continue
+		}
+		results = append(results, NmapAlertOut{
+			Data:            json.RawMessage(jsonBytes),
+			ScannedHostname: raw.ScannedHostname,
+			SessionID:       raw.SessionID,
+			Date:            raw.Date,
+		})
+	}
+	return results, cursor.Err()
+}
+
+// GetNmapAlertsByHostname returns all NmapAlerts for the given hostname, newest first.
+func GetNmapAlertsByHostname(hostname string) ([]NmapAlertOut, error) {
+	opts := options.Find().SetSort(bson.D{{Key: "SessionID", Value: -1}})
+	cursor, err := NmapAlertsCollection.Find(ctx, bson.M{"ScannedHostname": hostname}, opts)
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(ctx)
+	return decodeNmapAlerts(cursor)
+}
+
+// GetNmapAlertsBySession returns NmapAlerts for the given hostname and session, newest first.
+func GetNmapAlertsBySession(hostname, sessionID string) ([]NmapAlertOut, error) {
+	opts := options.Find().SetSort(bson.D{{Key: "SessionID", Value: -1}})
+	cursor, err := NmapAlertsCollection.Find(ctx, bson.M{"ScannedHostname": hostname, "SessionID": sessionID}, opts)
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(ctx)
+	return decodeNmapAlerts(cursor)
+}
+
 // GetNmapDataByHostnameAndSessionID fetches nmap data for a hostname and session, resolving the hostname to a key first.
 func GetNmapDataByHostnameAndSessionID(hostname, sessionid string) (dbNmapData, error) {
 	s, err := GetServerByHostname(hostname)

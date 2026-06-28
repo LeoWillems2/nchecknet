@@ -34,6 +34,8 @@ function Ready() {
         if (m.Function === "FillData")           { FillData(m);           return; }
         if (m.Function === "FillNmapCollector")  { FillNmapCollector(m);  return; }
         if (m.Function === "FillChartReport")    { FillChartReport(m);    return; }
+        if (m.Function === "FillServerAlerts")   { FillServerAlerts(m);   return; }
+        if (m.Function === "FillNmapAlerts")     { FillNmapAlerts(m);     return; }
     };
 
     ws.onclose = () => {
@@ -56,9 +58,19 @@ function Ready() {
     $("#SessionIDs").on("change", function () {
         sendWithContext({ Function: "GetNmapSuggestion" });
         sendWithContext({ Function: "GetData" });
+        sendWithContext({ Function: "GetServerAlerts", AllSessions: $("#alerts-all-sessions").prop('checked') });
+        sendWithContext({ Function: "GetNmapAlerts", AllSessions: $("#nmapalerts-all-sessions").prop('checked') });
         $("#charttype").val("select");
         $("#baseline-server").hide();
         $("#baseline-nmap").hide();
+    });
+
+    $("#alerts-all-sessions").on("change", function () {
+        sendWithContext({ Function: "GetServerAlerts", AllSessions: $(this).prop('checked') });
+    });
+
+    $("#nmapalerts-all-sessions").on("change", function () {
+        sendWithContext({ Function: "GetNmapAlerts", AllSessions: $(this).prop('checked') });
     });
 
     $("#baseline-server-val").on("click", doBaseLineServer);
@@ -131,6 +143,8 @@ function FillSessionIDs(m) {
 
     if (s0.length > 0) {
         sendWithContext({ Function: "GetNmapSuggestion" });
+        sendWithContext({ Function: "GetServerAlerts", AllSessions: $("#alerts-all-sessions").prop('checked') });
+        sendWithContext({ Function: "GetNmapAlerts", AllSessions: $("#nmapalerts-all-sessions").prop('checked') });
     }
 }
 
@@ -225,4 +239,76 @@ function FillData(m) {
 
 function FillNmapCollector(m) {
     $("#nmaprawcollector").html("<br/><pre>" + m.ArrData[0] + "</pre>");
+}
+
+function formatAlertData(infoType, data) {
+    if (!data) return '';
+    switch (infoType) {
+        case 'Listener':
+            return (data.proto || '') + ' ' + (data.ip || '') + ':' + (data.port || '') +
+                   (data.command ? ' (' + data.command + ')' : '');
+        case 'Fwrule':
+            return (data.proto || '') + ' port ' + (data.port || '') +
+                   (data.ruletype ? ' ' + data.ruletype : '') +
+                   (data.chain ? ' chain:' + data.chain : '') +
+                   (data.ip_from ? ' from:' + data.ip_from : '') +
+                   (data.ip_to ? ' to:' + data.ip_to : '');
+        case 'Interface':
+            return (data.name || '') +
+                   (data.v4addresses && data.v4addresses.length ? ' v4:' + data.v4addresses.join(',') : '') +
+                   (data.v6addresses && data.v6addresses.length ? ' v6:' + data.v6addresses.join(',') : '');
+        case 'Route':
+            return (data.dest || '') +
+                   (data.gateway ? ' via ' + data.gateway : '') +
+                   (data.interface ? ' dev ' + data.interface : '');
+        default:
+            return JSON.stringify(data);
+    }
+}
+
+function FillServerAlerts(m) {
+    const alerts = JSON.parse(m.AlertsJSON || '[]');
+    if (alerts.length === 0) {
+        $("#ServerAlertsTable").html('<p style="margin-top:10px;">No alerts found.</p>');
+        return;
+    }
+    let html = '<table class="table table-sm table-striped table-bordered" style="margin-top:10px;">' +
+               '<thead><tr><th>InfoType</th><th>What</th><th>Baseline</th><th>Reference Id</th><th>Data</th></tr></thead><tbody>';
+    for (const a of alerts) {
+        html += '<tr>' +
+            '<td>' + escHtml(a.InfoType) + '</td>' +
+            '<td>' + escHtml(a.What) + '</td>' +
+            '<td>' + escHtml(a.Sid1) + '</td>' +
+            '<td>' + escHtml(a.Sid2) + '</td>' +
+            '<td>' + escHtml(formatAlertData(a.InfoType, a.Data)) + '</td>' +
+            '</tr>';
+    }
+    html += '</tbody></table>';
+    $("#ServerAlertsTable").html(html);
+}
+
+function FillNmapAlerts(m) {
+    const alerts = JSON.parse(m.NmapAlertsJSON || '[]');
+    if (alerts.length === 0) {
+        $("#NmapAlertsTable").html('<p style="margin-top:10px;">No alerts found.</p>');
+        return;
+    }
+    let html = '<table class="table table-sm table-striped table-bordered" style="margin-top:10px;">' +
+               '<thead><tr><th>SessionID</th><th>Date</th><th>Proto</th><th>Port</th><th>Status</th></tr></thead><tbody>';
+    for (const a of alerts) {
+        const d = a.Data || {};
+        html += '<tr>' +
+            '<td>' + escHtml(a.SessionID) + '</td>' +
+            '<td>' + escHtml(a.Date) + '</td>' +
+            '<td>' + escHtml(d.proto || '') + '</td>' +
+            '<td>' + escHtml(d.port || '') + '</td>' +
+            '<td>' + escHtml(d.status || '') + '</td>' +
+            '</tr>';
+    }
+    html += '</tbody></table>';
+    $("#NmapAlertsTable").html(html);
+}
+
+function escHtml(s) {
+    return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
