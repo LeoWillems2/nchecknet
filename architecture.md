@@ -170,6 +170,17 @@ hostname      string
 sessionid     string
 ```
 
+#### `ServerAlerts`
+```
+InfoType      string   ("Route" | "Listener" | "Fwrule" | "Interface")
+Data          document (the full struct of the item that appeared or disappeared)
+What          string   ("appeared" | "disappeared")
+Hostname      string
+Sid1          string   (first session ID passed to Compare2SessionIDs)
+Sid2          string   (second session ID passed to Compare2SessionIDs)
+DataHash      string   (SHA-256 of Hostname+Sid1+Sid2+InfoType+What+JSON(Data); used for deduplication)
+```
+
 ### Core Domain Types (`parse.go`)
 
 ```go
@@ -225,7 +236,7 @@ type NmapHost  struct { IPversion, IPScanned, Interfacename, FromHostname, Scann
 3. Delete any existing document for same (key, sessionid) — idempotent daily runs
 4. Parse raw text into structured types
 5. Copy `Comment` and `Supressed` flags from the previous session's matching rules (matched by SHA-256 checksum of static fields), so annotations survive daily re-ingestion
-6. Trigger `CompareBaseline` — log appeared/disappeared items vs baseline session
+6. Trigger `CompareBaseline` — compare against baseline session; log and persist appeared/disappeared items to `ServerAlerts`
 7. If nmap data also exists for this session, trigger `CompareFromNMAPViewpoint`
 
 `InsertNmapData`:
@@ -312,7 +323,7 @@ Key dependencies: `go.mongodb.org/mongo-driver`, `github.com/golang-jwt/jwt/v5`,
 
 ## Known Gaps / Todo
 
-- Baseline comparison currently only logs to stderr (no UI display)
+- Baseline alerts are persisted to `ServerAlerts` and logged to stderr, but not yet surfaced in the web UI
 - `RunReport` has a bug: `ok=false` is forced, so every nmap port is always flagged as unmanaged
 - Nmap script IPv6 scanning is stubbed out (returns early on `:` in IP)
 - No session pruning (old sessions accumulate indefinitely)

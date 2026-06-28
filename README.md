@@ -152,11 +152,25 @@ CLI for administration and script generation. All flags:
 
 ## Baseline
 
-If a baseline is set for a server, that baseline data is compared with the new data the collector receives for that server. If new information appears or old information disappears, this is logged by the collector unless the item is supressed.
+If a baseline is set for a server, incoming data is compared against that baseline session. Any item that appeared or disappeared is both logged by the collector and persisted to the `ServerAlerts` MongoDB collection.
 
 ```
 2026-06-27T13:36:37.841641+02:00 monitor collector[2884]: Listener disappeared: someserver {v4 tcp 0.0.0.0 33443 0.0.0.0  comment false}
 ```
+
+Each alert document in `ServerAlerts` records:
+
+| Field | Description |
+|---|---|
+| `InfoType` | `Route`, `Listener`, `Fwrule`, or `Interface` |
+| `Data` | The full item that appeared or disappeared |
+| `What` | `appeared` or `disappeared` |
+| `Hostname` | Server hostname |
+| `Sid1` | Baseline session ID |
+| `Sid2` | Current session ID |
+| `DataHash` | SHA-256 fingerprint used to prevent duplicate inserts |
+
+Suppressed items are still compared but not logged or stored.
 
 ---
 
