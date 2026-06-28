@@ -9,6 +9,10 @@
 *.dylib
 
 CLAUDE.md
+.claude
+prompts/
+prompts/*
+
 .git/config
 
 bin/
