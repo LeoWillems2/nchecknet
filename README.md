@@ -14,7 +14,8 @@ Cross-reference your nftables firewall rules against active listeners, routing t
 - Compares `nftables` rules against `netstat -ntlp`, `netstat -rn`, and `ifconfig`
 - Runs nmap from external vantage points and flags ports open to the world without a matching firewall rule
 - Daily cron-based collection; annotations and suppression flags carry over between sessions
-- Baseline comparison — alerts when listeners or firewall rules appear or disappear
+- Baseline comparison — alerts when listeners, firewall rules, routes, or interfaces appear or disappear
+- Nmap alerts — flags ports found open externally with no matching firewall rule, stored per session
 - Web UI with interactive Mermaid diagrams, inline comments, and per-rule suppression
 
 ---
@@ -157,6 +158,12 @@ If a baseline is set for a server, incoming data is compared against that baseli
 ```
 2026-06-27T13:36:37.841641+02:00 monitor collector[2884]: Listener disappeared: someserver {v4 tcp 0.0.0.0 33443 0.0.0.0  comment false}
 ```
+
+---
+
+## Nmap Alerts
+
+When `CompareFromNMAPViewpoint` finds a port open externally that has no matching firewall rule, it logs the finding and persists it to the `NmapAlerts` MongoDB collection.
 
 ---
 

@@ -181,6 +181,15 @@ Sid2          string   (second session ID passed to Compare2SessionIDs)
 DataHash      string   (SHA-256 of Hostname+Sid1+Sid2+InfoType+What+JSON(Data); used for deduplication)
 ```
 
+#### `NmapAlerts`
+```
+Data          document (the NmapLine that triggered the alert)
+ScannedHostname  string
+SessionID     string   (session in which the unmanaged port was found)
+Date          string   (wall-clock date of first detection, YYYY-MM-DD)
+DataHash      string   (SHA-256 of ScannedHostname+SessionID+JSON(Data); used for deduplication)
+```
+
 ### Core Domain Types (`parse.go`)
 
 ```go
@@ -250,7 +259,7 @@ Charts are generated server-side as Mermaid flowchart syntax and rendered in the
 
 **FwAllow chart** (`CompareFromFWViewpoint`): Groups fw rules and listeners by port, renders them as two subgraphs connected by arrows where a fw rule port matches a listener port. Interactive buttons per node allow hide/suppress and inline comment editing.
 
-**Nmap chart** (`CompareFromNMAPViewpoint`): Shows each nmap vantage point's findings linked to the interface they scanned through. Highlights ports found open externally but without a matching firewall rule (red label).
+**Nmap chart** (`CompareFromNMAPViewpoint`): Shows each nmap vantage point's findings linked to the interface they scanned through. Highlights ports found open externally but without a matching firewall rule (red label). Each such finding is also logged and persisted to `NmapAlerts` (deduplicated per host + session + port).
 
 **Systems tab** (`GenPic`): Mermaid diagram of the server's interfaces with clickable buttons to generate the nmap script for each interface.
 
@@ -324,6 +333,7 @@ Key dependencies: `go.mongodb.org/mongo-driver`, `github.com/golang-jwt/jwt/v5`,
 ## Known Gaps / Todo
 
 - Baseline alerts are persisted to `ServerAlerts` and logged to stderr, but not yet surfaced in the web UI
+- Nmap unmanaged-port alerts are persisted to `NmapAlerts` and logged to stderr, but not yet surfaced in the web UI
 - `RunReport` has a bug: `ok=false` is forced, so every nmap port is always flagged as unmanaged
 - Nmap script IPv6 scanning is stubbed out (returns early on `:` in IP)
 - No session pruning (old sessions accumulate indefinitely)
