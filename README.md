@@ -1,4 +1,5 @@
 # nchecknet
+
 ![Logo](v2/docs/logo.svg)
 
 Cross-reference your nftables firewall rules against active listeners, routing table, network interfaces, and external nmap scans — and surface the discrepancies.
