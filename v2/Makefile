@@ -23,5 +23,10 @@ installbin:
 	sudo systemctl start nchecknet
 	sudo systemctl start webnchecknet
 
+installweb:
+	sudo pax -pe  -rw webroot /usr/local/share
+	sudo rm -rf /usr/local/share/nchecknetwebroot
+	sudo mv /usr/local/share/webroot /usr/local/share/nchecknetwebroot
+
 clean:
 	rm -f bin/*

@@ -243,24 +243,25 @@ function FillNmapCollector(m) {
 
 function formatAlertData(infoType, data) {
     if (!data) return '';
+    const sup = ' suppressed:' + (data.supressed ? 'true' : 'false');
     switch (infoType) {
         case 'Listener':
             return (data.proto || '') + ' ' + (data.ip || '') + ':' + (data.port || '') +
-                   (data.command ? ' (' + data.command + ')' : '');
+                   (data.command ? ' (' + data.command + ')' : '') + sup;
         case 'Fwrule':
             return (data.proto || '') + ' port ' + (data.port || '') +
                    (data.ruletype ? ' ' + data.ruletype : '') +
                    (data.chain ? ' chain:' + data.chain : '') +
                    (data.ip_from ? ' from:' + data.ip_from : '') +
-                   (data.ip_to ? ' to:' + data.ip_to : '');
+                   (data.ip_to ? ' to:' + data.ip_to : '') + sup;
         case 'Interface':
             return (data.name || '') +
                    (data.v4addresses && data.v4addresses.length ? ' v4:' + data.v4addresses.join(',') : '') +
-                   (data.v6addresses && data.v6addresses.length ? ' v6:' + data.v6addresses.join(',') : '');
+                   (data.v6addresses && data.v6addresses.length ? ' v6:' + data.v6addresses.join(',') : '') + sup;
         case 'Route':
             return (data.dest || '') +
                    (data.gateway ? ' via ' + data.gateway : '') +
-                   (data.interface ? ' dev ' + data.interface : '');
+                   (data.interface ? ' dev ' + data.interface : '') + sup;
         default:
             return JSON.stringify(data);
     }
