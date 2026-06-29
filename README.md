@@ -1,4 +1,3 @@
-# nchecknet
 
 ![Logo](v2/docs/logo.svg)
 
