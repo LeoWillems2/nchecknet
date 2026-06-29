@@ -220,8 +220,6 @@ function FillNmapSuggestion(m) {
     $("#nmapsuggestion").html("<pre class='mermaid' id=mermaidnmap></pre>");
     $("#mermaidnmap").removeAttr("data-processed");
     $("#mermaidnmap").html(m.ArrData[0]);
-    $("#nmaprawcollector").html("");
-
     mermaid.init();
 
     // Wire up interface buttons after Mermaid has finished rendering.
@@ -238,7 +236,6 @@ function FillData(m) {
 }
 
 function FillNmapCollector(m) {
-    $("#nmaprawcollector").html("<br/><pre>" + m.ArrData[0] + "</pre>");
 }
 
 function formatAlertData(infoType, data) {

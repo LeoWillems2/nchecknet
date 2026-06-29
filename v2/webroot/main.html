@@ -9,6 +9,10 @@
 </head>
 
 <body style="background: var(--bs-light-bg-subtle);">
+    <div style="padding: 8px 12px; display: flex; align-items: center; justify-content: space-between;">
+        <img src="/assets/img/logo.svg" alt="nchecknet" style="height: 50px;">
+        <button id="logoff" type="button" style="background-color: #1d4ed8; border-color: #1e3a8a; color: white;" class="btn btn-sm">Log off</button>
+    </div>
     <div>
         <ul class="nav nav-tabs" role="tablist">
             <li class="nav-item" role="presentation"><a class="nav-link" role="tab" data-bs-toggle="tab" href="#tab-1">Systems</a></li>
@@ -38,16 +42,7 @@
                         <div id="nmapsuggestion"></div>
                     </div>
                 </div>
-                <div class="container">
-                    <div class="col" style="border-radius: 3px;background: var(--bs-focus-ring-color);margin-left: 0px;border: 2px solid var(--bs-primary);">
-                        <p id="nmaprawcollector" style="margin-left: 5px;"></p>
-                    </div>
-                </div>
-                <div class="container">
-                    <div class="row">
-                        <div class="col"><button class="btn btn-primary" id="logoff" type="button">Log off</button></div>
-                    </div>
-                </div>
+
             </div>
             <div class="tab-pane active" role="tabpanel" id="tab-2">
                 <div class="container" style="height: 20px;"></div>
@@ -119,6 +114,9 @@
     <script src="assets/bootstrap/js/bootstrap.min.js"></script>
     <script src="/js/mermaid.tiny.js"></script>
     <script src="/js/nchecknet.js"></script>
+    <footer style="text-align: center; font-size: 12px; color: var(--bs-secondary-color); padding: 12px 0; margin-top: 20px; border-top: 1px solid var(--bs-border-color);">
+        &copy; CC0-1.0 license 2025&ndash;<script>document.write(new Date().getFullYear())</script> nchecknet
+    </footer>
 </body>
 
 </html>

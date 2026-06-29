@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 310 90" width="310" height="90">
+  <defs>
+    <linearGradient id="iconBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1e3a8a"/>
+      <stop offset="100%" stop-color="#1d4ed8"/>
+    </linearGradient>
+    <linearGradient id="checkBadge" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#15803d"/>
+      <stop offset="100%" stop-color="#22c55e"/>
+    </linearGradient>
+    <linearGradient id="wordmark" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%"   stop-color="#1e3a8a"/>
+      <stop offset="45%"  stop-color="#1d4ed8"/>
+      <stop offset="100%" stop-color="#38bdf8"/>
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="2" dy="3" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.25"/>
+    </filter>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="2.5" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Icon background — rounded square with drop shadow -->
+  <rect x="5" y="5" width="80" height="80" rx="18" ry="18"
+        fill="url(#iconBg)" filter="url(#shadow)"/>
+
+  <!-- Subtle inner highlight (top edge) -->
+  <rect x="5" y="5" width="80" height="40" rx="18" ry="18"
+        fill="white" opacity="0.05"/>
+
+  <!-- N-shape network connection lines -->
+  <g stroke="rgba(255,255,255,0.45)" stroke-width="2.2" stroke-linecap="round">
+    <line x1="23" y1="64" x2="23" y2="26"/>   <!-- left vertical  -->
+    <line x1="23" y1="26" x2="67" y2="64"/>   <!-- diagonal cross -->
+    <line x1="67" y1="26" x2="67" y2="64"/>   <!-- right vertical -->
+    <!-- faint horizontal tie line at top for mesh feel -->
+    <line x1="23" y1="26" x2="67" y2="26"
+          stroke-width="1.2" stroke-opacity="0.2"/>
+  </g>
+
+  <!-- Network nodes (white circles on each vertex) -->
+  <circle cx="23" cy="26" r="5"   fill="white" opacity="0.92"/>
+  <circle cx="23" cy="64" r="5"   fill="white" opacity="0.92"/>
+  <circle cx="67" cy="26" r="5"   fill="white" opacity="0.92"/>
+  <!-- centre-diagonal dot for extra network depth -->
+  <circle cx="45" cy="45" r="3.5" fill="white" opacity="0.45"/>
+
+  <!-- Green check badge at bottom-right node position -->
+  <circle cx="67" cy="64" r="13"
+          fill="url(#checkBadge)" filter="url(#glow)"/>
+  <!-- Soft white ring on badge -->
+  <circle cx="67" cy="64" r="13"
+          fill="none" stroke="white" stroke-width="1.4" opacity="0.35"/>
+  <!-- Checkmark path -->
+  <path d="M60.5 64 L65.5 70 L74.5 57"
+        stroke="white" stroke-width="2.6"
+        fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Wordmark: nchecknet -->
+  <!-- Render twice: once as white ghost for crispness, once with gradient fill -->
+  <text x="102" y="57"
+        font-family="'Inter','Segoe UI',system-ui,-apple-system,Helvetica,Arial,sans-serif"
+        font-size="33" font-weight="700" letter-spacing="-1"
+        fill="url(#wordmark)">nchecknet</text>
+
+  <!-- Sub-label / descriptor -->
+  <text x="103" y="73"
+        font-family="'Inter','Segoe UI',system-ui,-apple-system,Helvetica,Arial,sans-serif"
+        font-size="9.5" font-weight="500" letter-spacing="3"
+        fill="#64748b">NETWORK MONITORING</text>
+</svg>
