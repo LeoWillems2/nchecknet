@@ -50,10 +50,10 @@ HTTP server (default port 8087) that receives raw telemetry from monitored nodes
 
 | Endpoint | Method | Handler |
 |---|---|---|
-| `/api_server` | POST | `jsonPostHandlerServerRawData` |
-| `/api_nmap` | POST | `jsonPostHandlerNmapRawData` |
+| `/api_server` | POST | `makeServerHandler(cfg)` |
+| `/api_nmap` | POST | `makeNmapHandler(cfg)` |
 
-On receipt, raw JSON is parsed (`sharedlib.ProcessRawServerDataJSON` / `ProcessRawNmapDataJSON`) and stored in MongoDB. When both server data and nmap data exist for the same session, `CompareFromNMAPViewpoint` runs automatically and logs warnings.
+Handlers are closures that capture `CollectorConfig` so they can apply pruning thresholds after each insert. On receipt, raw JSON is parsed (`sharedlib.ProcessRawServerDataJSON` / `ProcessRawNmapDataJSON`) and stored in MongoDB. When both server data and nmap data exist for the same session, `CompareFromNMAPViewpoint` runs automatically and logs warnings. If `MaxCountServerData` / `MaxCountNmapData` is non-zero in the config, `PruneServerData` / `PruneNmapData` is called immediately after insert to remove the oldest documents for that server key.
 
 ### `cmd/webserver` — Web UI & API
 
@@ -249,11 +249,17 @@ type NmapHost  struct { IPversion, IPScanned, Interfacename, FromHostname, Scann
 5. Copy `Comment` and `Supressed` flags from the previous session's matching rules (matched by SHA-256 checksum of static fields), so annotations survive daily re-ingestion
 6. Trigger `CompareBaseline` — compare against baseline session; log and persist appeared/disappeared items to `ServerAlerts`
 7. If nmap data also exists for this session, trigger `CompareFromNMAPViewpoint`
+8. _(caller)_ If `MaxCountServerData > 0`, call `PruneServerData` to keep at most that many documents per server key
 
 `InsertNmapData`:
 1. Verify server key
 2. Upsert: if session doc exists, replace the NmapHost entry matching same `FromHostname + IPversion + ScannedHostname`; otherwise insert new doc or append new NmapHost
 3. If server data also exists, trigger `CompareFromNMAPViewpoint`
+4. _(caller)_ If `MaxCountNmapData > 0`, call `PruneNmapData` to keep at most that many documents per server key
+
+`PruneServerData(key, maxCount)` / `PruneNmapData(key, maxCount)`:
+- Count documents for the given server key
+- If count exceeds maxCount, delete the oldest `(count − maxCount)` documents sorted by `sessionid` (YYYYMMDD) ascending
 
 ### Viewing (on demand via WebSocket)
 
@@ -302,6 +308,8 @@ webserver:
 collector:
   collectorurl: "https://your-collector-fqdn"
   port: "8087"
+  maxcountserverdata: 365  # max serverdata documents retained per server; 0 or absent = no pruning
+  maxcountnmapdata: 365    # max nmapdata documents retained per server; 0 or absent = no pruning
 ```
 
 ---
@@ -337,5 +345,4 @@ Key dependencies: `go.mongodb.org/mongo-driver`, `github.com/golang-jwt/jwt/v5`,
 
 - `RunReport` has a bug: `ok=false` is forced, so every nmap port is always flagged as unmanaged
 - Nmap script IPv6 scanning is stubbed out (returns early on `:` in IP)
-- No session pruning (old sessions accumulate indefinitely)
-- `maxsessionidselect` governs UI display only, not DB retention
+- `maxsessionidselect` governs UI display only, not DB retention (use `maxcountserverdata` / `maxcountnmapdata` for that)
