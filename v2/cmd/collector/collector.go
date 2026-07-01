@@ -16,54 +16,62 @@ import (
 	"github.com/LeoWillems2/nchecknet/pkg/sharedlib"
 )
 
-// jsonPostHandlerServerRawData handles POST /api_server.
-// It decodes the RawDataServer JSON payload posted by server collector scripts
-// and delegates storage and processing to sharedlib.InsertServerData.
-// The server key embedded in the payload is verified inside InsertServerData.
-func jsonPostHandlerServerRawData(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		http.Error(w, "Only POST requests are allowed", http.StatusMethodNotAllowed)
-		return
+// makeServerHandler returns a handler for POST /api_server.
+// After inserting, it prunes old serverdata documents for that server key if
+// MaxCountServerData is configured (non-zero) in the collector config.
+func makeServerHandler(cfg sharedlib.CollectorConfig) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Error(w, "Only POST requests are allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		data := sharedlib.RawDataServer{}
+		err := json.NewDecoder(r.Body).Decode(&data)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Invalid JSON: %v", err), http.StatusBadRequest)
+			return
+		}
+		defer r.Body.Close()
+
+		sharedlib.InsertServerData(data)
+		if cfg.MaxCountServerData > 0 {
+			sharedlib.PruneServerData(data.Key, cfg.MaxCountServerData)
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(map[string]string{"message": "Data received successfully!"})
 	}
-
-	data := sharedlib.RawDataServer{}
-	err := json.NewDecoder(r.Body).Decode(&data)
-	if err != nil {
-		http.Error(w, fmt.Sprintf("Invalid JSON: %v", err), http.StatusBadRequest)
-		return
-	}
-	defer r.Body.Close()
-
-	sharedlib.InsertServerData(data)
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(map[string]string{"message": "Data received successfully!"})
 }
 
-// jsonPostHandlerNmapRawData handles POST /api_nmap.
-// It decodes the RawDataNmap JSON payload posted by nmap collector scripts
-// and delegates storage and processing to sharedlib.InsertNmapData.
-// The server key embedded in the payload is verified inside InsertNmapData.
-func jsonPostHandlerNmapRawData(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		http.Error(w, "Only POST requests are allowed", http.StatusMethodNotAllowed)
-		return
+// makeNmapHandler returns a handler for POST /api_nmap.
+// After inserting, it prunes old nmapdata documents for that server key if
+// MaxCountNmapData is configured (non-zero) in the collector config.
+func makeNmapHandler(cfg sharedlib.CollectorConfig) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Error(w, "Only POST requests are allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		data := sharedlib.RawDataNmap{}
+		err := json.NewDecoder(r.Body).Decode(&data)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Invalid JSON: %v", err), http.StatusBadRequest)
+			return
+		}
+		defer r.Body.Close()
+
+		sharedlib.InsertNmapData(data)
+		if cfg.MaxCountNmapData > 0 {
+			sharedlib.PruneNmapData(data.Key, cfg.MaxCountNmapData)
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(map[string]string{"message": "Data received successfully!"})
 	}
-
-	data := sharedlib.RawDataNmap{}
-	err := json.NewDecoder(r.Body).Decode(&data)
-	if err != nil {
-		http.Error(w, fmt.Sprintf("Invalid JSON: %v", err), http.StatusBadRequest)
-		return
-	}
-	defer r.Body.Close()
-
-	sharedlib.InsertNmapData(data)
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(map[string]string{"message": "Data received successfully!"})
 }
 
 // main loads config, connects to MongoDB, registers the two collector endpoints,
@@ -77,8 +85,8 @@ func main() {
 		return
 	}
 
-	http.HandleFunc("/api_nmap", jsonPostHandlerNmapRawData)
-	http.HandleFunc("/api_server", jsonPostHandlerServerRawData)
+	http.HandleFunc("/api_nmap", makeNmapHandler(YConfig.Collector))
+	http.HandleFunc("/api_server", makeServerHandler(YConfig.Collector))
 
 	sharedlib.DBConnect(YConfig.Server.MongoDBURL)
 

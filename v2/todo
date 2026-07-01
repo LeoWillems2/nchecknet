@@ -3,8 +3,6 @@
 
 
 
-* more reports
+nmap ipv6 integratie
 
-nmap integratie
- max sessionid for web opnemen in yaml.
- max sessionid for pruning opnemen in yaml.
+max sessionid for pruning opnemen in yaml.

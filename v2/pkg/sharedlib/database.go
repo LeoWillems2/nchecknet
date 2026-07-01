@@ -664,6 +664,85 @@ func CreateSessionID(date string) string {
 	return strings.Replace(date[0:10], "-", "", 2)
 }
 
+// PruneServerData deletes the oldest serverdata documents for a server key, keeping at most maxCount.
+// Documents are ordered by sessionid (YYYYMMDD) ascending; the excess oldest are removed.
+func PruneServerData(key string, maxCount int) {
+	filter := bson.D{{Key: "key", Value: key}}
+	count, err := ServerDataCollection.CountDocuments(ctx, filter)
+	if err != nil {
+		log.Println("PruneServerData: count error:", err)
+		return
+	}
+	excess := count - int64(maxCount)
+	if excess <= 0 {
+		return
+	}
+
+	opts := options.Find().
+		SetSort(bson.D{{Key: "sessionid", Value: 1}}).
+		SetLimit(excess).
+		SetProjection(bson.D{{Key: "_id", Value: 1}})
+	cursor, err := ServerDataCollection.Find(ctx, filter, opts)
+	if err != nil {
+		log.Println("PruneServerData: find error:", err)
+		return
+	}
+	var docs []struct {
+		ID primitive.ObjectID `bson:"_id"`
+	}
+	if err := cursor.All(ctx, &docs); err != nil {
+		log.Println("PruneServerData: cursor error:", err)
+		return
+	}
+	ids := make([]primitive.ObjectID, len(docs))
+	for i, d := range docs {
+		ids[i] = d.ID
+	}
+	_, err = ServerDataCollection.DeleteMany(ctx, bson.D{{Key: "_id", Value: bson.D{{Key: "$in", Value: ids}}}})
+	if err != nil {
+		log.Println("PruneServerData: delete error:", err)
+	}
+}
+
+// PruneNmapData deletes the oldest nmapdata documents for a server key, keeping at most maxCount.
+// Documents are ordered by sessionid (YYYYMMDD) ascending; the excess oldest are removed.
+func PruneNmapData(key string, maxCount int) {
+	filter := bson.D{{Key: "key", Value: key}}
+	count, err := NmapDataCollection.CountDocuments(ctx, filter)
+	if err != nil {
+		log.Println("PruneNmapData: count error:", err)
+		return
+	}
+	excess := count - int64(maxCount)
+	if excess <= 0 {
+		return
+	}
+	opts := options.Find().
+		SetSort(bson.D{{Key: "sessionid", Value: 1}}).
+		SetLimit(excess).
+		SetProjection(bson.D{{Key: "_id", Value: 1}})
+	cursor, err := NmapDataCollection.Find(ctx, filter, opts)
+	if err != nil {
+		log.Println("PruneNmapData: find error:", err)
+		return
+	}
+	var docs []struct {
+		ID primitive.ObjectID `bson:"_id"`
+	}
+	if err := cursor.All(ctx, &docs); err != nil {
+		log.Println("PruneNmapData: cursor error:", err)
+		return
+	}
+	ids := make([]primitive.ObjectID, len(docs))
+	for i, d := range docs {
+		ids[i] = d.ID
+	}
+	_, err = NmapDataCollection.DeleteMany(ctx, bson.D{{Key: "_id", Value: bson.D{{Key: "$in", Value: ids}}}})
+	if err != nil {
+		log.Println("PruneNmapData: delete error:", err)
+	}
+}
+
 // InsertServerData processes raw server telemetry and stores it in MongoDB.
 // If a document for the same (hostname, sessionid) already exists it is replaced (idempotent daily runs).
 // Comment and Supressed flags are migrated from the previous session's matching rules by checksum.

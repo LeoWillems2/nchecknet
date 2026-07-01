@@ -25,8 +25,10 @@ type ServerConfig struct {
 
 // CollectorConfig holds the collector-specific settings.
 type CollectorConfig struct {
-	CollectorURL string `yaml:"collectorurl"`
-	Port string    `yaml:"port"`
+	CollectorURL      string `yaml:"collectorurl"`
+	Port              string `yaml:"port"`
+	MaxCountServerData int   `yaml:"maxcountserverdata"`
+	MaxCountNmapData   int   `yaml:"maxcountnmapdata"`
 }
 
 // GetYamlConfig reads and parses the YAML config file at configPath.
